@@ -26,6 +26,21 @@ export default function ProductPurchase() {
     return { gold, making, profit, tax };
   }, [selected]);
 
+  function addToCart() {
+    const cartItem = {
+      productId: 'EVA-AGH-NEC-TOL-001',
+      unitId: selected.id,
+      name: 'طلوع',
+      collection: 'کالکشن آغاز',
+      weight: selected.weight,
+      purity: '۱۸ عیار',
+      price: selected.price,
+    };
+
+    window.localStorage.setItem('eva-cart', JSON.stringify(cartItem));
+    setAdded(true);
+  }
+
   return (
     <div className={styles.purchasePanel}>
       <a className={styles.collectionLink} href="/#collection">کالکشن آغاز</a>
@@ -55,9 +70,10 @@ export default function ProductPurchase() {
 
       <div className={styles.availability}><span /> موجود و آماده سفارش</div>
 
-      <button className={styles.addToCart} onClick={() => setAdded(true)}>
+      <button className={styles.addToCart} onClick={addToCart}>
         {added ? '✓ به سبد اضافه شد' : 'افزودن به سبد'}
       </button>
+      {added && <a href="/cart" className={styles.cartLink}>مشاهده سبد خرید ←</a>}
       <div className={styles.secondaryActions}><button>♡ افزودن به علاقه‌مندی‌ها</button><button>اشتراک‌گذاری</button></div>
 
       <div className={styles.microTrust}><span>تضمین اصالت</span><span>فاکتور معتبر</span><span>ارسال امن</span></div>
