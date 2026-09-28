@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  OUT_OF_STOCK
+  HIDDEN
+  DISCONTINUED
+  ARCHIVED
+}
+
+enum UnitStatus {
+  QC_PENDING
+  AVAILABLE
+  RESERVED
+  SOLD
+  RETURNED
+  QUALITY_HOLD
+  DAMAGED
+  UNAVAILABLE
+}
+
+model Collection {
+  id        String          @id @default(cuid())
+  nameFa    String
+  slug      String          @unique
+  code      String          @unique
+  story     String?
+  products  MasterProduct[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model MasterProduct {
+  id           String          @id @default(cuid())
+  nameFa       String
+  slug         String          @unique
+  masterSku    String          @unique
+  purity       Int             @default(18)
+  status       ProductStatus   @default(DRAFT)
+  collectionId String?
+  collection   Collection?     @relation(fields: [collectionId], references: [id])
+  units        PhysicalUnit[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([status])
+  @@index([collectionId])
+}
+
+model PhysicalUnit {
+  id              String        @id @default(cuid())
+  unitSku         String        @unique
+  productId       String
+  product         MasterProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+  exactWeightGram Decimal       @db.Decimal(8, 3)
+  status          UnitStatus    @default(QC_PENDING)
+  reservedUntil   DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([productId, status])
+  @@index([status, reservedUntil])
+}
+
+model GoldRate {
+  id          String   @id @default(cuid())
+  purity      Int      @default(18)
+  irrPerGram  BigInt
+  source      String
+  rateVersion String   @unique
+  observedAt  DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([purity, observedAt])
+}

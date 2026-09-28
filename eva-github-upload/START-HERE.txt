@@ -1,0 +1,13 @@
+EVA SITE - GitHub upload package
+
+1) Do not upload this ZIP itself to GitHub.
+2) Unzip it on your computer.
+3) Open the extracted folder.
+4) In your GitHub repository, choose Add file > Upload files.
+5) Drag ALL CONTENTS inside the extracted folder into the GitHub upload area.
+   Upload the contents, not the outer folder itself.
+6) Wait until the file list finishes loading.
+7) At the bottom click Commit changes.
+8) Do not create or upload a file named .env.
+
+After this, connect Railway using Deploy from GitHub repo and SELECT the repository from the list. Do not paste the repository URL into a source field.

@@ -1,0 +1,25 @@
+{
+  "name": "eva-commerce",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n storefront,admin,api -c auto \"npm run dev -w @eva/storefront\" \"npm run dev -w @eva/admin\" \"npm run dev -w @eva/api\"",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "db:generate": "npm run db:generate -w @eva/api",
+    "db:migrate": "npm run db:migrate -w @eva/api",
+    "db:studio": "npm run db:studio -w @eva/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.2"
+  }
+}
