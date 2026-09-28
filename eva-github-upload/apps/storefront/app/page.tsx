@@ -6,10 +6,10 @@ const categories = [
 ];
 
 const products = [
-  { name: 'طلوع', collection: 'کالکشن آغاز', weight: '۰.۸۴ گرم', price: '۱۴,۸۵۰,۰۰۰ تومان', art: 'sun' },
-  { name: 'مسیر', collection: 'کالکشن آغاز', weight: '۰.۷۲ گرم', price: '۱۲,۹۰۰,۰۰۰ تومان', art: 'line' },
-  { name: 'راه', collection: 'کالکشن آغاز', weight: '۰.۹۱ گرم', price: '۱۵,۹۵۰,۰۰۰ تومان', art: 'arc' },
-  { name: 'روشن', collection: 'کالکشن آغاز', weight: '۰.۶۸ گرم', price: '۱۱,۹۵۰,۰۰۰ تومان', art: 'drop' },
+  { name: 'طلوع', collection: 'کالکشن آغاز', weight: '۰.۸۴ گرم', price: '۱۴,۸۵۰,۰۰۰ تومان', art: 'sun', href: '/products/tolou' },
+  { name: 'مسیر', collection: 'کالکشن آغاز', weight: '۰.۷۲ گرم', price: '۱۲,۹۰۰,۰۰۰ تومان', art: 'line', href: '/shop' },
+  { name: 'راه', collection: 'کالکشن آغاز', weight: '۰.۹۱ گرم', price: '۱۵,۹۵۰,۰۰۰ تومان', art: 'arc', href: '/shop' },
+  { name: 'روشن', collection: 'کالکشن آغاز', weight: '۰.۶۸ گرم', price: '۱۱,۹۵۰,۰۰۰ تومان', art: 'drop', href: '/shop' },
 ];
 
 const trustItems = [
@@ -34,9 +34,9 @@ export default function HomePage() {
       <div className="announcement">ارسال امن • فاکتور معتبر • قیمت شفاف</div>
 
       <header className="siteHeader">
-        <a className="brand" href="#top" aria-label="EVA">EVA</a>
+        <a className="brand" href="/" aria-label="EVA">EVA</a>
         <nav aria-label="ناوبری اصلی">
-          <a href="#shop">فروشگاه</a>
+          <a href="/shop">فروشگاه</a>
           <a href="#collection">کالکشن‌ها</a>
           <a href="#gift">هدیه</a>
           <a href="#lightweight">طلای سبک</a>
@@ -52,12 +52,12 @@ export default function HomePage() {
       <section className="hero" id="top">
         <div className="heroContent">
           <div className="eyebrow">EVA • GOLD BOUTIQUE</div>
-          <h1>طلا، برای لحظه‌هایی که<br />با تو معنا می‌گیرند.</h1>
+          <h1>طلا، برای لحظه‌هایی که با تو معنا می‌گیرند.</h1>
           <p>
             قطعه‌های ظریف و معاصر با وزن و قیمت شفاف؛ برای استفاده روزمره، هدیه و لحظه‌هایی که می‌خواهی ماندگارشان کنی.
           </p>
           <div className="actions">
-            <a className="primaryButton" href="#shop">مشاهده فروشگاه</a>
+            <a className="primaryButton" href="/shop">مشاهده فروشگاه</a>
             <a className="textLink" href="#collection">کشف کالکشن آغاز</a>
           </div>
         </div>
@@ -71,7 +71,7 @@ export default function HomePage() {
 
       <section className="categoryStrip" aria-label="دسته‌بندی محصولات">
         {categories.map((category) => (
-          <a className="categoryCard" href="#shop" key={category.title}>
+          <a className="categoryCard" href="/shop" key={category.title}>
             <span className="categorySymbol" aria-hidden="true">{category.symbol}</span>
             <span className="categoryLabel">{category.label}</span>
             <strong>{category.title}</strong>
@@ -85,14 +85,14 @@ export default function HomePage() {
             <span>SELECTED FOR YOU</span>
             <h2>انتخاب‌های ایوا</h2>
           </div>
-          <a className="textLink" href="#shop">مشاهده همه محصولات</a>
+          <a className="textLink" href="/shop">مشاهده همه محصولات</a>
         </div>
         <div className="productGrid">
           {products.map((product) => (
             <article className="productCard" key={product.name}>
-              <a href="#" aria-label={`مشاهده ${product.name}`}>
+              <a href={product.href} aria-label={`مشاهده ${product.name}`}>
                 <div className="productMedia">
-                  <button className="wishlist" aria-label={`افزودن ${product.name} به علاقه‌مندی‌ها`}>♡</button>
+                  <span className="wishlist" aria-hidden="true">♡</span>
                   <ProductVisual art={product.art} />
                 </div>
                 <div className="productInfo">
@@ -125,7 +125,7 @@ export default function HomePage() {
           <p>
             کالکشن «آغاز» از نقطه، حرکت و مسیر باز الهام گرفته؛ فرم‌هایی ظریف و ناتمام که یادآور امکانِ ادامه دادن‌اند.
           </p>
-          <a className="secondaryButton" href="#shop">مشاهده کالکشن</a>
+          <a className="secondaryButton" href="/shop">مشاهده کالکشن</a>
         </div>
       </section>
 
@@ -136,7 +136,7 @@ export default function HomePage() {
           <p>مسیر خرید را بر اساس چیزی که برایت مهم‌تر است کوتاه کرده‌ایم.</p>
         </div>
         <div className="needGrid">
-          <a className="needCard" href="#shop">
+          <a className="needCard" href="/shop">
             <span>01</span>
             <h3>برای خودم</h3>
             <p>قطعه‌های ظریف، مینیمال و مناسب استفاده روزمره.</p>
@@ -194,7 +194,7 @@ export default function HomePage() {
           <p>بوتیک آنلاین طلای معاصر؛ با طراحی ظریف و خرید شفاف.</p>
         </div>
         <div className="footerLinks">
-          <div><strong>فروشگاه</strong><a href="#shop">همه محصولات</a><a href="#collection">کالکشن‌ها</a><a href="#lightweight">طلای سبک</a></div>
+          <div><strong>فروشگاه</strong><a href="/shop">همه محصولات</a><a href="#collection">کالکشن‌ها</a><a href="#lightweight">طلای سبک</a></div>
           <div><strong>راهنما</strong><a href="#trust">قیمت‌گذاری</a><a href="#trust">اصالت و فاکتور</a><a href="#gift">راهنمای هدیه</a></div>
           <div><strong>ایوا</strong><a href="#trust">درباره ما</a><a href="#trust">تماس</a><a href="#trust">سوالات متداول</a></div>
         </div>
