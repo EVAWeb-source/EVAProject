@@ -58,15 +58,16 @@ model MasterProduct {
 }
 
 model PhysicalUnit {
-  id              String        @id @default(cuid())
-  unitSku         String        @unique
-  productId       String
-  product         MasterProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
-  exactWeightGram Decimal       @db.Decimal(8, 3)
-  status          UnitStatus    @default(QC_PENDING)
-  reservedUntil   DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                String        @id @default(cuid())
+  unitSku           String        @unique
+  productId         String
+  product           MasterProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+  exactWeightGram   Decimal       @db.Decimal(8, 3)
+  currentPriceToman BigInt?
+  status            UnitStatus    @default(QC_PENDING)
+  reservedUntil     DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   @@index([productId, status])
   @@index([status, reservedUntil])
