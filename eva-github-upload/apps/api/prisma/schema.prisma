@@ -29,6 +29,13 @@ enum UnitStatus {
   UNAVAILABLE
 }
 
+enum OrderStatus {
+  DEMO_CONFIRMED
+  PENDING_PAYMENT
+  PAID
+  CANCELLED
+}
+
 model Collection {
   id        String          @id @default(cuid())
   nameFa    String
@@ -66,6 +73,7 @@ model PhysicalUnit {
   currentPriceToman BigInt?
   status            UnitStatus    @default(QC_PENDING)
   reservedUntil     DateTime?
+  orderLines        OrderLine[]
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
@@ -83,4 +91,43 @@ model GoldRate {
   createdAt   DateTime @default(now())
 
   @@index([purity, observedAt])
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  orderNumber   String      @unique
+  status        OrderStatus @default(DEMO_CONFIRMED)
+  isDemo        Boolean     @default(true)
+  customerName  String
+  mobile        String
+  province      String
+  city          String
+  address       String
+  postalCode    String
+  recipientName String
+  totalToman    BigInt
+  lines         OrderLine[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([mobile, createdAt])
+  @@index([status, createdAt])
+}
+
+model OrderLine {
+  id             String       @id @default(cuid())
+  orderId        String
+  order          Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  unitId         String
+  unit           PhysicalUnit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  productNameFa  String
+  masterSku      String
+  unitSku        String
+  exactWeightGram Decimal      @db.Decimal(8, 3)
+  purity         Int
+  unitPriceToman BigInt
+  createdAt      DateTime     @default(now())
+
+  @@index([orderId])
+  @@index([unitId])
 }
