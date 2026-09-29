@@ -36,6 +36,12 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum ReservationStatus {
+  ACTIVE
+  EXPIRED
+  RELEASED
+}
+
 model Collection {
   id        String          @id @default(cuid())
   nameFa    String
@@ -74,6 +80,7 @@ model PhysicalUnit {
   status            UnitStatus    @default(QC_PENDING)
   reservedUntil     DateTime?
   orderLines        OrderLine[]
+  reservations      Reservation[]
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
@@ -107,6 +114,7 @@ model Order {
   recipientName String
   totalToman    BigInt
   lines         OrderLine[]
+  reservation   Reservation?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
@@ -115,19 +123,35 @@ model Order {
 }
 
 model OrderLine {
-  id             String       @id @default(cuid())
-  orderId        String
-  order          Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  unitId         String
-  unit           PhysicalUnit @relation(fields: [unitId], references: [id], onDelete: Restrict)
-  productNameFa  String
-  masterSku      String
-  unitSku        String
+  id              String       @id @default(cuid())
+  orderId         String
+  order           Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  unitId          String
+  unit            PhysicalUnit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  productNameFa   String
+  masterSku       String
+  unitSku         String
   exactWeightGram Decimal      @db.Decimal(8, 3)
-  purity         Int
-  unitPriceToman BigInt
-  createdAt      DateTime     @default(now())
+  purity          Int
+  unitPriceToman  BigInt
+  createdAt       DateTime     @default(now())
 
   @@index([orderId])
   @@index([unitId])
+}
+
+model Reservation {
+  id        String            @id @default(cuid())
+  token     String            @unique
+  unitId    String
+  unit      PhysicalUnit      @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  status    ReservationStatus @default(ACTIVE)
+  expiresAt DateTime
+  orderId   String?           @unique
+  order     Order?            @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@index([unitId, status, expiresAt])
+  @@index([status, expiresAt])
 }
