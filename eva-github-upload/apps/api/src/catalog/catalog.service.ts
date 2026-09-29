@@ -1,11 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ReservationsService } from '../reservations/reservations.service.js';
 
 @Injectable()
 export class CatalogService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reservations: ReservationsService,
+  ) {}
 
   async listProducts() {
+    await this.reservations.releaseExpired();
+
     const products = await this.prisma.masterProduct.findMany({
       where: { status: 'ACTIVE' },
       include: {
@@ -22,11 +28,14 @@ export class CatalogService {
   }
 
   async getProductBySlug(slug: string) {
+    await this.reservations.releaseExpired();
+
     const product = await this.prisma.masterProduct.findUnique({
       where: { slug },
       include: {
         collection: true,
         units: {
+          where: { status: 'AVAILABLE' },
           orderBy: { exactWeightGram: 'asc' },
         },
       },
