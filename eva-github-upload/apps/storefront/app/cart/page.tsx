@@ -13,6 +13,8 @@ type CartItem = {
   price: number;
 };
 
+const apiBase=process.env.NEXT_PUBLIC_API_URL ?? 'https://eva-api-production-c864.up.railway.app';
+
 function toman(value: number) {
   return `${new Intl.NumberFormat('fa-IR').format(value)} تومان`;
 }
@@ -35,7 +37,18 @@ export default function CartPage() {
   const shipping = 0;
   const total = useMemo(() => (item?.price ?? 0) + shipping, [item]);
 
-  function removeItem() {
+  async function removeItem() {
+    const reservationRaw=window.localStorage.getItem('eva-reservation');
+    if(reservationRaw){
+      try{
+        const reservation=JSON.parse(reservationRaw) as {token?:string};
+        if(reservation.token){
+          await fetch(`${apiBase}/api/v1/reservations/${reservation.token}/release`,{method:'POST'}).catch(()=>undefined);
+        }
+      }catch{}
+      window.localStorage.removeItem('eva-reservation');
+    }
+
     window.localStorage.removeItem('eva-cart');
     setItem(null);
   }
@@ -90,7 +103,7 @@ export default function CartPage() {
 
           <div className={styles.reservationNote}>
             <span>◌</span>
-            <div><strong>این قطعه برای مدت کوتاهی برای سبد شما نگه داشته می‌شود.</strong><p>در نسخه نهایی، زمان رزرو واقعی به موجودی متصل خواهد شد.</p></div>
+            <div><strong>رزرو قطعه از مرحله Checkout شروع می‌شود.</strong><p>در Checkout، این Unit برای ۱۰ دقیقه فقط برای سفارش تو نگه داشته می‌شود.</p></div>
           </div>
 
           <label className={styles.giftOption}>
