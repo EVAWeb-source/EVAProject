@@ -3,22 +3,36 @@
 import { useMemo, useState } from 'react';
 import styles from './product.module.css';
 
-const units = [
-  { id: 'U01', weight: '۰.۸۱ گرم', price: 14300000 },
-  { id: 'U02', weight: '۰.۸۴ گرم', price: 14850000 },
-  { id: 'U03', weight: '۰.۸۹ گرم', price: 15650000 },
-];
+type PurchaseUnit = {
+  id: string;
+  unitSku: string;
+  weight: string;
+  price: number;
+};
+
+type ProductInfo = {
+  name: string;
+  masterSku: string;
+  collection: string;
+  purity: number;
+};
+
+type ProductPurchaseProps = {
+  product: ProductInfo;
+  units: PurchaseUnit[];
+};
 
 function toman(value: number) {
   return `${new Intl.NumberFormat('fa-IR').format(value)} تومان`;
 }
 
-export default function ProductPurchase() {
-  const [selected, setSelected] = useState(units[1]);
+export default function ProductPurchase({ product, units }: ProductPurchaseProps) {
+  const [selected, setSelected] = useState<PurchaseUnit | null>(units[0] ?? null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [added, setAdded] = useState(false);
 
   const breakdown = useMemo(() => {
+    if (!selected) return null;
     const gold = Math.round(selected.price * 0.78);
     const making = Math.round(selected.price * 0.11);
     const profit = Math.round(selected.price * 0.06);
@@ -27,13 +41,16 @@ export default function ProductPurchase() {
   }, [selected]);
 
   function addToCart() {
+    if (!selected) return;
+
     const cartItem = {
-      productId: 'EVA-AGH-NEC-TOL-001',
+      productId: product.masterSku,
       unitId: selected.id,
-      name: 'طلوع',
-      collection: 'کالکشن آغاز',
+      unitSku: selected.unitSku,
+      name: product.name,
+      collection: `کالکشن ${product.collection}`,
       weight: selected.weight,
-      purity: '۱۸ عیار',
+      purity: `${product.purity} عیار`,
       price: selected.price,
     };
 
@@ -41,15 +58,26 @@ export default function ProductPurchase() {
     setAdded(true);
   }
 
+  if (!selected) {
+    return (
+      <div className={styles.purchasePanel}>
+        <a className={styles.collectionLink} href="/#collection">کالکشن {product.collection}</a>
+        <h1>{product.name}</h1>
+        <p className={styles.subtitle}>گردنبند طلای {product.purity} عیار، ظریف و مناسب استفاده روزمره</p>
+        <div className={styles.availability}>این محصول فعلاً موجود نیست.</div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.purchasePanel}>
-      <a className={styles.collectionLink} href="/#collection">کالکشن آغاز</a>
-      <h1>طلوع</h1>
-      <p className={styles.subtitle}>گردنبند طلای ۱۸ عیار، ظریف و مناسب استفاده روزمره</p>
+      <a className={styles.collectionLink} href="/#collection">کالکشن {product.collection}</a>
+      <h1>{product.name}</h1>
+      <p className={styles.subtitle}>گردنبند طلای {product.purity} عیار، ظریف و مناسب استفاده روزمره</p>
 
       <div className={styles.priceBlock}>
         <strong>{toman(selected.price)}</strong>
-        <span>{selected.weight} • ۱۸ عیار</span>
+        <span>{selected.weight} • {product.purity} عیار</span>
       </div>
 
       <div className={styles.selectorBlock}>
@@ -82,14 +110,14 @@ export default function ProductPurchase() {
         <button className={styles.breakdownToggle} onClick={() => setDetailsOpen(!detailsOpen)}>
           <span>جزئیات قیمت</span><b>{detailsOpen ? '−' : '+'}</b>
         </button>
-        {detailsOpen && (
+        {detailsOpen && breakdown && (
           <div className={styles.breakdownRows}>
             <div><span>ارزش طلا</span><strong>{toman(breakdown.gold)}</strong></div>
             <div><span>اجرت</span><strong>{toman(breakdown.making)}</strong></div>
             <div><span>سود</span><strong>{toman(breakdown.profit)}</strong></div>
             <div><span>مالیات</span><strong>{toman(breakdown.tax)}</strong></div>
             <div className={styles.total}><span>قیمت نهایی</span><strong>{toman(selected.price)}</strong></div>
-            <p>این اعداد فعلاً نمونه نمایشی هستند و در مرحله اتصال موتور قیمت‌گذاری به داده واقعی تبدیل می‌شوند.</p>
+            <p>قیمت نهایی و موجودی از دیتابیس EVA خوانده می‌شود. تفکیک اجزای قیمت در مرحله اتصال موتور قیمت‌گذاری واقعی جایگزین این محاسبه نمایشی خواهد شد.</p>
           </div>
         )}
       </div>
