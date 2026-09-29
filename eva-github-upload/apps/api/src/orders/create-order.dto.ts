@@ -6,6 +6,10 @@ export class CreateOrderDto {
   unitId!: string;
 
   @IsString()
+  @MinLength(10)
+  reservationToken!: string;
+
+  @IsString()
   @MinLength(2)
   customerName!: string;
 
