@@ -1,17 +1,61 @@
 import ProductPurchase from './ProductPurchase';
 import styles from './product.module.css';
 
-export default function TolouPage() {
+export const dynamic = 'force-dynamic';
+
+type ApiUnit = {
+  id: string;
+  unitSku: string;
+  exactWeightGram: string;
+  currentPriceToman: string;
+  status: string;
+};
+
+type ApiProduct = {
+  nameFa: string;
+  masterSku: string;
+  purity: number;
+  collection: { nameFa: string } | null;
+  units: ApiUnit[];
+};
+
+async function getTolou(): Promise<ApiProduct> {
+  const apiBase = process.env.API_URL ?? 'https://eva-api-production-c864.up.railway.app';
+  const response = await fetch(`${apiBase}/api/v1/products/tolou`, { cache: 'no-store' });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load Tolou from EVA API: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+function toPersianWeight(value: string) {
+  return `${new Intl.NumberFormat('fa-IR', { minimumFractionDigits: 2, maximumFractionDigits: 3 }).format(Number(value))} گرم`;
+}
+
+export default async function TolouPage() {
+  const product = await getTolou();
+  const collectionName = product.collection?.nameFa ?? 'آغاز';
+  const availableUnits = product.units
+    .filter((unit) => unit.status === 'AVAILABLE')
+    .map((unit) => ({
+      id: unit.id,
+      unitSku: unit.unitSku,
+      weight: toPersianWeight(unit.exactWeightGram),
+      price: Number(unit.currentPriceToman),
+    }));
+
   return (
     <main className={styles.page}>
       <div className={styles.announcement}>ارسال امن • فاکتور معتبر • قیمت شفاف</div>
       <header className={styles.header}>
         <a className={styles.brand} href="/">EVA</a>
         <nav><a href="/shop">فروشگاه</a><a href="/#collection">کالکشن‌ها</a><a href="/#gift">هدیه</a><a href="/#lightweight">طلای سبک</a></nav>
-        <div className={styles.actions}><button>⌕</button><button>♡</button><button className={styles.cart}>سبد ۰</button></div>
+        <div className={styles.actions}><button>⌕</button><button>♡</button><a href="/cart" className={styles.cart}>سبد</a></div>
       </header>
 
-      <div className={styles.breadcrumb}><a href="/">خانه</a><span>/</span><a href="/shop">فروشگاه</a><span>/</span><span>طلوع</span></div>
+      <div className={styles.breadcrumb}><a href="/">خانه</a><span>/</span><a href="/shop">فروشگاه</a><span>/</span><span>{product.nameFa}</span></div>
 
       <section className={styles.productHero}>
         <div className={styles.gallery}>
@@ -22,11 +66,19 @@ export default function TolouPage() {
           <div className={styles.galleryCard}><div className={styles.onBody}><span className={styles.neck} /><span className={styles.bodyChain} /><span className={styles.bodyPendant} /></div><span className={styles.imageLabel}>نمای روی بدن</span></div>
           <div className={styles.galleryCard}><div className={styles.detailJewel}><span /></div><span className={styles.imageLabel}>جزئیات</span></div>
         </div>
-        <ProductPurchase />
+        <ProductPurchase
+          product={{
+            name: product.nameFa,
+            masterSku: product.masterSku,
+            collection: collectionName,
+            purity: product.purity,
+          }}
+          units={availableUnits}
+        />
       </section>
 
       <section className={styles.storySection}>
-        <div><span className={styles.eyebrow}>THE STORY</span><h2>داستان طلوع</h2></div>
+        <div><span className={styles.eyebrow}>THE STORY</span><h2>داستان {product.nameFa}</h2></div>
         <p>«طلوع» از لحظه‌ای الهام گرفته که اولین نور، مرز تاریکی را باز می‌کند. فرم باز و نقطه مرکزی آن، یادآور شروعی است که هنوز امکان ادامه دارد؛ قطعه‌ای سبک برای حضور هرروزه، بدون اینکه بی‌هویت باشد.</p>
       </section>
 
@@ -34,11 +86,11 @@ export default function TolouPage() {
         <div><span className={styles.eyebrow}>DETAILS</span><h2>مشخصات محصول</h2></div>
         <dl>
           <div><dt>دسته</dt><dd>گردنبند</dd></div>
-          <div><dt>کالکشن</dt><dd>آغاز</dd></div>
-          <div><dt>عیار</dt><dd>۱۸ عیار</dd></div>
+          <div><dt>کالکشن</dt><dd>{collectionName}</dd></div>
+          <div><dt>عیار</dt><dd>{product.purity} عیار</dd></div>
           <div><dt>رنگ طلا</dt><dd>زرد</dd></div>
           <div><dt>سبک</dt><dd>مینیمال / روزمره</dd></div>
-          <div><dt>SKU</dt><dd dir="ltr">EVA-AGH-NEC-TOL-001</dd></div>
+          <div><dt>SKU</dt><dd dir="ltr">{product.masterSku}</dd></div>
         </dl>
       </section>
 
