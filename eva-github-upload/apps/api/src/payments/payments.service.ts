@@ -17,6 +17,7 @@ export class PaymentsService {
       where: { orderNumber },
       include: {
         reservation: true,
+        invoice: true,
         lines: true,
         payments: { orderBy: { createdAt: 'desc' } },
       },
@@ -67,6 +68,7 @@ export class PaymentsService {
         order: {
           include: {
             reservation: true,
+            invoice: true,
             lines: true,
           },
         },
@@ -86,6 +88,7 @@ export class PaymentsService {
         order: {
           include: {
             reservation: true,
+            invoice: true,
             lines: true,
           },
         },
@@ -93,7 +96,7 @@ export class PaymentsService {
     });
 
     if (!payment) throw new NotFoundException('Payment not found');
-    if (payment.status === 'SUCCEEDED') return this.toPublicPayment(payment);
+    if (payment.status === 'SUCCEEDED') return this.getDemo(token);
     if (payment.status !== 'INITIATED') {
       throw new ConflictException('Payment is not active');
     }
@@ -115,6 +118,8 @@ export class PaymentsService {
     if (!line) throw new ConflictException('Order item is missing');
 
     const referenceId = `DEMO-${randomUUID()}`;
+    const invoiceNumber = order.orderNumber.replace(/^EVA-/, 'EVA-INV-');
+    const verificationCode = randomUUID();
 
     await this.prisma.$transaction(async (tx) => {
       const paymentResult = await tx.paymentAttempt.updateMany({
@@ -142,6 +147,44 @@ export class PaymentsService {
       ) {
         throw new ConflictException('Payment finalization conflict');
       }
+
+      await tx.invoice.upsert({
+        where: { orderId: order.id },
+        update: {},
+        create: {
+          invoiceNumber,
+          verificationCode,
+          orderId: order.id,
+          customerName: order.customerName,
+          customerMobile: order.mobile,
+          recipientName: order.recipientName,
+          province: order.province,
+          city: order.city,
+          address: order.address,
+          postalCode: order.postalCode,
+          paymentProvider: payment.provider,
+          paymentReference: referenceId,
+          totalToman: order.totalToman,
+          lines: {
+            create: order.lines.map((item) => ({
+              productNameFa: item.productNameFa,
+              masterSku: item.masterSku,
+              unitSku: item.unitSku,
+              exactWeightGram: item.exactWeightGram,
+              purity: item.purity,
+              goldRateTomanPerGram: item.goldRateTomanPerGram,
+              goldValueToman: item.goldValueToman,
+              makingToman: item.makingToman,
+              profitToman: item.profitToman,
+              taxToman: item.taxToman,
+              finalPriceToman: item.unitPriceToman,
+              rateVersion: item.rateVersion,
+              pricingFormulaVersion: item.pricingFormulaVersion,
+              pricingRuleId: item.pricingRuleId,
+            })),
+          },
+        },
+      });
     });
 
     return this.getDemo(token);
@@ -156,6 +199,7 @@ export class PaymentsService {
         order: {
           include: {
             reservation: true,
+            invoice: true,
             lines: true,
           },
         },
@@ -208,6 +252,7 @@ export class PaymentsService {
     const order = payment.order;
     const line = order.lines?.[0] ?? null;
     const reservation = order.reservation ?? null;
+    const invoice = order.invoice ?? null;
     const remainingSeconds = reservation
       ? Math.max(0, Math.floor((new Date(reservation.expiresAt).getTime() - Date.now()) / 1000))
       : 0;
@@ -220,6 +265,12 @@ export class PaymentsService {
       referenceId: payment.referenceId,
       paidAt: payment.paidAt,
       failureCode: payment.failureCode,
+      invoice: invoice
+        ? {
+            invoiceNumber: invoice.invoiceNumber,
+            verificationCode: invoice.verificationCode,
+          }
+        : null,
       order: {
         number: order.orderNumber,
         status: order.status,
