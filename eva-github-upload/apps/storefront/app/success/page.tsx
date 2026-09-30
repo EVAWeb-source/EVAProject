@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import styles from './success.module.css';
 
-type Order = { number:string; name:string; weight:string; price:number; status:string; referenceId?:string|null };
+type Order = { number:string; name:string; weight:string; price:number; status:string; referenceId?:string|null; invoiceNumber?:string|null; verificationCode?:string|null };
 type ApiOrder = {
   number:string;
   status:string;
@@ -11,6 +11,7 @@ type ApiOrder = {
   payment:{status:string;referenceId:string|null}|null;
   item:{name:string;weightGram:string}|null;
 };
+type ApiInvoice={invoiceNumber:string;verificationCode:string};
 
 const apiBase=process.env.NEXT_PUBLIC_API_URL ?? 'https://eva-api-production-c864.up.railway.app';
 function toman(value:number){return `${new Intl.NumberFormat('fa-IR').format(value)} تومان`;}
@@ -26,9 +27,13 @@ export default function SuccessPage(){
     async function load(){
       if(orderNumber){
         try{
-          const response=await fetch(`${apiBase}/api/v1/orders/${encodeURIComponent(orderNumber)}`,{cache:'no-store'});
-          if(response.ok){
-            const data:ApiOrder=await response.json();
+          const [orderResponse,invoiceResponse]=await Promise.all([
+            fetch(`${apiBase}/api/v1/orders/${encodeURIComponent(orderNumber)}`,{cache:'no-store'}),
+            fetch(`${apiBase}/api/v1/invoices/order/${encodeURIComponent(orderNumber)}`,{cache:'no-store'}),
+          ]);
+          if(orderResponse.ok){
+            const data:ApiOrder=await orderResponse.json();
+            const invoice:ApiInvoice|null=invoiceResponse.ok?await invoiceResponse.json():null;
             if(cancelled)return;
             const verified:Order={
               number:data.number,
@@ -37,6 +42,8 @@ export default function SuccessPage(){
               price:data.totalToman,
               status:data.status==='PAID'?'پرداخت شد':data.status,
               referenceId:data.payment?.referenceId ?? null,
+              invoiceNumber:invoice?.invoiceNumber ?? null,
+              verificationCode:invoice?.verificationCode ?? null,
             };
             setOrder(verified);
             window.localStorage.setItem('eva-last-order',JSON.stringify(verified));
@@ -60,8 +67,8 @@ export default function SuccessPage(){
       <span>PAYMENT CONFIRMED</span>
       <h1>پرداخت آزمایشی تأیید شد.</h1>
       <p>جریان پرداخت با موفقیت تست شد. این تراکنش شبیه‌سازی‌شده است و هیچ مبلغ بانکی واقعی جابه‌جا نشده.</p>
-      {order&&<div className={styles.orderBox}><div><span>شماره سفارش</span><strong>{order.number}</strong></div><div><span>محصول</span><strong>{order.name} • {order.weight}</strong></div><div><span>مبلغ</span><strong>{toman(order.price)}</strong></div><div><span>وضعیت</span><strong>{order.status}</strong></div>{order.referenceId&&<div><span>کد مرجع آزمایشی</span><strong dir="ltr">{order.referenceId}</strong></div>}</div>}
-      <div className={styles.actions}><a className={styles.primary} href="/shop">ادامه خرید</a><a className={styles.secondary} href="/">بازگشت به خانه</a></div>
+      {order&&<div className={styles.orderBox}><div><span>شماره سفارش</span><strong>{order.number}</strong></div><div><span>محصول</span><strong>{order.name} • {order.weight}</strong></div><div><span>مبلغ</span><strong>{toman(order.price)}</strong></div><div><span>وضعیت</span><strong>{order.status}</strong></div>{order.referenceId&&<div><span>کد مرجع آزمایشی</span><strong dir="ltr">{order.referenceId}</strong></div>}{order.invoiceNumber&&<div><span>شماره فاکتور</span><strong dir="ltr">{order.invoiceNumber}</strong></div>}</div>}
+      <div className={styles.actions}>{order?.invoiceNumber&&<a className={styles.primary} href={`/invoice/${encodeURIComponent(order.invoiceNumber)}`}>مشاهده فاکتور</a>}{order?.verificationCode&&<a className={styles.secondary} href={`/verify/${encodeURIComponent(order.verificationCode)}`}>تأیید فاکتور</a>}<a className={styles.secondary} href="/shop">ادامه خرید</a><a className={styles.secondary} href="/">بازگشت به خانه</a></div>
     </section>
   </main>;
 }
