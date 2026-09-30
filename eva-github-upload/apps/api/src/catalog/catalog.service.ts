@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { PricingService } from '../pricing/pricing.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ReservationsService } from '../reservations/reservations.service.js';
 
@@ -7,6 +8,7 @@ export class CatalogService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly reservations: ReservationsService,
+    private readonly pricing: PricingService,
   ) {}
 
   async listProducts() {
@@ -24,7 +26,7 @@ export class CatalogService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return products.map((product) => this.serializeProduct(product));
+    return Promise.all(products.map((product) => this.serializeProduct(product)));
   }
 
   async getProductBySlug(slug: string) {
@@ -48,7 +50,32 @@ export class CatalogService {
     return this.serializeProduct(product);
   }
 
-  private serializeProduct(product: any) {
+  private async serializeProduct(product: any) {
+    const units = await Promise.all(
+      product.units.map(async (unit: any) => {
+        const quote = await this.pricing.priceUnit(unit.id, true);
+
+        return {
+          id: unit.id,
+          unitSku: unit.unitSku,
+          exactWeightGram: unit.exactWeightGram.toString(),
+          currentPriceToman: String(quote.finalPriceToman),
+          status: unit.status,
+          reservedUntil: unit.reservedUntil,
+          pricing: {
+            goldRateTomanPerGram: quote.goldRateTomanPerGram,
+            goldValueToman: quote.goldValueToman,
+            makingToman: quote.makingToman,
+            profitToman: quote.profitToman,
+            taxToman: quote.taxToman,
+            finalPriceToman: quote.finalPriceToman,
+            rateVersion: quote.rateVersion,
+            pricingFormulaVersion: quote.pricingFormulaVersion,
+          },
+        };
+      }),
+    );
+
     return {
       id: product.id,
       nameFa: product.nameFa,
@@ -65,14 +92,7 @@ export class CatalogService {
             story: product.collection.story,
           }
         : null,
-      units: product.units.map((unit: any) => ({
-        id: unit.id,
-        unitSku: unit.unitSku,
-        exactWeightGram: unit.exactWeightGram.toString(),
-        currentPriceToman: unit.currentPriceToman?.toString() ?? null,
-        status: unit.status,
-        reservedUntil: unit.reservedUntil,
-      })),
+      units,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };
