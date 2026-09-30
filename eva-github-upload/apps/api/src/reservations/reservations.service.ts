@@ -16,13 +16,14 @@ export class ReservationsService {
     const now = new Date();
     const expired = await this.prisma.reservation.findMany({
       where: { status: 'ACTIVE', expiresAt: { lte: now } },
-      select: { id: true, unitId: true },
+      select: { id: true, unitId: true, orderId: true },
     });
 
     if (expired.length === 0) return 0;
 
     const ids = expired.map((item) => item.id);
     const unitIds = [...new Set(expired.map((item) => item.unitId))];
+    const orderIds = [...new Set(expired.map((item) => item.orderId).filter((id): id is string => Boolean(id)))];
 
     await this.prisma.$transaction([
       this.prisma.reservation.updateMany({
@@ -36,6 +37,14 @@ export class ReservationsService {
           reservedUntil: { lte: now },
         },
         data: { status: 'AVAILABLE', reservedUntil: null },
+      }),
+      this.prisma.order.updateMany({
+        where: { id: { in: orderIds }, status: 'PENDING_PAYMENT' },
+        data: { status: 'CANCELLED' },
+      }),
+      this.prisma.paymentAttempt.updateMany({
+        where: { orderId: { in: orderIds }, status: 'INITIATED' },
+        data: { status: 'EXPIRED', failureCode: 'RESERVATION_EXPIRED' },
       }),
     ]);
 
@@ -116,16 +125,28 @@ export class ReservationsService {
       return { token, status: reservation.status };
     }
 
-    await this.prisma.$transaction([
-      this.prisma.reservation.update({
+    await this.prisma.$transaction(async (tx) => {
+      await tx.reservation.update({
         where: { id: reservation.id },
         data: { status: 'RELEASED' },
-      }),
-      this.prisma.physicalUnit.updateMany({
+      });
+
+      await tx.physicalUnit.updateMany({
         where: { id: reservation.unitId, status: 'RESERVED' },
         data: { status: 'AVAILABLE', reservedUntil: null },
-      }),
-    ]);
+      });
+
+      if (reservation.orderId) {
+        await tx.order.updateMany({
+          where: { id: reservation.orderId, status: 'PENDING_PAYMENT' },
+          data: { status: 'CANCELLED' },
+        });
+        await tx.paymentAttempt.updateMany({
+          where: { orderId: reservation.orderId, status: 'INITIATED' },
+          data: { status: 'FAILED', failureCode: 'RESERVATION_RELEASED' },
+        });
+      }
+    });
 
     return { token, status: 'RELEASED' };
   }
@@ -136,8 +157,7 @@ export class ReservationsService {
       Math.floor((new Date(reservation.expiresAt).getTime() - Date.now()) / 1000),
     );
 
-    const lockedPrice =
-      reservation.lockedPriceToman ?? reservation.unit.currentPriceToman;
+    const lockedPrice = reservation.lockedPriceToman ?? reservation.unit.currentPriceToman;
 
     return {
       token: reservation.token,
