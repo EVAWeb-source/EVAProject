@@ -15,6 +15,7 @@ async function forward(request: Request, context: { params: Promise<{ path: stri
     /^products\/[^/]+$/,
     /^units$/,
     /^units\/[^/]+$/,
+    /^pricing\/config$/,
   ];
   const joined = path.join('/');
   if (!allowed.some((pattern) => pattern.test(joined))) {
