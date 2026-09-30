@@ -1,5 +1,27 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+
+const PRODUCT_STATUSES = [
+  'DRAFT',
+  'ACTIVE',
+  'OUT_OF_STOCK',
+  'HIDDEN',
+  'DISCONTINUED',
+  'ARCHIVED',
+] as const;
+
+const ADMIN_UNIT_STATUSES = [
+  'QC_PENDING',
+  'AVAILABLE',
+  'QUALITY_HOLD',
+  'DAMAGED',
+  'UNAVAILABLE',
+] as const;
 
 @Injectable()
 export class AdminService {
@@ -7,6 +29,7 @@ export class AdminService {
 
   async dashboard() {
     const [
+      collections,
       products,
       units,
       orders,
@@ -23,6 +46,7 @@ export class AdminService {
       latestRate,
       activeRule,
     ] = await Promise.all([
+      this.prisma.collection.findMany({ orderBy: { createdAt: 'asc' } }),
       this.prisma.masterProduct.findMany({
         include: {
           collection: true,
@@ -88,6 +112,12 @@ export class AdminService {
         invoices: invoiceCount,
         paidRevenueToman: Number(paidRevenue._sum.totalToman ?? 0n),
       },
+      collections: collections.map((collection) => ({
+        id: collection.id,
+        nameFa: collection.nameFa,
+        slug: collection.slug,
+        code: collection.code,
+      })),
       pricing: {
         rate: latestRate
           ? {
@@ -117,6 +147,7 @@ export class AdminService {
         masterSku: product.masterSku,
         purity: product.purity,
         status: product.status,
+        collectionId: product.collectionId,
         collection: product.collection?.nameFa ?? null,
         unitCount: product.units.length,
         availableCount: product.units.filter((unit) => unit.status === 'AVAILABLE').length,
@@ -131,6 +162,7 @@ export class AdminService {
       })),
       units: units.map((unit) => ({
         id: unit.id,
+        productId: unit.productId,
         unitSku: unit.unitSku,
         productNameFa: unit.product.nameFa,
         masterSku: unit.product.masterSku,
@@ -188,5 +220,166 @@ export class AdminService {
           : null,
       })),
     };
+  }
+
+  async createProduct(input: Record<string, unknown>) {
+    const nameFa = this.requiredString(input.nameFa, 'نام محصول');
+    const slug = this.requiredString(input.slug, 'slug').toLowerCase();
+    const masterSku = this.requiredString(input.masterSku, 'Master SKU').toUpperCase();
+    const purity = Number(input.purity ?? 18);
+    const status = String(input.status ?? 'DRAFT').toUpperCase();
+    const collectionId = input.collectionId ? String(input.collectionId) : null;
+
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      throw new BadRequestException('Slug must contain only lowercase latin letters, numbers and hyphens');
+    }
+    if (!/^EVA-[A-Z0-9-]+$/.test(masterSku)) {
+      throw new BadRequestException('Master SKU must start with EVA- and use uppercase letters/numbers');
+    }
+    if (!Number.isInteger(purity) || purity < 1 || purity > 24) {
+      throw new BadRequestException('Purity must be an integer between 1 and 24');
+    }
+    if (!PRODUCT_STATUSES.includes(status as (typeof PRODUCT_STATUSES)[number])) {
+      throw new BadRequestException('Invalid product status');
+    }
+
+    if (collectionId) {
+      const collection = await this.prisma.collection.findUnique({ where: { id: collectionId } });
+      if (!collection) throw new NotFoundException('Collection not found');
+    }
+
+    try {
+      return await this.prisma.masterProduct.create({
+        data: {
+          nameFa,
+          slug,
+          masterSku,
+          purity,
+          status: status as any,
+          collectionId,
+        },
+        include: { collection: true },
+      });
+    } catch (error: any) {
+      if (error?.code === 'P2002') {
+        throw new ConflictException('Slug or Master SKU already exists');
+      }
+      throw error;
+    }
+  }
+
+  async updateProduct(id: string, input: Record<string, unknown>) {
+    const product = await this.prisma.masterProduct.findUnique({
+      where: { id },
+      include: { units: { select: { status: true } } },
+    });
+    if (!product) throw new NotFoundException('Product not found');
+
+    const data: Record<string, unknown> = {};
+    if (input.nameFa !== undefined) data.nameFa = this.requiredString(input.nameFa, 'نام محصول');
+    if (input.status !== undefined) {
+      const status = String(input.status).toUpperCase();
+      if (!PRODUCT_STATUSES.includes(status as (typeof PRODUCT_STATUSES)[number])) {
+        throw new BadRequestException('Invalid product status');
+      }
+      data.status = status;
+    }
+    if (input.collectionId !== undefined) {
+      const collectionId = input.collectionId ? String(input.collectionId) : null;
+      if (collectionId) {
+        const collection = await this.prisma.collection.findUnique({ where: { id: collectionId } });
+        if (!collection) throw new NotFoundException('Collection not found');
+      }
+      data.collectionId = collectionId;
+    }
+
+    if (Object.keys(data).length === 0) {
+      throw new BadRequestException('No editable fields supplied');
+    }
+
+    return this.prisma.masterProduct.update({
+      where: { id },
+      data: data as any,
+      include: { collection: true },
+    });
+  }
+
+  async createUnit(input: Record<string, unknown>) {
+    const productId = this.requiredString(input.productId, 'Product');
+    const unitSku = this.requiredString(input.unitSku, 'Unit SKU').toUpperCase();
+    const exactWeightGram = Number(input.exactWeightGram);
+    const status = String(input.status ?? 'QC_PENDING').toUpperCase();
+
+    const product = await this.prisma.masterProduct.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException('Product not found');
+    if (!/^EVA-[A-Z0-9-]+-U[0-9]+$/.test(unitSku)) {
+      throw new BadRequestException('Unit SKU must follow the EVA-...-U01 pattern');
+    }
+    if (!Number.isFinite(exactWeightGram) || exactWeightGram <= 0 || exactWeightGram >= 1000) {
+      throw new BadRequestException('Exact weight must be a positive number');
+    }
+    if (!ADMIN_UNIT_STATUSES.includes(status as (typeof ADMIN_UNIT_STATUSES)[number])) {
+      throw new BadRequestException('New Unit cannot start with this status');
+    }
+
+    try {
+      return await this.prisma.physicalUnit.create({
+        data: {
+          productId,
+          unitSku,
+          exactWeightGram: exactWeightGram.toFixed(3),
+          status: status as any,
+        },
+        include: { product: true },
+      });
+    } catch (error: any) {
+      if (error?.code === 'P2002') throw new ConflictException('Unit SKU already exists');
+      throw error;
+    }
+  }
+
+  async updateUnit(id: string, input: Record<string, unknown>) {
+    const unit = await this.prisma.physicalUnit.findUnique({ where: { id } });
+    if (!unit) throw new NotFoundException('Unit not found');
+    if (unit.status === 'SOLD') {
+      throw new ConflictException('Sold Unit is immutable');
+    }
+    if (unit.status === 'RESERVED') {
+      throw new ConflictException('Reserved Unit cannot be edited manually');
+    }
+
+    const data: Record<string, unknown> = {};
+    if (input.status !== undefined) {
+      const status = String(input.status).toUpperCase();
+      if (!ADMIN_UNIT_STATUSES.includes(status as (typeof ADMIN_UNIT_STATUSES)[number])) {
+        throw new BadRequestException('RESERVED/SOLD/RETURNED must be changed by their dedicated workflows');
+      }
+      data.status = status;
+      if (status === 'AVAILABLE') data.reservedUntil = null;
+    }
+    if (input.exactWeightGram !== undefined) {
+      const weight = Number(input.exactWeightGram);
+      if (!Number.isFinite(weight) || weight <= 0 || weight >= 1000) {
+        throw new BadRequestException('Exact weight must be a positive number');
+      }
+      data.exactWeightGram = weight.toFixed(3);
+      data.currentPriceToman = null;
+    }
+
+    if (Object.keys(data).length === 0) {
+      throw new BadRequestException('No editable fields supplied');
+    }
+
+    return this.prisma.physicalUnit.update({
+      where: { id },
+      data: data as any,
+      include: { product: true },
+    });
+  }
+
+  private requiredString(value: unknown, label: string) {
+    const text = String(value ?? '').trim();
+    if (!text) throw new BadRequestException(`${label} is required`);
+    return text;
   }
 }
