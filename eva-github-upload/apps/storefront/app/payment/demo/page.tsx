@@ -11,6 +11,7 @@ type Payment = {
   referenceId:string|null;
   failureCode:string|null;
   paidAt:string|null;
+  invoice:{invoiceNumber:string;verificationCode:string}|null;
   order:{
     number:string;
     status:string;
@@ -90,6 +91,8 @@ export default function DemoPaymentPage(){
           price:data.order.totalToman,
           status:'پرداخت شد',
           referenceId:data.referenceId,
+          invoiceNumber:data.invoice?.invoiceNumber ?? null,
+          verificationCode:data.invoice?.verificationCode ?? null,
         }));
         window.localStorage.removeItem('eva-cart');
         window.localStorage.removeItem('eva-reservation');
@@ -133,7 +136,7 @@ export default function DemoPaymentPage(){
 
       {active&&<div className={styles.timer}><span>زمان باقی‌مانده رزرو</span><strong>{clock}</strong></div>}
 
-      {payment.status==='SUCCEEDED'&&<div className={styles.successBox}><strong>✓ پرداخت آزمایشی موفق است</strong><span>کد مرجع: {payment.referenceId}</span></div>}
+      {payment.status==='SUCCEEDED'&&<div className={styles.successBox}><strong>✓ پرداخت آزمایشی موفق است</strong><span>کد مرجع: {payment.referenceId}</span>{payment.invoice&&<span>فاکتور: {payment.invoice.invoiceNumber}</span>}</div>}
       {failed&&<div className={styles.failBox}><strong>پرداخت ناموفق/منقضی شده</strong><span>قطعه از رزرو خارج شده و دوباره قابل خرید است.</span></div>}
       {error&&<p className={styles.error}>{error}</p>}
 
@@ -143,7 +146,7 @@ export default function DemoPaymentPage(){
       </div>}
 
       {failed&&<div className={styles.actions}><a className={styles.secondary} href="/checkout">تلاش دوباره از Checkout</a><a className={styles.textLink} href="/products/tolou">بازگشت به محصول</a></div>}
-      {payment.status==='SUCCEEDED'&&<div className={styles.actions}><a className={styles.secondary} href={`/success?order=${encodeURIComponent(payment.order.number)}`}>مشاهده نتیجه سفارش</a></div>}
+      {payment.status==='SUCCEEDED'&&<div className={styles.actions}>{payment.invoice&&<a className={styles.secondary} href={`/invoice/${encodeURIComponent(payment.invoice.invoiceNumber)}`}>مشاهده فاکتور</a>}<a className={styles.textLink} href={`/success?order=${encodeURIComponent(payment.order.number)}`}>مشاهده نتیجه سفارش</a></div>}
     </section>
   </main>;
 }
