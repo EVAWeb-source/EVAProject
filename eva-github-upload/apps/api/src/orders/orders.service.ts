@@ -18,7 +18,7 @@ export class OrdersService {
       where: { token: dto.reservationToken },
       include: {
         unit: { include: { product: true } },
-        order: { include: { lines: true } },
+        order: { include: { lines: true, payments: true } },
       },
     });
 
@@ -59,7 +59,7 @@ export class OrdersService {
       const created = await tx.order.create({
         data: {
           orderNumber,
-          status: 'DEMO_CONFIRMED',
+          status: 'PENDING_PAYMENT',
           isDemo: true,
           customerName: dto.customerName,
           mobile: dto.mobile,
@@ -89,7 +89,7 @@ export class OrdersService {
             },
           },
         },
-        include: { lines: true },
+        include: { lines: true, payments: true },
       });
 
       await tx.reservation.update({
@@ -106,7 +106,7 @@ export class OrdersService {
   async findByNumber(orderNumber: string) {
     const order = await this.prisma.order.findUnique({
       where: { orderNumber },
-      include: { lines: true },
+      include: { lines: true, payments: { orderBy: { createdAt: 'desc' } } },
     });
 
     if (!order) {
@@ -139,8 +139,18 @@ export class OrdersService {
       rateVersion: string | null;
       pricingFormulaVersion: string | null;
     }>;
+    payments?: Array<{
+      provider: string;
+      status: string;
+      amountToman: bigint;
+      referenceId: string | null;
+      failureCode: string | null;
+      paidAt: Date | null;
+      createdAt: Date;
+    }>;
   }) {
     const line = order.lines[0];
+    const payment = order.payments?.[0] ?? null;
 
     return {
       id: order.id,
@@ -151,6 +161,16 @@ export class OrdersService {
       mobile: order.mobile,
       totalToman: Number(order.totalToman),
       createdAt: order.createdAt,
+      payment: payment
+        ? {
+            provider: payment.provider,
+            status: payment.status,
+            amountToman: Number(payment.amountToman),
+            referenceId: payment.referenceId,
+            failureCode: payment.failureCode,
+            paidAt: payment.paidAt,
+          }
+        : null,
       item: line
         ? {
             name: line.productNameFa,
