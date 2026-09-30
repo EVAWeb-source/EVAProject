@@ -100,6 +100,20 @@ model GoldRate {
   @@index([purity, observedAt])
 }
 
+model PricingRule {
+  id             String   @id
+  name           String
+  formulaVersion String   @unique
+  makingPercent  Decimal  @db.Decimal(7, 3)
+  profitPercent  Decimal  @db.Decimal(7, 3)
+  taxPercent     Decimal  @db.Decimal(7, 3)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([isActive, updatedAt])
+}
+
 model Order {
   id            String      @id @default(cuid())
   orderNumber   String      @unique
@@ -123,34 +137,51 @@ model Order {
 }
 
 model OrderLine {
-  id              String       @id @default(cuid())
-  orderId         String
-  order           Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  unitId          String
-  unit            PhysicalUnit @relation(fields: [unitId], references: [id], onDelete: Restrict)
-  productNameFa   String
-  masterSku       String
-  unitSku         String
-  exactWeightGram Decimal      @db.Decimal(8, 3)
-  purity          Int
-  unitPriceToman  BigInt
-  createdAt       DateTime     @default(now())
+  id                       String       @id @default(cuid())
+  orderId                  String
+  order                    Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  unitId                   String
+  unit                     PhysicalUnit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  productNameFa            String
+  masterSku                String
+  unitSku                  String
+  exactWeightGram          Decimal      @db.Decimal(8, 3)
+  purity                   Int
+  unitPriceToman           BigInt
+  goldRateTomanPerGram     BigInt?
+  goldValueToman           BigInt?
+  makingToman              BigInt?
+  profitToman              BigInt?
+  taxToman                 BigInt?
+  rateVersion              String?
+  pricingFormulaVersion    String?
+  pricingRuleId            String?
+  createdAt                DateTime     @default(now())
 
   @@index([orderId])
   @@index([unitId])
 }
 
 model Reservation {
-  id        String            @id @default(cuid())
-  token     String            @unique
-  unitId    String
-  unit      PhysicalUnit      @relation(fields: [unitId], references: [id], onDelete: Restrict)
-  status    ReservationStatus @default(ACTIVE)
-  expiresAt DateTime
-  orderId   String?           @unique
-  order     Order?            @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  id                    String            @id @default(cuid())
+  token                 String            @unique
+  unitId                String
+  unit                  PhysicalUnit      @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  status                ReservationStatus @default(ACTIVE)
+  expiresAt             DateTime
+  lockedPriceToman      BigInt?
+  goldRateTomanPerGram  BigInt?
+  goldValueToman        BigInt?
+  makingToman           BigInt?
+  profitToman           BigInt?
+  taxToman              BigInt?
+  rateVersion           String?
+  pricingFormulaVersion String?
+  pricingRuleId         String?
+  orderId               String?           @unique
+  order                 Order?            @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
 
   @@index([unitId, status, expiresAt])
   @@index([status, expiresAt])
