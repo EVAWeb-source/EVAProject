@@ -18,7 +18,7 @@ type ApiReservation = {
   remainingSeconds:number;
   unit:{ id:string; unitSku:string; exactWeightGram:string; priceToman:number|null; purity:number; productNameFa:string };
 };
-
+type ApiPayment = { token:string; status:string; amountToman:number; order:{ number:string; status:string } };
 type StoredReservation = { token:string; unitId:string; expiresAt:string };
 
 const apiBase=process.env.NEXT_PUBLIC_API_URL ?? 'https://eva-api-production-c864.up.railway.app';
@@ -140,11 +140,10 @@ export default function CheckoutPage(){
 
     setLoading(true);
     setError('');
-
     const form=new FormData(event.currentTarget);
 
     try{
-      const response=await fetch(`${apiBase}/api/v1/orders`,{
+      const orderResponse=await fetch(`${apiBase}/api/v1/orders`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
@@ -160,27 +159,31 @@ export default function CheckoutPage(){
         }),
       });
 
-      if(!response.ok){
-        const body=await response.text();
-        throw new Error(body || `HTTP ${response.status}`);
+      if(!orderResponse.ok){
+        const body=await orderResponse.text();
+        throw new Error(body || `HTTP ${orderResponse.status}`);
       }
 
-      const saved:ApiOrder=await response.json();
-      const order={
+      const saved:ApiOrder=await orderResponse.json();
+      const paymentResponse=await fetch(`${apiBase}/api/v1/payments/demo/start/${encodeURIComponent(saved.number)}`,{method:'POST'});
+
+      if(!paymentResponse.ok){
+        const body=await paymentResponse.text();
+        throw new Error(body || `PAYMENT HTTP ${paymentResponse.status}`);
+      }
+
+      const payment:ApiPayment=await paymentResponse.json();
+      window.localStorage.setItem('eva-pending-order',JSON.stringify({
         number:saved.number,
         name:saved.item?.name ?? item.name,
         weight:saved.item ? faWeight(saved.item.weightGram) : item.weight,
         price:saved.totalToman,
-        status:'ثبت شد',
-      };
-
-      window.localStorage.setItem('eva-last-order',JSON.stringify(order));
-      window.localStorage.removeItem('eva-cart');
-      window.localStorage.removeItem('eva-reservation');
-      window.location.href='/success';
+        status:'در انتظار پرداخت',
+      }));
+      window.location.href=`/payment/demo?token=${encodeURIComponent(payment.token)}`;
     }catch(err){
       console.error(err);
-      setError('ثبت سفارش انجام نشد. ممکن است زمان رزرو تمام شده باشد؛ لطفاً دوباره تلاش کن.');
+      setError('ایجاد سفارش یا شروع پرداخت انجام نشد. ممکن است زمان رزرو تمام شده باشد؛ لطفاً دوباره تلاش کن.');
       setLoading(false);
     }
   }
@@ -203,11 +206,11 @@ export default function CheckoutPage(){
         <section><h2><b>۱</b> اطلاعات تماس</h2><div className={styles.grid2}><label>نام و نام خانوادگی<input name="customerName" required placeholder="مثلاً حسین شاپوریان" /></label><label>شماره موبایل<input name="mobile" required inputMode="tel" placeholder="۰۹۱۲..." /></label></div></section>
         <section><h2><b>۲</b> آدرس ارسال</h2><div className={styles.grid2}><label>استان<input name="province" required placeholder="استان" /></label><label>شهر<input name="city" required placeholder="شهر" /></label></div><label>آدرس کامل<textarea name="address" required placeholder="خیابان، کوچه، پلاک و واحد" /></label><div className={styles.grid2}><label>کدپستی<input name="postalCode" required inputMode="numeric" placeholder="۱۰ رقم" /></label><label>نام گیرنده<input name="recipientName" required placeholder="نام گیرنده" /></label></div></section>
         <section><h2><b>۳</b> روش ارسال</h2><label className={styles.choice}><input type="radio" name="shipping" defaultChecked /><span><strong>ارسال استاندارد EVA</strong><small>هزینه و زمان دقیق در اتصال لجستیک واقعی محاسبه می‌شود.</small></span><b>فعلاً رایگان</b></label></section>
-        <section><h2><b>۴</b> پرداخت</h2><div className={styles.demoPay}><strong>حالت آزمایشی</strong><p>درگاه واقعی بعداً متصل می‌شود. فعلاً سفارش در دیتابیس ثبت می‌شود و رزرو Unit تا پایان زمان خود معتبر می‌ماند.</p></div></section>
+        <section><h2><b>۴</b> پرداخت</h2><div className={styles.demoPay}><strong>درگاه آزمایشی EVA</strong><p>با ادامه، سفارش با وضعیت «در انتظار پرداخت» ساخته می‌شود و به صفحه شبیه‌ساز درگاه می‌روی. هیچ پول واقعی جابه‌جا نمی‌شود.</p></div></section>
         {error&&<p role="alert" style={{color:'#8b2f2f',margin:'0 0 16px'}}>{error}</p>}
-        <button className={styles.payButton} disabled={loading||reserving||!reservation||secondsLeft<=0}>{loading?'در حال ثبت سفارش...':reserving?'در حال رزرو...':`ثبت سفارش آزمایشی • ${toman(item.price)}`}</button>
+        <button className={styles.payButton} disabled={loading||reserving||!reservation||secondsLeft<=0}>{loading?'در حال انتقال به درگاه...':reserving?'در حال رزرو...':`ادامه به پرداخت آزمایشی • ${toman(item.price)}`}</button>
       </form>
-      <aside className={styles.summary}><span>ORDER SUMMARY</span><h2>سفارش تو</h2><div className={styles.product}><div className={styles.visual}><i /><b /></div><div><strong>{item.name}</strong><small>{item.weight} • {item.purity}</small><small>کد قطعه: {item.unitSku ?? item.unitId}</small></div></div><div className={styles.rows}><div><span>محصول</span><strong>{toman(item.price)}</strong></div><div><span>ارسال</span><strong>رایگان</strong></div></div><div className={styles.total}><span>مبلغ نهایی</span><strong>{toman(item.price)}</strong></div><p>قیمت و وضعیت Unit هنگام رزرو و ثبت سفارش دوباره از دیتابیس EVA بررسی می‌شود.</p></aside>
+      <aside className={styles.summary}><span>ORDER SUMMARY</span><h2>سفارش تو</h2><div className={styles.product}><div className={styles.visual}><i /><b /></div><div><strong>{item.name}</strong><small>{item.weight} • {item.purity}</small><small>کد قطعه: {item.unitSku ?? item.unitId}</small></div></div><div className={styles.rows}><div><span>محصول</span><strong>{toman(item.price)}</strong></div><div><span>ارسال</span><strong>رایگان</strong></div></div><div className={styles.total}><span>مبلغ نهایی</span><strong>{toman(item.price)}</strong></div><p>مبلغ پرداخت از Price Lock همان Reservation استفاده می‌کند و در سمت Backend تأیید می‌شود.</p></aside>
     </div>
   </main>;
 }
