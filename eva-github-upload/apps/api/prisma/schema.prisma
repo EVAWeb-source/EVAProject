@@ -40,6 +40,14 @@ enum ReservationStatus {
   ACTIVE
   EXPIRED
   RELEASED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  INITIATED
+  SUCCEEDED
+  FAILED
+  EXPIRED
 }
 
 model Collection {
@@ -115,10 +123,10 @@ model PricingRule {
 }
 
 model Order {
-  id            String      @id @default(cuid())
-  orderNumber   String      @unique
-  status        OrderStatus @default(DEMO_CONFIRMED)
-  isDemo        Boolean     @default(true)
+  id            String           @id @default(cuid())
+  orderNumber   String           @unique
+  status        OrderStatus      @default(PENDING_PAYMENT)
+  isDemo        Boolean          @default(true)
   customerName  String
   mobile        String
   province      String
@@ -129,8 +137,9 @@ model Order {
   totalToman    BigInt
   lines         OrderLine[]
   reservation   Reservation?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  payments      PaymentAttempt[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
   @@index([mobile, createdAt])
   @@index([status, createdAt])
@@ -185,4 +194,22 @@ model Reservation {
 
   @@index([unitId, status, expiresAt])
   @@index([status, expiresAt])
+}
+
+model PaymentAttempt {
+  id           String        @id @default(cuid())
+  token        String        @unique
+  orderId      String
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  provider     String        @default("DEMO")
+  status       PaymentStatus @default(INITIATED)
+  amountToman  BigInt
+  referenceId  String?       @unique
+  failureCode  String?
+  paidAt       DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([orderId, status])
+  @@index([status, createdAt])
 }
