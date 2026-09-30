@@ -40,37 +40,23 @@ export class CatalogSeedService implements OnModuleInit {
     });
 
     const units = [
-      {
-        unitSku: 'EVA-AGH-NEC-TOL-001-U01',
-        exactWeightGram: '0.810',
-        currentPriceToman: BigInt(14300000),
-      },
-      {
-        unitSku: 'EVA-AGH-NEC-TOL-001-U02',
-        exactWeightGram: '0.840',
-        currentPriceToman: BigInt(14850000),
-      },
-      {
-        unitSku: 'EVA-AGH-NEC-TOL-001-U03',
-        exactWeightGram: '0.890',
-        currentPriceToman: BigInt(15650000),
-      },
+      { unitSku: 'EVA-AGH-NEC-TOL-001-U01', exactWeightGram: '0.810' },
+      { unitSku: 'EVA-AGH-NEC-TOL-001-U02', exactWeightGram: '0.840' },
+      { unitSku: 'EVA-AGH-NEC-TOL-001-U03', exactWeightGram: '0.890' },
     ];
 
     for (const unit of units) {
       await this.prisma.physicalUnit.upsert({
         where: { unitSku: unit.unitSku },
+        // Do not reset status, reservation or price on deploy.
         update: {
           productId: product.id,
           exactWeightGram: unit.exactWeightGram,
-          currentPriceToman: unit.currentPriceToman,
-          status: 'AVAILABLE',
         },
         create: {
           unitSku: unit.unitSku,
           productId: product.id,
           exactWeightGram: unit.exactWeightGram,
-          currentPriceToman: unit.currentPriceToman,
           status: 'AVAILABLE',
         },
       });
