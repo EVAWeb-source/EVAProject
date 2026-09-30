@@ -48,8 +48,9 @@ export class OrdersService {
       throw new BadRequestException('Unit is not reserved');
     }
 
-    if (unit.currentPriceToman === null) {
-      throw new BadRequestException('Unit does not have a current price');
+    const lockedPrice = reservation.lockedPriceToman ?? unit.currentPriceToman;
+    if (lockedPrice === null) {
+      throw new BadRequestException('Reservation does not have a locked price');
     }
 
     const orderNumber = `EVA-${new Date().getUTCFullYear()}-${randomInt(100000, 999999)}`;
@@ -67,7 +68,7 @@ export class OrdersService {
           address: dto.address,
           postalCode: dto.postalCode,
           recipientName: dto.recipientName,
-          totalToman: unit.currentPriceToman!,
+          totalToman: lockedPrice,
           lines: {
             create: {
               unitId: unit.id,
@@ -76,7 +77,15 @@ export class OrdersService {
               unitSku: unit.unitSku,
               exactWeightGram: unit.exactWeightGram,
               purity: unit.product.purity,
-              unitPriceToman: unit.currentPriceToman!,
+              unitPriceToman: lockedPrice,
+              goldRateTomanPerGram: reservation.goldRateTomanPerGram,
+              goldValueToman: reservation.goldValueToman,
+              makingToman: reservation.makingToman,
+              profitToman: reservation.profitToman,
+              taxToman: reservation.taxToman,
+              rateVersion: reservation.rateVersion,
+              pricingFormulaVersion: reservation.pricingFormulaVersion,
+              pricingRuleId: reservation.pricingRuleId,
             },
           },
         },
@@ -122,6 +131,13 @@ export class OrdersService {
       exactWeightGram: unknown;
       purity: number;
       unitPriceToman: bigint;
+      goldRateTomanPerGram: bigint | null;
+      goldValueToman: bigint | null;
+      makingToman: bigint | null;
+      profitToman: bigint | null;
+      taxToman: bigint | null;
+      rateVersion: string | null;
+      pricingFormulaVersion: string | null;
     }>;
   }) {
     const line = order.lines[0];
@@ -142,6 +158,21 @@ export class OrdersService {
             weightGram: String(line.exactWeightGram),
             purity: line.purity,
             priceToman: Number(line.unitPriceToman),
+            pricing: {
+              goldRateTomanPerGram:
+                line.goldRateTomanPerGram === null
+                  ? null
+                  : Number(line.goldRateTomanPerGram),
+              goldValueToman:
+                line.goldValueToman === null ? null : Number(line.goldValueToman),
+              makingToman:
+                line.makingToman === null ? null : Number(line.makingToman),
+              profitToman:
+                line.profitToman === null ? null : Number(line.profitToman),
+              taxToman: line.taxToman === null ? null : Number(line.taxToman),
+              rateVersion: line.rateVersion,
+              pricingFormulaVersion: line.pricingFormulaVersion,
+            },
           }
         : null,
     };
