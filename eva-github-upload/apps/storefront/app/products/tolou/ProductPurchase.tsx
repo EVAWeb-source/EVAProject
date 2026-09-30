@@ -1,13 +1,25 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import styles from './product.module.css';
+
+type PurchasePricing = {
+  goldRateTomanPerGram: number;
+  goldValueToman: number;
+  makingToman: number;
+  profitToman: number;
+  taxToman: number;
+  finalPriceToman: number;
+  rateVersion: string;
+  pricingFormulaVersion: string;
+};
 
 type PurchaseUnit = {
   id: string;
   unitSku: string;
   weight: string;
   price: number;
+  pricing: PurchasePricing;
 };
 
 type ProductInfo = {
@@ -30,15 +42,6 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
   const [selected, setSelected] = useState<PurchaseUnit | null>(units[0] ?? null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [added, setAdded] = useState(false);
-
-  const breakdown = useMemo(() => {
-    if (!selected) return null;
-    const gold = Math.round(selected.price * 0.78);
-    const making = Math.round(selected.price * 0.11);
-    const profit = Math.round(selected.price * 0.06);
-    const tax = selected.price - gold - making - profit;
-    return { gold, making, profit, tax };
-  }, [selected]);
 
   function addToCart() {
     if (!selected) return;
@@ -68,6 +71,8 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
       </div>
     );
   }
+
+  const breakdown = selected.pricing;
 
   return (
     <div className={styles.purchasePanel}>
@@ -110,14 +115,18 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
         <button className={styles.breakdownToggle} onClick={() => setDetailsOpen(!detailsOpen)}>
           <span>جزئیات قیمت</span><b>{detailsOpen ? '−' : '+'}</b>
         </button>
-        {detailsOpen && breakdown && (
+        {detailsOpen && (
           <div className={styles.breakdownRows}>
-            <div><span>ارزش طلا</span><strong>{toman(breakdown.gold)}</strong></div>
-            <div><span>اجرت</span><strong>{toman(breakdown.making)}</strong></div>
-            <div><span>سود</span><strong>{toman(breakdown.profit)}</strong></div>
-            <div><span>مالیات</span><strong>{toman(breakdown.tax)}</strong></div>
-            <div className={styles.total}><span>قیمت نهایی</span><strong>{toman(selected.price)}</strong></div>
-            <p>قیمت نهایی و موجودی از دیتابیس EVA خوانده می‌شود. تفکیک اجزای قیمت در مرحله اتصال موتور قیمت‌گذاری واقعی جایگزین این محاسبه نمایشی خواهد شد.</p>
+            <div><span>نرخ پایه طلا / گرم</span><strong>{toman(breakdown.goldRateTomanPerGram)}</strong></div>
+            <div><span>ارزش طلا</span><strong>{toman(breakdown.goldValueToman)}</strong></div>
+            <div><span>اجرت</span><strong>{toman(breakdown.makingToman)}</strong></div>
+            <div><span>سود</span><strong>{toman(breakdown.profitToman)}</strong></div>
+            <div><span>مالیات</span><strong>{toman(breakdown.taxToman)}</strong></div>
+            <div className={styles.total}><span>قیمت نهایی</span><strong>{toman(breakdown.finalPriceToman)}</strong></div>
+            <p>
+              موتور قیمت‌گذاری فعال است. فرمول فعلی برای تست و با نسخه{' '}
+              <span dir="ltr">{breakdown.pricingFormulaVersion}</span> اجرا می‌شود و بعداً می‌توانیم قواعد دقیق نهایی را جایگزین کنیم.
+            </p>
           </div>
         )}
       </div>
