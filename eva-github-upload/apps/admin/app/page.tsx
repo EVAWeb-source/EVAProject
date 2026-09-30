@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import AdminActions from './components/AdminActions';
+import PricingActions from './components/PricingActions';
 import { ADMIN_SESSION_COOKIE, sessionValue } from './lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
@@ -203,6 +204,7 @@ export default async function AdminPage() {
                 <article><span>سود</span><strong>{data.pricing.rule ? `${faNumber(data.pricing.rule.profitPercent)}٪` : '—'}</strong><small>{data.pricing.rule?.name ?? '—'}</small></article>
                 <article><span>مالیات</span><strong>{data.pricing.rule ? `${faNumber(data.pricing.rule.taxPercent)}٪` : '—'}</strong><small>قانون موقت تست</small></article>
               </div>
+              <PricingActions rate={data.pricing.rate} rule={data.pricing.rule} />
             </section>
           </>
         )}
