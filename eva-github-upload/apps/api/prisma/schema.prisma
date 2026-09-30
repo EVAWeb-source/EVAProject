@@ -50,6 +50,11 @@ enum PaymentStatus {
   EXPIRED
 }
 
+enum InvoiceStatus {
+  ISSUED
+  VOID
+}
+
 model Collection {
   id        String          @id @default(cuid())
   nameFa    String
@@ -138,6 +143,7 @@ model Order {
   lines         OrderLine[]
   reservation   Reservation?
   payments      PaymentAttempt[]
+  invoice       Invoice?
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
@@ -212,4 +218,54 @@ model PaymentAttempt {
 
   @@index([orderId, status])
   @@index([status, createdAt])
+}
+
+model Invoice {
+  id               String        @id @default(cuid())
+  invoiceNumber    String        @unique
+  verificationCode String        @unique
+  status           InvoiceStatus @default(ISSUED)
+  orderId          String        @unique
+  order            Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  sellerName       String        @default("EVA")
+  customerName     String
+  customerMobile   String
+  recipientName    String
+  province         String
+  city             String
+  address          String
+  postalCode       String
+  paymentProvider  String
+  paymentReference String
+  totalToman       BigInt
+  lines            InvoiceLine[]
+  issuedAt         DateTime      @default(now())
+  createdAt        DateTime      @default(now())
+
+  @@index([status, issuedAt])
+  @@index([customerMobile, issuedAt])
+}
+
+model InvoiceLine {
+  id                    String  @id @default(cuid())
+  invoiceId             String
+  invoice               Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  productNameFa         String
+  masterSku             String
+  unitSku               String
+  exactWeightGram       Decimal @db.Decimal(8, 3)
+  purity                 Int
+  goldRateTomanPerGram  BigInt?
+  goldValueToman        BigInt?
+  makingToman           BigInt?
+  profitToman           BigInt?
+  taxToman              BigInt?
+  finalPriceToman       BigInt
+  rateVersion           String?
+  pricingFormulaVersion String?
+  pricingRuleId         String?
+  createdAt             DateTime @default(now())
+
+  @@index([invoiceId])
+  @@index([unitSku])
 }
