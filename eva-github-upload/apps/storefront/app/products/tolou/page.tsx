@@ -3,12 +3,24 @@ import styles from './product.module.css';
 
 export const dynamic = 'force-dynamic';
 
+type ApiPricing = {
+  goldRateTomanPerGram: number;
+  goldValueToman: number;
+  makingToman: number;
+  profitToman: number;
+  taxToman: number;
+  finalPriceToman: number;
+  rateVersion: string;
+  pricingFormulaVersion: string;
+};
+
 type ApiUnit = {
   id: string;
   unitSku: string;
   exactWeightGram: string;
   currentPriceToman: string;
   status: string;
+  pricing: ApiPricing;
 };
 
 type ApiProduct = {
@@ -44,6 +56,7 @@ export default async function TolouPage() {
       unitSku: unit.unitSku,
       weight: toPersianWeight(unit.exactWeightGram),
       price: Number(unit.currentPriceToman),
+      pricing: unit.pricing,
     }));
 
   return (
