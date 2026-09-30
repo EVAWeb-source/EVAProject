@@ -1,12 +1,16 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { PricingService } from '../pricing/pricing.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 const HARD_HOLD_MINUTES = 10;
 
 @Injectable()
 export class ReservationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pricing: PricingService,
+  ) {}
 
   async releaseExpired() {
     const now = new Date();
@@ -47,10 +51,8 @@ export class ReservationsService {
     });
 
     if (!unit) throw new NotFoundException('Unit not found');
-    if (unit.currentPriceToman === null) {
-      throw new ConflictException('Unit price is unavailable');
-    }
 
+    const quote = await this.pricing.priceUnit(unitId, true);
     const now = new Date();
     const expiresAt = new Date(now.getTime() + HARD_HOLD_MINUTES * 60 * 1000);
     const token = randomUUID();
@@ -58,7 +60,11 @@ export class ReservationsService {
     const reservation = await this.prisma.$transaction(async (tx) => {
       const claim = await tx.physicalUnit.updateMany({
         where: { id: unitId, status: 'AVAILABLE' },
-        data: { status: 'RESERVED', reservedUntil: expiresAt },
+        data: {
+          status: 'RESERVED',
+          reservedUntil: expiresAt,
+          currentPriceToman: BigInt(quote.finalPriceToman),
+        },
       });
 
       if (claim.count !== 1) {
@@ -66,7 +72,20 @@ export class ReservationsService {
       }
 
       return tx.reservation.create({
-        data: { token, unitId, expiresAt },
+        data: {
+          token,
+          unitId,
+          expiresAt,
+          lockedPriceToman: BigInt(quote.finalPriceToman),
+          goldRateTomanPerGram: BigInt(quote.goldRateTomanPerGram),
+          goldValueToman: BigInt(quote.goldValueToman),
+          makingToman: BigInt(quote.makingToman),
+          profitToman: BigInt(quote.profitToman),
+          taxToman: BigInt(quote.taxToman),
+          rateVersion: quote.rateVersion,
+          pricingFormulaVersion: quote.pricingFormulaVersion,
+          pricingRuleId: quote.pricingRuleId,
+        },
         include: { unit: { include: { product: true } } },
       });
     });
@@ -117,19 +136,38 @@ export class ReservationsService {
       Math.floor((new Date(reservation.expiresAt).getTime() - Date.now()) / 1000),
     );
 
+    const lockedPrice =
+      reservation.lockedPriceToman ?? reservation.unit.currentPriceToman;
+
     return {
       token: reservation.token,
       status: reservation.status,
       expiresAt: reservation.expiresAt,
       remainingSeconds,
+      pricing: {
+        lockedPriceToman: lockedPrice === null ? null : Number(lockedPrice),
+        goldRateTomanPerGram:
+          reservation.goldRateTomanPerGram === null
+            ? null
+            : Number(reservation.goldRateTomanPerGram),
+        goldValueToman:
+          reservation.goldValueToman === null
+            ? null
+            : Number(reservation.goldValueToman),
+        makingToman:
+          reservation.makingToman === null ? null : Number(reservation.makingToman),
+        profitToman:
+          reservation.profitToman === null ? null : Number(reservation.profitToman),
+        taxToman:
+          reservation.taxToman === null ? null : Number(reservation.taxToman),
+        rateVersion: reservation.rateVersion,
+        pricingFormulaVersion: reservation.pricingFormulaVersion,
+      },
       unit: {
         id: reservation.unit.id,
         unitSku: reservation.unit.unitSku,
         exactWeightGram: reservation.unit.exactWeightGram.toString(),
-        priceToman:
-          reservation.unit.currentPriceToman === null
-            ? null
-            : Number(reservation.unit.currentPriceToman),
+        priceToman: lockedPrice === null ? null : Number(lockedPrice),
         purity: reservation.unit.product.purity,
         productNameFa: reservation.unit.product.nameFa,
       },
