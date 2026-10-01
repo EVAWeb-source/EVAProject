@@ -20,6 +20,7 @@ export class AdminController {
     return this.admin.dashboard();
   }
 
+  // Fulfillment operations are exposed only through the authenticated admin API.
   @Get('fulfillment')
   fulfillment(@Headers('x-admin-key') key?: string) {
     this.authorize(key);
