@@ -6,6 +6,8 @@ import { ADMIN_SESSION_COOKIE, sessionValue } from './lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
+const storefrontBase = process.env.STOREFRONT_URL ?? 'https://evaproject-production.up.railway.app';
+
 type Dashboard = {
   generatedAt: string;
   summary: {
@@ -183,16 +185,25 @@ export default async function AdminPage() {
             </section>
 
             <section id="orders" className="panel">
-              <div className="panelHead"><div><span>COMMERCE</span><h2>آخرین سفارش‌ها</h2></div><small>حداکثر ۳۰ سفارش اخیر</small></div>
-              <div className="tableWrap"><table><thead><tr><th>شماره سفارش</th><th>مشتری</th><th>محصول</th><th>مبلغ</th><th>پرداخت</th><th>فاکتور</th><th>تاریخ</th></tr></thead><tbody>
-                {data.orders.map(order => <tr key={order.id}><td><strong dir="ltr">{order.orderNumber}</strong><small>{statusFa(order.status)}</small></td><td><strong>{order.customerName}</strong><small dir="ltr">{order.mobile}</small></td><td>{order.item ? <><strong>{order.item.productNameFa}</strong><small>{faNumber(order.item.exactWeightGram)} گرم</small></> : '—'}</td><td>{toman(order.totalToman)}</td><td><span className={`badge ${(order.payment?.status ?? order.status).toLowerCase()}`}>{statusFa(order.payment?.status ?? order.status)}</span></td><td>{order.invoiceNumber ? <span dir="ltr">{order.invoiceNumber}</span> : '—'}</td><td>{date(order.createdAt)}</td></tr>)}
+              <div className="panelHead"><div><span>COMMERCE</span><h2>آخرین سفارش‌ها</h2></div><small>جزئیات پرداخت و فاکتور از همینجا قابل بررسی است</small></div>
+              <div className="tableWrap"><table><thead><tr><th>شماره سفارش</th><th>مشتری</th><th>محصول</th><th>مبلغ</th><th>پرداخت</th><th>فاکتور</th><th>تاریخ</th><th>جزئیات</th></tr></thead><tbody>
+                {data.orders.map(order => <tr key={order.id}>
+                  <td><strong dir="ltr">{order.orderNumber}</strong><small>{statusFa(order.status)}</small></td>
+                  <td><strong>{order.customerName}</strong><small dir="ltr">{order.mobile}</small></td>
+                  <td>{order.item ? <><strong>{order.item.productNameFa}</strong><small>{faNumber(order.item.exactWeightGram)} گرم</small></> : '—'}</td>
+                  <td>{toman(order.totalToman)}</td>
+                  <td><span className={`badge ${(order.payment?.status ?? order.status).toLowerCase()}`}>{statusFa(order.payment?.status ?? order.status)}</span></td>
+                  <td>{order.invoiceNumber ? <a className="adminLink" href={`${storefrontBase}/invoice/${encodeURIComponent(order.invoiceNumber)}`} target="_blank" rel="noreferrer" dir="ltr">{order.invoiceNumber}</a> : '—'}</td>
+                  <td>{date(order.createdAt)}</td>
+                  <td><details className="orderDetails"><summary>مشاهده</summary><div className="orderDetailCard"><span>شهر: <b>{order.city}</b></span><span>Unit: <b dir="ltr">{order.item?.unitSku ?? '—'}</b></span><span>درگاه: <b>{order.payment?.provider ?? '—'}</b></span><span>مرجع پرداخت: <b dir="ltr">{order.payment?.referenceId ?? '—'}</b></span><span>زمان پرداخت: <b>{order.payment?.paidAt ? date(order.payment.paidAt) : '—'}</b></span>{order.invoiceNumber && <a className="adminLink" href={`${storefrontBase}/invoice/${encodeURIComponent(order.invoiceNumber)}`} target="_blank" rel="noreferrer">باز کردن فاکتور</a>}</div></details></td>
+                </tr>)}
               </tbody></table></div>
             </section>
 
             <section id="invoices" className="panel">
-              <div className="panelHead"><div><span>FINANCE</span><h2>فاکتورها</h2></div><small>Snapshot مستقل از سفارش</small></div>
-              <div className="tableWrap"><table><thead><tr><th>شماره فاکتور</th><th>مشتری</th><th>محصول</th><th>مبلغ</th><th>وضعیت</th><th>صدور</th></tr></thead><tbody>
-                {data.invoices.map(invoice => <tr key={invoice.id}><td><strong dir="ltr">{invoice.invoiceNumber}</strong></td><td><strong>{invoice.customerName}</strong><small dir="ltr">{invoice.customerMobile}</small></td><td>{invoice.item?.productNameFa ?? '—'}</td><td>{toman(invoice.totalToman)}</td><td><span className={`badge ${invoice.status.toLowerCase()}`}>{statusFa(invoice.status)}</span></td><td>{date(invoice.issuedAt)}</td></tr>)}
+              <div className="panelHead"><div><span>FINANCE</span><h2>فاکتورها</h2></div><small>فاکتور و صفحه عمومی Verify مستقیماً قابل باز شدن هستند</small></div>
+              <div className="tableWrap"><table><thead><tr><th>شماره فاکتور</th><th>مشتری</th><th>محصول</th><th>مبلغ</th><th>وضعیت</th><th>صدور</th><th>لینک‌ها</th></tr></thead><tbody>
+                {data.invoices.map(invoice => <tr key={invoice.id}><td><strong dir="ltr">{invoice.invoiceNumber}</strong></td><td><strong>{invoice.customerName}</strong><small dir="ltr">{invoice.customerMobile}</small></td><td>{invoice.item?.productNameFa ?? '—'}</td><td>{toman(invoice.totalToman)}</td><td><span className={`badge ${invoice.status.toLowerCase()}`}>{statusFa(invoice.status)}</span></td><td>{date(invoice.issuedAt)}</td><td><div className="adminLinks"><a className="adminLink" href={`${storefrontBase}/invoice/${encodeURIComponent(invoice.invoiceNumber)}`} target="_blank" rel="noreferrer">فاکتور</a><a className="adminLink" href={`${storefrontBase}/verify/${encodeURIComponent(invoice.verificationCode)}`} target="_blank" rel="noreferrer">Verify</a></div></td></tr>)}
               </tbody></table></div>
             </section>
 
