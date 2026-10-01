@@ -1,3 +1,4 @@
+import QRCode from 'qrcode';
 import PrintButton from './PrintButton';
 import styles from './invoice.module.css';
 
@@ -36,6 +37,7 @@ export default async function InvoicePage({params}:{params:Promise<{invoiceNumbe
   const invoice=await getInvoice(invoiceNumber);
   const item=invoice.items[0];
   const verifyUrl=`${siteBase}/verify/${invoice.verificationCode}`;
+  const qrDataUrl=await QRCode.toDataURL(verifyUrl,{width:220,margin:1,errorCorrectionLevel:'M'});
 
   return <main className={styles.page} dir="rtl">
     <article className={styles.sheet}>
@@ -52,7 +54,10 @@ export default async function InvoicePage({params}:{params:Promise<{invoiceNumbe
 
       <section className={styles.section}><h2>پرداخت</h2><div className={styles.grid}><div className={styles.row}><span>درگاه</span><strong>{invoice.payment.provider}</strong></div><div className={styles.row}><span>کد مرجع</span><strong dir="ltr">{invoice.payment.reference}</strong></div></div></section>
 
-      <section className={styles.verify}><strong>تأیید اصالت فاکتور</strong><p>این فاکتور یک Verification Code یکتا دارد. صفحه عمومی تأیید، اطلاعات شخصی خریدار را نمایش نمی‌دهد.</p><code>{invoice.verificationCode}</code><a href={verifyUrl}>{verifyUrl}</a></section>
+      <section className={styles.verify}>
+        <div className={styles.verifyText}><strong>تأیید اصالت فاکتور</strong><p>QR را اسکن کن تا صفحه عمومی تأیید همین فاکتور باز شود. اطلاعات شخصی خریدار در صفحه عمومی نمایش داده نمی‌شود.</p><code>{invoice.verificationCode}</code><a href={verifyUrl}>{verifyUrl}</a></div>
+        <a className={styles.qrWrap} href={verifyUrl} aria-label="باز کردن صفحه تأیید فاکتور"><img className={styles.qr} src={qrDataUrl} alt="QR تأیید فاکتور EVA" /></a>
+      </section>
 
       <div className={styles.actions}><PrintButton/><a href={`/verify/${invoice.verificationCode}`}>بررسی فاکتور</a><a href="/shop">بازگشت به فروشگاه</a></div>
       <p className={styles.note}>این نسخه فعلاً برای تست زیرساخت EVA صادر شده است. اطلاعات حقوقی فروشنده، قواعد مالیاتی نهایی و قالب رسمی نهایی فاکتور پیش از Launch تکمیل می‌شوند.</p>
