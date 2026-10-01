@@ -36,6 +36,14 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum FulfillmentStatus {
+  REGISTERED
+  PREPARING
+  READY_TO_SHIP
+  SHIPPED
+  DELIVERED
+}
+
 enum ReservationStatus {
   ACTIVE
   EXPIRED
@@ -128,27 +136,33 @@ model PricingRule {
 }
 
 model Order {
-  id            String           @id @default(cuid())
-  orderNumber   String           @unique
-  status        OrderStatus      @default(PENDING_PAYMENT)
-  isDemo        Boolean          @default(true)
-  customerName  String
-  mobile        String
-  province      String
-  city          String
-  address       String
-  postalCode    String
-  recipientName String
-  totalToman    BigInt
-  lines         OrderLine[]
-  reservation   Reservation?
-  payments      PaymentAttempt[]
-  invoice       Invoice?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id                String            @id @default(cuid())
+  orderNumber       String            @unique
+  status            OrderStatus       @default(PENDING_PAYMENT)
+  fulfillmentStatus FulfillmentStatus @default(REGISTERED)
+  isDemo            Boolean           @default(true)
+  customerName      String
+  mobile            String
+  province          String
+  city              String
+  address           String
+  postalCode        String
+  recipientName     String
+  shippingCarrier   String?
+  trackingCode      String?
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  totalToman        BigInt
+  lines             OrderLine[]
+  reservation       Reservation?
+  payments          PaymentAttempt[]
+  invoice           Invoice?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   @@index([mobile, createdAt])
   @@index([status, createdAt])
+  @@index([fulfillmentStatus, createdAt])
 }
 
 model OrderLine {
