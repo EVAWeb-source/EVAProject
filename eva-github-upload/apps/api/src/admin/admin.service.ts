@@ -23,6 +23,14 @@ const ADMIN_UNIT_STATUSES = [
   'UNAVAILABLE',
 ] as const;
 
+const FULFILLMENT_FLOW = [
+  'REGISTERED',
+  'PREPARING',
+  'READY_TO_SHIP',
+  'SHIPPED',
+  'DELIVERED',
+] as const;
+
 @Injectable()
 export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
@@ -179,6 +187,7 @@ export class AdminService {
           id: order.id,
           orderNumber: order.orderNumber,
           status: order.status,
+          fulfillmentStatus: order.fulfillmentStatus,
           customerName: order.customerName,
           mobile: order.mobile,
           city: order.city,
@@ -220,6 +229,100 @@ export class AdminService {
           : null,
       })),
     };
+  }
+
+  async fulfillmentQueue() {
+    const orders = await this.prisma.order.findMany({
+      where: { status: 'PAID' },
+      take: 100,
+      include: {
+        lines: true,
+        payments: { where: { status: 'SUCCEEDED' }, orderBy: { paidAt: 'desc' }, take: 1 },
+        invoice: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const counts = Object.fromEntries(FULFILLMENT_FLOW.map((status) => [status, 0])) as Record<string, number>;
+    for (const order of orders) counts[order.fulfillmentStatus] = (counts[order.fulfillmentStatus] ?? 0) + 1;
+
+    return {
+      generatedAt: new Date().toISOString(),
+      summary: counts,
+      orders: orders.map((order) => ({
+        id: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        fulfillmentStatus: order.fulfillmentStatus,
+        customerName: order.customerName,
+        mobile: order.mobile,
+        recipientName: order.recipientName,
+        province: order.province,
+        city: order.city,
+        address: order.address,
+        postalCode: order.postalCode,
+        shippingCarrier: order.shippingCarrier,
+        trackingCode: order.trackingCode,
+        shippedAt: order.shippedAt,
+        deliveredAt: order.deliveredAt,
+        totalToman: Number(order.totalToman),
+        createdAt: order.createdAt,
+        item: order.lines[0]
+          ? {
+              productNameFa: order.lines[0].productNameFa,
+              unitSku: order.lines[0].unitSku,
+              exactWeightGram: order.lines[0].exactWeightGram.toString(),
+            }
+          : null,
+        payment: order.payments[0]
+          ? {
+              referenceId: order.payments[0].referenceId,
+              paidAt: order.payments[0].paidAt,
+            }
+          : null,
+        invoiceNumber: order.invoice?.invoiceNumber ?? null,
+      })),
+    };
+  }
+
+  async updateFulfillment(id: string, input: Record<string, unknown>) {
+    const order = await this.prisma.order.findUnique({ where: { id } });
+    if (!order) throw new NotFoundException('Order not found');
+    if (order.status !== 'PAID') {
+      throw new ConflictException('Only paid orders can enter fulfillment');
+    }
+
+    const target = this.requiredString(input.status, 'Fulfillment status').toUpperCase();
+    if (!FULFILLMENT_FLOW.includes(target as (typeof FULFILLMENT_FLOW)[number])) {
+      throw new BadRequestException('Invalid fulfillment status');
+    }
+
+    const currentIndex = FULFILLMENT_FLOW.indexOf(order.fulfillmentStatus as any);
+    const targetIndex = FULFILLMENT_FLOW.indexOf(target as any);
+    if (targetIndex !== currentIndex + 1) {
+      throw new ConflictException('Fulfillment status must move forward one step at a time');
+    }
+
+    const data: Record<string, unknown> = {
+      fulfillmentStatus: target,
+    };
+
+    if (target === 'SHIPPED') {
+      const shippingCarrier = this.requiredString(input.shippingCarrier, 'Shipping carrier');
+      const trackingCode = this.requiredString(input.trackingCode, 'Tracking code');
+      data.shippingCarrier = shippingCarrier;
+      data.trackingCode = trackingCode;
+      data.shippedAt = new Date();
+    }
+
+    if (target === 'DELIVERED') {
+      data.deliveredAt = new Date();
+    }
+
+    return this.prisma.order.update({
+      where: { id },
+      data: data as any,
+    });
   }
 
   async createProduct(input: Record<string, unknown>) {
