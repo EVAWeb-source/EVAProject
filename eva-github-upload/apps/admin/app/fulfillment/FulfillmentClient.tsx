@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './fulfillment.module.css';
 
@@ -62,6 +62,7 @@ function date(value: string | null) {
 
 export default function FulfillmentClient({ orders, storefrontBase }: { orders: Order[]; storefrontBase: string }) {
   const router = useRouter();
+  const inFlight = useRef<Set<string>>(new Set());
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +71,8 @@ export default function FulfillmentClient({ orders, storefrontBase }: { orders: 
   const activeOrders = useMemo(() => orders.filter((order) => order.fulfillmentStatus !== 'DELIVERED'), [orders]);
 
   async function advance(order: Order) {
+    if (inFlight.current.has(order.id)) return;
+
     const target = nextStatus[order.fulfillmentStatus];
     if (!target) return;
 
@@ -79,9 +82,11 @@ export default function FulfillmentClient({ orders, storefrontBase }: { orders: 
       return;
     }
 
+    inFlight.current.add(order.id);
     setBusyId(order.id);
     setMessage(null);
     setError(null);
+
     try {
       const response = await fetch(`/api/admin/orders/${encodeURIComponent(order.id)}/fulfillment`, {
         method: 'PATCH',
@@ -93,13 +98,25 @@ export default function FulfillmentClient({ orders, storefrontBase }: { orders: 
             : {}),
         }),
       });
+
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload?.message ?? payload?.error ?? `خطای ${response.status}`);
+      const detail = payload?.message ?? payload?.error ?? `خطای ${response.status}`;
+
+      if (!response.ok) {
+        if (response.status === 409 && String(detail).includes('one step at a time')) {
+          setMessage('وضعیت سفارش ثبت شده بود؛ اطلاعات تازه شد.');
+          router.refresh();
+          return;
+        }
+        throw new Error(detail);
+      }
+
       setMessage(`وضعیت سفارش ${order.orderNumber} به «${labels[target]}» تغییر کرد.`);
       router.refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'بروزرسانی وضعیت انجام نشد.');
     } finally {
+      inFlight.current.delete(order.id);
       setBusyId(null);
     }
   }
