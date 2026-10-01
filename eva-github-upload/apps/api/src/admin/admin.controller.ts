@@ -20,6 +20,22 @@ export class AdminController {
     return this.admin.dashboard();
   }
 
+  @Get('fulfillment')
+  fulfillment(@Headers('x-admin-key') key?: string) {
+    this.authorize(key);
+    return this.admin.fulfillmentQueue();
+  }
+
+  @Patch('orders/:id/fulfillment')
+  updateFulfillment(
+    @Headers('x-admin-key') key: string | undefined,
+    @Param('id') id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    this.authorize(key);
+    return this.admin.updateFulfillment(id, body);
+  }
+
   @Post('products')
   createProduct(
     @Headers('x-admin-key') key: string | undefined,
