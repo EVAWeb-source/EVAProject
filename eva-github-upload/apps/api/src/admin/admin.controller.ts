@@ -28,13 +28,27 @@ export class AdminController {
   }
 
   @Patch('orders/:id/fulfillment')
-  updateFulfillment(
+  async updateFulfillment(
     @Headers('x-admin-key') key: string | undefined,
     @Param('id') id: string,
     @Body() body: Record<string, unknown>,
   ) {
     this.authorize(key);
-    return this.admin.updateFulfillment(id, body);
+    const updated = await this.admin.updateFulfillment(id, body);
+
+    // Return a deliberately JSON-safe payload. The Order model contains BigInt
+    // monetary fields, which must never be serialized directly by Nest/JSON.
+    return {
+      id: updated.id,
+      orderNumber: updated.orderNumber,
+      status: updated.status,
+      fulfillmentStatus: updated.fulfillmentStatus,
+      shippingCarrier: updated.shippingCarrier,
+      trackingCode: updated.trackingCode,
+      shippedAt: updated.shippedAt,
+      deliveredAt: updated.deliveredAt,
+      updatedAt: updated.updatedAt,
+    };
   }
 
   @Post('products')
