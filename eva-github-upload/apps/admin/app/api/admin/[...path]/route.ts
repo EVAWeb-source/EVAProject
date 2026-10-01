@@ -16,6 +16,7 @@ async function forward(request: Request, context: { params: Promise<{ path: stri
     /^units$/,
     /^units\/[^/]+$/,
     /^pricing\/config$/,
+    /^fulfillment$/,
     /^orders\/[^/]+\/fulfillment$/,
   ];
   const joined = path.join('/');
@@ -45,6 +46,10 @@ async function forward(request: Request, context: { params: Promise<{ path: stri
     status: response.status,
     headers: { 'content-type': response.headers.get('content-type') ?? 'application/json' },
   });
+}
+
+export async function GET(request: Request, context: { params: Promise<{ path: string[] }> }) {
+  return forward(request, context);
 }
 
 export async function POST(request: Request, context: { params: Promise<{ path: string[] }> }) {
