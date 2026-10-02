@@ -1,0 +1,15 @@
+.page{min-height:100vh;background:#fbf8f2;color:#26221f;padding:28px 5vw 70px}
+.header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ddd2c2;padding-bottom:24px;margin-bottom:50px}
+.brand{font-family:Georgia,serif;font-size:42px;letter-spacing:.16em;color:#26221f;text-decoration:none}
+.back{color:#665e56;text-decoration:none}
+.wrap{max-width:980px;margin:0 auto}
+.intro{text-align:center;max-width:650px;margin:0 auto 34px}.eyebrow{font-size:12px;letter-spacing:.18em;color:#a4772a}.intro h1{font-size:44px;margin:12px 0}.intro p{color:#756d65;line-height:2}
+.form{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;border:1px solid #ddd2c2;background:#fffdf9;border-radius:18px;padding:18px}
+.form label{display:grid;gap:8px;font-weight:700}.form input{height:50px;border:1px solid #d8cdbd;border-radius:11px;padding:0 13px;background:#fff;font:inherit}
+.form button{align-self:end;height:50px;border:0;border-radius:11px;padding:0 24px;background:#28231f;color:#fff;font:inherit;font-weight:800;cursor:pointer}
+.error{margin-top:14px;background:#faece9;color:#8b3830;padding:12px 14px;border-radius:12px}
+.card{margin-top:28px;border:1px solid #ddd2c2;background:#fffdf9;border-radius:22px;padding:28px}
+.head{display:flex;justify-content:space-between;align-items:start;gap:20px;border-bottom:1px solid #eee3d5;padding-bottom:20px}.head h2{margin:7px 0 0;font-size:28px}.status{background:#edf6f0;color:#347452;border-radius:999px;padding:8px 13px}
+.progress{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:28px 0}.step,.done{text-align:center;font-size:12px;color:#a09991}.step i,.done i{display:flex;width:32px;height:32px;border:1px solid #d8cebf;border-radius:50%;align-items:center;justify-content:center;margin:0 auto 8px;font-style:normal}.done{color:#347452;font-weight:700}.done i{background:#eaf4ed;border-color:#bddac7}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.grid div,.shipping{border:1px solid #eee3d5;border-radius:14px;padding:16px}.grid span,.shipping span{display:block;color:#8a8178;font-size:12px;margin-bottom:7px}.shipping{margin-top:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:800px){.page{padding:20px}.form{grid-template-columns:1fr}.grid,.shipping{grid-template-columns:1fr 1fr}.progress{overflow-x:auto}.step,.done{min-width:82px}.head{flex-direction:column}}
