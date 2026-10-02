@@ -29,7 +29,7 @@ type ApiProduct={
   slug:string;
   masterSku:string;
   purity:number;
-  collection:{nameFa:string}|null;
+  collection:{nameFa:string;slug:string}|null;
   units:ApiUnit[];
 };
 
@@ -78,7 +78,7 @@ export default async function ProductPage({params}:{params:Promise<{slug:string}
     <div className={styles.announcement}>ارسال امن • فاکتور معتبر • قیمت شفاف</div>
     <header className={styles.header}>
       <a className={styles.brand} href="/">EVA</a>
-      <nav><a href="/shop">فروشگاه</a><a href="/#collection">کالکشن‌ها</a><a href="/#gift">هدیه</a><a href="/#lightweight">طلای سبک</a></nav>
+      <nav><a href="/shop">فروشگاه</a><a href="/collections">کالکشن‌ها</a><a href="/#gift">هدیه</a><a href="/#lightweight">طلای سبک</a></nav>
       <div className={styles.actions}><a href="/wishlist">♡</a><a href="/account">حساب</a><a href="/cart" className={styles.cart}>سبد</a></div>
     </header>
 
@@ -108,6 +108,7 @@ export default async function ProductPage({params}:{params:Promise<{slug:string}
           slug:product.slug,
           masterSku:product.masterSku,
           collection:collectionName,
+          collectionSlug:product.collection?.slug ?? 'eva',
           category:cat,
           purity:product.purity
         }}
