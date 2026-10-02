@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import AdminActions from './components/AdminActions';
 import PricingActions from './components/PricingActions';
+import NotificationsPanel from './components/NotificationsPanel';
 import { ADMIN_SESSION_COOKIE, sessionValue } from './lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
@@ -77,6 +78,7 @@ const sections = [
   ['#inventory', 'Unit و موجودی'],
   ['#orders', 'سفارش‌ها'],
   ['#invoices', 'فاکتورها'],
+  ['#notifications', 'پیامک‌ها'],
   ['#pricing', 'قیمت‌گذاری'],
 ];
 
@@ -206,6 +208,8 @@ export default async function AdminPage() {
                 {data.invoices.map(invoice => <tr key={invoice.id}><td><strong dir="ltr">{invoice.invoiceNumber}</strong></td><td><strong>{invoice.customerName}</strong><small dir="ltr">{invoice.customerMobile}</small></td><td>{invoice.item?.productNameFa ?? '—'}</td><td>{toman(invoice.totalToman)}</td><td><span className={`badge ${invoice.status.toLowerCase()}`}>{statusFa(invoice.status)}</span></td><td>{date(invoice.issuedAt)}</td><td><div className="adminLinks"><a className="adminLink" href={`${storefrontBase}/invoice/${encodeURIComponent(invoice.invoiceNumber)}`} target="_blank" rel="noreferrer">فاکتور</a><a className="adminLink" href={`${storefrontBase}/verify/${encodeURIComponent(invoice.verificationCode)}`} target="_blank" rel="noreferrer">Verify</a></div></td></tr>)}
               </tbody></table></div>
             </section>
+
+            <NotificationsPanel />
 
             <section id="pricing" className="panel pricingPanel">
               <div className="panelHead"><div><span>PRICING ENGINE</span><h2>قیمت‌گذاری</h2></div><small>فعلاً فرمول Demo قابل تعویض است</small></div>
