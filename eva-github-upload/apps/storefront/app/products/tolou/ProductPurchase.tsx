@@ -27,6 +27,7 @@ type ProductInfo = {
   slug: string;
   masterSku: string;
   collection: string;
+  category: string;
   purity: number;
 };
 
@@ -88,7 +89,7 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
       <div className={styles.purchasePanel}>
         <a className={styles.collectionLink} href="/#collection">کالکشن {product.collection}</a>
         <h1>{product.name}</h1>
-        <p className={styles.subtitle}>گردنبند طلای {product.purity} عیار، ظریف و مناسب استفاده روزمره</p>
+        <p className={styles.subtitle}>{product.category} طلای {product.purity} عیار، ظریف و مناسب استفاده روزمره</p>
         <div className={styles.availability}>این محصول فعلاً موجود نیست.</div>
       </div>
     );
@@ -100,7 +101,7 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
     <div className={styles.purchasePanel}>
       <a className={styles.collectionLink} href="/#collection">کالکشن {product.collection}</a>
       <h1>{product.name}</h1>
-      <p className={styles.subtitle}>گردنبند طلای {product.purity} عیار، ظریف و مناسب استفاده روزمره</p>
+      <p className={styles.subtitle}>{product.category} طلای {product.purity} عیار، ظریف و مناسب استفاده روزمره</p>
 
       <div className={styles.priceBlock}>
         <strong>{toman(selected.price)}</strong>
