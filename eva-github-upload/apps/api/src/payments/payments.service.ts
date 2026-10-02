@@ -2,12 +2,14 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ReservationsService } from '../reservations/reservations.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 @Injectable()
 export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly reservations: ReservationsService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async startDemo(orderNumber: string) {
@@ -185,6 +187,12 @@ export class PaymentsService {
           },
         },
       });
+    });
+
+    await this.notifications.orderPaid({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      mobile: order.mobile,
     });
 
     return this.getDemo(token);
