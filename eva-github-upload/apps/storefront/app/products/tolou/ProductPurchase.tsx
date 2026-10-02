@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import styles from './product.module.css';
 
 type PurchasePricing = {
@@ -24,6 +24,7 @@ type PurchaseUnit = {
 
 type ProductInfo = {
   name: string;
+  slug: string;
   masterSku: string;
   collection: string;
   purity: number;
@@ -42,6 +43,27 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
   const [selected, setSelected] = useState<PurchaseUnit | null>(units[0] ?? null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [added, setAdded] = useState(false);
+  const [liked, setLiked] = useState(false);
+
+  useEffect(() => {
+    try {
+      const current: string[] = JSON.parse(window.localStorage.getItem('eva-wishlist') ?? '[]');
+      setLiked(current.includes(product.slug));
+    } catch {
+      setLiked(false);
+    }
+  }, [product.slug]);
+
+  function toggleWishlist() {
+    try {
+      const current: string[] = JSON.parse(window.localStorage.getItem('eva-wishlist') ?? '[]');
+      const next = current.includes(product.slug)
+        ? current.filter((item) => item !== product.slug)
+        : [...current, product.slug];
+      window.localStorage.setItem('eva-wishlist', JSON.stringify(next));
+      setLiked(next.includes(product.slug));
+    } catch {}
+  }
 
   function addToCart() {
     if (!selected) return;
@@ -107,7 +129,7 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
         {added ? '✓ به سبد اضافه شد' : 'افزودن به سبد'}
       </button>
       {added && <a href="/cart" className={styles.cartLink}>مشاهده سبد خرید ←</a>}
-      <div className={styles.secondaryActions}><button>♡ افزودن به علاقه‌مندی‌ها</button><button>اشتراک‌گذاری</button></div>
+      <div className={styles.secondaryActions}><button onClick={toggleWishlist}>{liked ? '♥ در علاقه‌مندی‌ها' : '♡ افزودن به علاقه‌مندی‌ها'}</button><button onClick={() => navigator.clipboard?.writeText(window.location.href)}>اشتراک‌گذاری</button></div>
 
       <div className={styles.microTrust}><span>تضمین اصالت</span><span>فاکتور معتبر</span><span>ارسال امن</span></div>
 
