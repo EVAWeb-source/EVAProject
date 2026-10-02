@@ -1,8 +1,8 @@
 const categories = [
-  { title: 'گردنبند', label: 'NECKLACES', symbol: '◯' },
-  { title: 'انگشتر', label: 'RINGS', symbol: '◇' },
-  { title: 'دستبند', label: 'BRACELETS', symbol: '⌒' },
-  { title: 'گوشواره', label: 'EARRINGS', symbol: '⋮' },
+  { title: 'گردنبند', label: 'NECKLACES', symbol: '◯', href: '/shop/necklaces' },
+  { title: 'انگشتر', label: 'RINGS', symbol: '◇', href: '/shop/rings' },
+  { title: 'دستبند', label: 'BRACELETS', symbol: '⌒', href: '/shop/bracelets' },
+  { title: 'گوشواره', label: 'EARRINGS', symbol: '⋮', href: '/shop/earrings' },
 ];
 
 const products = [
@@ -37,7 +37,7 @@ export default function HomePage() {
         <a className="brand" href="/" aria-label="EVA">EVA</a>
         <nav aria-label="ناوبری اصلی">
           <a href="/shop">فروشگاه</a>
-          <a href="#collection">کالکشن‌ها</a>
+          <a href="/collections">کالکشن‌ها</a>
           <a href="#gift">هدیه</a>
           <a href="#lightweight">طلای سبک</a>
           <a href="#trust">درباره ایوا</a>
@@ -59,7 +59,7 @@ export default function HomePage() {
           </p>
           <div className="actions">
             <a className="primaryButton" href="/shop">مشاهده فروشگاه</a>
-            <a className="textLink" href="#collection">کشف کالکشن آغاز</a>
+            <a className="textLink" href="/collections/aghaz">کشف کالکشن آغاز</a>
           </div>
         </div>
         <div className="heroArt" aria-label="نمایش مفهومی یک قطعه طلای ایوا">
@@ -72,7 +72,7 @@ export default function HomePage() {
 
       <section className="categoryStrip" aria-label="دسته‌بندی محصولات">
         {categories.map((category) => (
-          <a className="categoryCard" href="/shop" key={category.title}>
+          <a className="categoryCard" href={category.href} key={category.title}>
             <span className="categorySymbol" aria-hidden="true">{category.symbol}</span>
             <span className="categoryLabel">{category.label}</span>
             <strong>{category.title}</strong>
@@ -126,7 +126,7 @@ export default function HomePage() {
           <p>
             کالکشن «آغاز» از نقطه، حرکت و مسیر باز الهام گرفته؛ فرم‌هایی ظریف و ناتمام که یادآور امکانِ ادامه دادن‌اند.
           </p>
-          <a className="secondaryButton" href="/shop">مشاهده کالکشن</a>
+          <a className="secondaryButton" href="/collections/aghaz">مشاهده کالکشن</a>
         </div>
       </section>
 
@@ -195,7 +195,7 @@ export default function HomePage() {
           <p>بوتیک آنلاین طلای معاصر؛ با طراحی ظریف و خرید شفاف.</p>
         </div>
         <div className="footerLinks">
-          <div><strong>فروشگاه</strong><a href="/shop">همه محصولات</a><a href="#collection">کالکشن‌ها</a><a href="#lightweight">طلای سبک</a></div>
+          <div><strong>فروشگاه</strong><a href="/shop">همه محصولات</a><a href="/collections">کالکشن‌ها</a><a href="#lightweight">طلای سبک</a></div>
           <div><strong>راهنما</strong><a href="/track-order">رهگیری سفارش</a><a href="#trust">قیمت‌گذاری</a><a href="#trust">اصالت و فاکتور</a><a href="#gift">راهنمای هدیه</a></div>
           <div><strong>ایوا</strong><a href="#trust">درباره ما</a><a href="#trust">تماس</a><a href="#trust">سوالات متداول</a></div>
         </div>
