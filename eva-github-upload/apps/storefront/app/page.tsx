@@ -195,7 +195,7 @@ export default function HomePage() {
         </div>
         <div className="footerLinks">
           <div><strong>فروشگاه</strong><a href="/shop">همه محصولات</a><a href="#collection">کالکشن‌ها</a><a href="#lightweight">طلای سبک</a></div>
-          <div><strong>راهنما</strong><a href="#trust">قیمت‌گذاری</a><a href="#trust">اصالت و فاکتور</a><a href="#gift">راهنمای هدیه</a></div>
+          <div><strong>راهنما</strong><a href="/track-order">رهگیری سفارش</a><a href="#trust">قیمت‌گذاری</a><a href="#trust">اصالت و فاکتور</a><a href="#gift">راهنمای هدیه</a></div>
           <div><strong>ایوا</strong><a href="#trust">درباره ما</a><a href="#trust">تماس</a><a href="#trust">سوالات متداول</a></div>
         </div>
         <div className="footerBottom"><span>© EVA 2026</span><span>طراحی‌شده برای یک تجربه آرام و شفاف از خرید طلا.</span></div>
