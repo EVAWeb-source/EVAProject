@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 const PRODUCT_STATUSES = [
   'DRAFT',
@@ -33,7 +34,10 @@ const FULFILLMENT_FLOW = [
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async dashboard() {
     const [
@@ -319,10 +323,21 @@ export class AdminService {
       data.deliveredAt = new Date();
     }
 
-    return this.prisma.order.update({
+    const updated = await this.prisma.order.update({
       where: { id },
       data: data as any,
     });
+
+    await this.notifications.fulfillmentChanged({
+      id: updated.id,
+      orderNumber: updated.orderNumber,
+      mobile: updated.mobile,
+      fulfillmentStatus: updated.fulfillmentStatus,
+      shippingCarrier: updated.shippingCarrier,
+      trackingCode: updated.trackingCode,
+    });
+
+    return updated;
   }
 
   async createProduct(input: Record<string, unknown>) {
