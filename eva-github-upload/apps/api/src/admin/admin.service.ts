@@ -340,6 +340,62 @@ export class AdminService {
     return updated;
   }
 
+  async smsOutbox() {
+    const [items, pending, sent, failed] = await Promise.all([
+      this.prisma.smsNotification.findMany({
+        take: 100,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.smsNotification.count({ where: { status: 'PENDING_PROVIDER' } }),
+      this.prisma.smsNotification.count({ where: { status: 'SENT' } }),
+      this.prisma.smsNotification.count({ where: { status: 'FAILED' } }),
+    ]);
+
+    return {
+      generatedAt: new Date().toISOString(),
+      summary: { pending, sent, failed, total: items.length },
+      items: items.map((item) => ({
+        id: item.id,
+        orderNumber: item.orderNumber,
+        mobile: item.mobile,
+        event: item.event,
+        body: item.body,
+        provider: item.provider,
+        status: item.status,
+        providerRef: item.providerRef,
+        error: item.error,
+        createdAt: item.createdAt,
+        sentAt: item.sentAt,
+      })),
+    };
+  }
+
+  async createTestSms(input: Record<string, unknown>) {
+    const mobile = this.normalizeMobile(input.mobile);
+    const orderNumber = String(input.orderNumber ?? '').trim().toUpperCase() || null;
+
+    if (orderNumber) {
+      const order = await this.prisma.order.findUnique({ where: { orderNumber } });
+      if (!order) throw new NotFoundException('Order not found');
+      if (order.mobile !== mobile) {
+        throw new ConflictException('Mobile does not match this order');
+      }
+    }
+
+    return this.prisma.smsNotification.create({
+      data: {
+        orderNumber,
+        mobile,
+        event: 'ADMIN_TEST',
+        body: orderNumber
+          ? `ایوا: این یک پیام آزمایشی برای سفارش ${orderNumber} است.`
+          : 'ایوا: این یک پیام آزمایشی سیستم پیامک است.',
+        provider: process.env.SMS_PROVIDER ?? 'NOT_CONFIGURED',
+        status: 'PENDING_PROVIDER',
+      },
+    });
+  }
+
   async createProduct(input: Record<string, unknown>) {
     const nameFa = this.requiredString(input.nameFa, 'نام محصول');
     const slug = this.requiredString(input.slug, 'slug').toLowerCase();
@@ -493,6 +549,16 @@ export class AdminService {
       data: data as any,
       include: { product: true },
     });
+  }
+
+  private normalizeMobile(value: unknown) {
+    let mobile = String(value ?? '').replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit))).replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit))).replace(/\D/g, '');
+    if (mobile.startsWith('0098')) mobile = '0' + mobile.slice(4);
+    else if (mobile.startsWith('98')) mobile = '0' + mobile.slice(2);
+    if (!/^09\d{9}$/.test(mobile)) {
+      throw new BadRequestException('Invalid Iranian mobile number');
+    }
+    return mobile;
   }
 
   private requiredString(value: unknown, label: string) {
