@@ -157,8 +157,6 @@ export class OrdersService {
       number: order.orderNumber,
       status: order.status,
       isDemo: order.isDemo,
-      customerName: order.customerName,
-      mobile: order.mobile,
       totalToman: Number(order.totalToman),
       createdAt: order.createdAt,
       payment: payment
