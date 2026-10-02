@@ -51,6 +51,21 @@ export class AdminController {
     };
   }
 
+  @Get('notifications')
+  notifications(@Headers('x-admin-key') key?: string) {
+    this.authorize(key);
+    return this.admin.smsOutbox();
+  }
+
+  @Post('notifications/test')
+  testNotification(
+    @Headers('x-admin-key') key: string | undefined,
+    @Body() body: Record<string, unknown>,
+  ) {
+    this.authorize(key);
+    return this.admin.createTestSms(body);
+  }
+
   @Post('products')
   createProduct(
     @Headers('x-admin-key') key: string | undefined,
