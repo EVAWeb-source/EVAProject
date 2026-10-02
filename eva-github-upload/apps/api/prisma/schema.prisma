@@ -308,3 +308,23 @@ model CustomerSession {
 
   @@index([mobile, expiresAt])
 }
+
+
+model SmsNotification {
+  id          String   @id @default(cuid())
+  orderId     String?
+  orderNumber String?
+  mobile      String
+  event       String
+  body        String
+  provider    String   @default("NOT_CONFIGURED")
+  status      String   @default("PENDING_PROVIDER")
+  providerRef String?
+  error       String?
+  createdAt   DateTime @default(now())
+  sentAt      DateTime?
+
+  @@index([orderNumber, createdAt])
+  @@index([mobile, createdAt])
+  @@index([status, createdAt])
+}
