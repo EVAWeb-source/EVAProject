@@ -108,6 +108,7 @@ export default async function ProductPage({params}:{params:Promise<{slug:string}
           slug:product.slug,
           masterSku:product.masterSku,
           collection:collectionName,
+          category:cat,
           purity:product.purity
         }}
         units={availableUnits}
