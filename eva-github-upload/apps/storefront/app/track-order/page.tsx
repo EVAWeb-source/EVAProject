@@ -85,5 +85,5 @@ export default function TrackOrderPage(){
           <div><span>تحویل</span><strong>{date(data.shipping.deliveredAt)}</strong></div>
         </div>
       </article>}
-    </div>
-  </main>;
+    </div>  </main>;
+}
