@@ -25,6 +25,7 @@ type ApiUnit = {
 
 type ApiProduct = {
   nameFa: string;
+  slug: string;
   masterSku: string;
   purity: number;
   collection: { nameFa: string } | null;
@@ -82,6 +83,7 @@ export default async function TolouPage() {
         <ProductPurchase
           product={{
             name: product.nameFa,
+            slug: product.slug,
             masterSku: product.masterSku,
             collection: collectionName,
             purity: product.purity,
