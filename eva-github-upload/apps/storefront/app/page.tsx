@@ -44,7 +44,8 @@ export default function HomePage() {
         </nav>
         <div className="headerActions" aria-label="ابزارهای فروشگاه">
           <button className="headerAction" aria-label="جستجو">⌕</button>
-          <a className="headerAction" href="/account" aria-label="حساب کاربری">حساب</a>\n          <button className="headerAction" aria-label="علاقه‌مندی‌ها">♡</button>
+          <a className="headerAction" href="/account" aria-label="حساب کاربری">حساب</a>
+          <button className="headerAction" aria-label="علاقه‌مندی‌ها">♡</button>
           <button className="headerAction cartAction" aria-label="سبد خرید">سبد <span>۰</span></button>
         </div>
       </header>
