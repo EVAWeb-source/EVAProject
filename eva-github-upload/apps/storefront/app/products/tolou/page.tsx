@@ -86,6 +86,7 @@ export default async function TolouPage() {
             slug: product.slug,
             masterSku: product.masterSku,
             collection: collectionName,
+            category: 'گردنبند',
             purity: product.purity,
           }}
           units={availableUnits}
