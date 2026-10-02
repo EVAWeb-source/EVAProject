@@ -283,3 +283,28 @@ model InvoiceLine {
   @@index([invoiceId])
   @@index([unitSku])
 }
+
+model OtpChallenge {
+  id         String    @id @default(cuid())
+  mobile     String
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([mobile, createdAt])
+  @@index([mobile, expiresAt])
+}
+
+model CustomerSession {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  mobile     String
+  expiresAt  DateTime
+  lastUsedAt DateTime  @default(now())
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([mobile, expiresAt])
+}
