@@ -28,7 +28,7 @@ type ApiProduct = {
   slug: string;
   masterSku: string;
   purity: number;
-  collection: { nameFa: string } | null;
+  collection: { nameFa: string; slug: string } | null;
   units: ApiUnit[];
 };
 
@@ -65,7 +65,7 @@ export default async function TolouPage() {
       <div className={styles.announcement}>ارسال امن • فاکتور معتبر • قیمت شفاف</div>
       <header className={styles.header}>
         <a className={styles.brand} href="/">EVA</a>
-        <nav><a href="/shop">فروشگاه</a><a href="/#collection">کالکشن‌ها</a><a href="/#gift">هدیه</a><a href="/#lightweight">طلای سبک</a></nav>
+        <nav><a href="/shop">فروشگاه</a><a href="/collections">کالکشن‌ها</a><a href="/#gift">هدیه</a><a href="/#lightweight">طلای سبک</a></nav>
         <div className={styles.actions}><button>⌕</button><button>♡</button><a href="/cart" className={styles.cart}>سبد</a></div>
       </header>
 
@@ -86,6 +86,7 @@ export default async function TolouPage() {
             slug: product.slug,
             masterSku: product.masterSku,
             collection: collectionName,
+            collectionSlug: product.collection?.slug ?? 'aghaz',
             category: 'گردنبند',
             purity: product.purity,
           }}
