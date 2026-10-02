@@ -26,6 +26,11 @@ const categories: Record<string,string> = {
   EAR:'گوشواره', SET:'ست', ANK:'پابند', CHM:'چارم',
 };
 
+const categorySlugs: Record<string,string> = {
+  NEC:'necklaces', PEN:'pendants', BRA:'bracelets', RIN:'rings',
+  EAR:'earrings', SET:'sets', ANK:'anklets', CHM:'charms',
+};
+
 function categoryCode(masterSku:string){ return masterSku.split('-')[2] ?? 'OTHER'; }
 function categoryLabel(masterSku:string){ return categories[categoryCode(masterSku)] ?? 'سایر'; }
 function toman(value:number){ return new Intl.NumberFormat('fa-IR').format(value) + ' تومان'; }
@@ -113,7 +118,7 @@ export default function ShopClient({ products }: { products:ShopProduct[] }) {
       <div className={styles.announcement}>ارسال امن • فاکتور معتبر • قیمت شفاف</div>
       <header className={styles.header}>
         <a className={styles.brand} href="/">EVA</a>
-        <nav><a href="/shop">فروشگاه</a><a href="/#collection">کالکشن‌ها</a><a href="/#gift">هدیه</a><a href="/#lightweight">طلای سبک</a></nav>
+        <nav><a href="/shop">فروشگاه</a><a href="/collections">کالکشن‌ها</a><a href="/#gift">هدیه</a><a href="/#lightweight">طلای سبک</a></nav>
         <div className={styles.actions}>
           <button aria-label="جستجو" onClick={()=>searchRef.current?.focus()}>⌕</button>
           <a className={styles.iconLink} href="/wishlist" aria-label="علاقه‌مندی‌ها">♡{wishlist.length>0&&<small>{wishlist.length}</small>}</a>
@@ -133,6 +138,11 @@ export default function ShopClient({ products }: { products:ShopProduct[] }) {
           {query&&<button onClick={()=>setQuery('')} aria-label="پاک کردن جستجو">×</button>}
         </label>
       </section>
+
+      <nav className={styles.categoryPages} aria-label="صفحه‌های دسته‌بندی">
+        <span>دسته‌ها</span>
+        {categoryCodes.map(code=><a key={code} href={'/shop/'+(categorySlugs[code]??'')}>{categories[code]??code} ←</a>)}
+      </nav>
 
       <section className={styles.toolbar}>
         <div className={styles.chips}>
