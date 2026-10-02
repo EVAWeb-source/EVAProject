@@ -75,7 +75,7 @@ export class CustomerService {
 
   async verifyOtp(input: Record<string, unknown>) {
     const mobile = this.normalizeMobile(input.mobile);
-    const code = String(input.code ?? '').trim();
+    const code = this.latinDigits(String(input.code ?? '')).trim();
 
     if (!/^\d{6}$/.test(code)) {
       throw new BadRequestException('OTP must be exactly 6 digits');
@@ -258,13 +258,19 @@ export class CustomerService {
   }
 
   private normalizeMobile(value: unknown) {
-    let mobile = String(value ?? '').replace(/\D/g, '');
+    let mobile = this.latinDigits(String(value ?? '')).replace(/\D/g, '');
     if (mobile.startsWith('0098')) mobile = '0' + mobile.slice(4);
     else if (mobile.startsWith('98')) mobile = '0' + mobile.slice(2);
     if (!/^09\d{9}$/.test(mobile)) {
       throw new BadRequestException('Enter a valid Iranian mobile number');
     }
     return mobile;
+  }
+
+  private latinDigits(value: string) {
+    return value
+      .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+      .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
   }
 
   private normalizeConfiguredMobile(value?: string) {
