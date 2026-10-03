@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import SiteChrome from './components/SiteChrome';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fa" dir="rtl">
-      <body>{children}</body>
+      <body><SiteChrome>{children}</SiteChrome></body>
     </html>
   );
 }
