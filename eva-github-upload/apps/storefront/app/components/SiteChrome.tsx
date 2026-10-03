@@ -43,6 +43,8 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMenuOpen(false);
+    setWishlistCount(readWishlistCount());
+    setCartCount(readCartCount());
   }, [pathname]);
 
   useEffect(() => {
@@ -52,10 +54,12 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
     };
 
     refresh();
+    const interval = window.setInterval(refresh, 700);
     window.addEventListener('storage', refresh);
     window.addEventListener('eva-wishlist-change', refresh);
     window.addEventListener('eva-cart-change', refresh);
     return () => {
+      window.clearInterval(interval);
       window.removeEventListener('storage', refresh);
       window.removeEventListener('eva-wishlist-change', refresh);
       window.removeEventListener('eva-cart-change', refresh);
