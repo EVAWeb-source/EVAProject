@@ -94,6 +94,13 @@ export default async function AccountPage() {
             <span>{new Intl.NumberFormat('fa-IR').format(orders.filter((order) => order.status === 'PAID').length)} پرداخت‌شده</span>
           </div>
 
+          <nav className={styles.quickActions} aria-label="دسترسی سریع حساب">
+            <a href="/shop"><span>SHOP</span><strong>ادامه خرید</strong><i>←</i></a>
+            <a href="/wishlist"><span>WISHLIST</span><strong>علاقه‌مندی‌ها</strong><i>←</i></a>
+            <a href="/track-order"><span>TRACK</span><strong>رهگیری سفارش</strong><i>←</i></a>
+            <a href="/help"><span>HELP</span><strong>مرکز راهنما</strong><i>←</i></a>
+          </nav>
+
           <section className={styles.orders}>
             {orders.map((order) => {
               const current = flow.indexOf(order.fulfillmentStatus);
@@ -134,6 +141,7 @@ export default async function AccountPage() {
                   <div className={styles.actions}>
                     {order.invoice && <a href={`/invoice/${encodeURIComponent(order.invoice.invoiceNumber)}`}>مشاهده فاکتور</a>}
                     {order.invoice && <a href={`/verify/${encodeURIComponent(order.invoice.verificationCode)}`}>تأیید اصالت فاکتور</a>}
+                    <a href="/track-order">رهگیری با شماره سفارش</a>
                   </div>
                 </article>
               );
