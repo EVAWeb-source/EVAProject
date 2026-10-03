@@ -13,6 +13,7 @@ async function forward(request: Request, context: { params: Promise<{ path: stri
   const allowed = [
     /^products$/,
     /^products\/[^/]+$/,
+    /^products\/[^/]+\/content$/,
     /^units$/,
     /^units\/[^/]+$/,
     /^pricing\/config$/,
