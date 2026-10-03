@@ -63,6 +63,13 @@ enum InvoiceStatus {
   VOID
 }
 
+enum ProductImageRole {
+  MAIN
+  GALLERY
+  ON_BODY
+  DETAIL
+}
+
 model Collection {
   id        String          @id @default(cuid())
   nameFa    String
@@ -75,20 +82,47 @@ model Collection {
 }
 
 model MasterProduct {
-  id           String          @id @default(cuid())
-  nameFa       String
-  slug         String          @unique
-  masterSku    String          @unique
-  purity       Int             @default(18)
-  status       ProductStatus   @default(DRAFT)
-  collectionId String?
-  collection   Collection?     @relation(fields: [collectionId], references: [id])
-  units        PhysicalUnit[]
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id               String          @id @default(cuid())
+  nameFa           String
+  slug             String          @unique
+  masterSku        String          @unique
+  purity           Int             @default(18)
+  status           ProductStatus   @default(DRAFT)
+  collectionId     String?
+  collection       Collection?     @relation(fields: [collectionId], references: [id])
+  shortDescription String?
+  story            String?
+  goldColor        String?
+  styleLabel       String?
+  details          String?
+  dimensions       String?
+  sizeGuide        String?
+  careInstructions String?
+  packagingNote    String?
+  seoTitle         String?
+  seoDescription   String?
+  images           ProductImage[]
+  units            PhysicalUnit[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   @@index([status])
   @@index([collectionId])
+}
+
+model ProductImage {
+  id        String           @id @default(cuid())
+  productId String
+  product   MasterProduct    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  altText   String
+  role      ProductImageRole @default(GALLERY)
+  sortOrder Int              @default(0)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([productId, sortOrder])
+  @@index([productId, role])
 }
 
 model PhysicalUnit {
@@ -145,7 +179,7 @@ model Order {
   mobile            String
   province          String
   city              String
-  address           String
+  address            String
   postalCode        String
   recipientName     String
   shippingCarrier   String?
@@ -261,13 +295,13 @@ model Invoice {
 }
 
 model InvoiceLine {
-  id                    String  @id @default(cuid())
+  id                    String   @id @default(cuid())
   invoiceId             String
-  invoice               Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  invoice               Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
   productNameFa         String
   masterSku             String
   unitSku               String
-  exactWeightGram       Decimal @db.Decimal(8, 3)
+  exactWeightGram       Decimal  @db.Decimal(8, 3)
   purity                 Int
   goldRateTomanPerGram  BigInt?
   goldValueToman        BigInt?
@@ -308,7 +342,6 @@ model CustomerSession {
 
   @@index([mobile, expiresAt])
 }
-
 
 model SmsNotification {
   id          String   @id @default(cuid())
