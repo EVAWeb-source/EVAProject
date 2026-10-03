@@ -38,15 +38,15 @@ export default function HomePage() {
         <nav aria-label="ناوبری اصلی">
           <a href="/shop">فروشگاه</a>
           <a href="/collections">کالکشن‌ها</a>
-          <a href="#gift">هدیه</a>
-          <a href="#lightweight">طلای سبک</a>
+          <a href="/gift">هدیه</a>
+          <a href="/lightweight">طلای سبک</a>
           <a href="#trust">درباره ایوا</a>
         </nav>
         <div className="headerActions" aria-label="ابزارهای فروشگاه">
           <button className="headerAction" aria-label="جستجو">⌕</button>
           <a className="headerAction" href="/account" aria-label="حساب کاربری">حساب</a>
-          <button className="headerAction" aria-label="علاقه‌مندی‌ها">♡</button>
-          <button className="headerAction cartAction" aria-label="سبد خرید">سبد <span>۰</span></button>
+          <a className="headerAction" href="/wishlist" aria-label="علاقه‌مندی‌ها">♡</a>
+          <a className="headerAction cartAction" href="/cart" aria-label="سبد خرید">سبد</a>
         </div>
       </header>
 
@@ -143,13 +143,13 @@ export default function HomePage() {
             <p>قطعه‌های ظریف، مینیمال و مناسب استفاده روزمره.</p>
             <b>مشاهده انتخاب‌ها ←</b>
           </a>
-          <a className="needCard needCard--warm" href="#gift" id="gift">
+          <a className="needCard needCard--warm" href="/gift">
             <span>02</span>
             <h3>برای هدیه</h3>
             <p>با بودجه و مناسبت شروع کن؛ ایوا انتخاب‌ها را برایت محدود می‌کند.</p>
             <b>پیدا کردن هدیه ←</b>
           </a>
-          <a className="needCard needCard--dark" href="#lightweight" id="lightweight">
+          <a className="needCard needCard--dark" href="/lightweight">
             <span>03</span>
             <h3>طلای سبک</h3>
             <p>وزن کمتر، طراحی همچنان دقیق و ماندگار.</p>
@@ -185,7 +185,7 @@ export default function HomePage() {
           <span className="eyebrow">EVA GIFT EXPERIENCE</span>
           <h2>هدیه‌ای که از لحظه باز شدن شروع می‌شود.</h2>
           <p>بسته‌بندی ایوا، پیام هدیه و امکان عدم نمایش قیمت برای سفارشی که قرار است مستقیم به دست عزیزت برسد.</p>
-          <a className="primaryButton" href="#gift">انتخاب هدیه</a>
+          <a className="primaryButton" href="/gift">انتخاب هدیه</a>
         </div>
       </section>
 
@@ -195,8 +195,8 @@ export default function HomePage() {
           <p>بوتیک آنلاین طلای معاصر؛ با طراحی ظریف و خرید شفاف.</p>
         </div>
         <div className="footerLinks">
-          <div><strong>فروشگاه</strong><a href="/shop">همه محصولات</a><a href="/collections">کالکشن‌ها</a><a href="#lightweight">طلای سبک</a></div>
-          <div><strong>راهنما</strong><a href="/track-order">رهگیری سفارش</a><a href="#trust">قیمت‌گذاری</a><a href="#trust">اصالت و فاکتور</a><a href="#gift">راهنمای هدیه</a></div>
+          <div><strong>فروشگاه</strong><a href="/shop">همه محصولات</a><a href="/collections">کالکشن‌ها</a><a href="/lightweight">طلای سبک</a></div>
+          <div><strong>راهنما</strong><a href="/track-order">رهگیری سفارش</a><a href="#trust">قیمت‌گذاری</a><a href="#trust">اصالت و فاکتور</a><a href="/gift">راهنمای هدیه</a></div>
           <div><strong>ایوا</strong><a href="#trust">درباره ما</a><a href="#trust">تماس</a><a href="#trust">سوالات متداول</a></div>
         </div>
         <div className="footerBottom"><span>© EVA 2026</span><span>طراحی‌شده برای یک تجربه آرام و شفاف از خرید طلا.</span></div>
