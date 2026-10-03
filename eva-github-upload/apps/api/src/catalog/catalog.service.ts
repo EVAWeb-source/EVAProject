@@ -18,6 +18,7 @@ export class CatalogService {
       where: { status: 'ACTIVE' },
       include: {
         collection: true,
+        images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
         units: {
           where: { status: 'AVAILABLE' },
           orderBy: { exactWeightGram: 'asc' },
@@ -36,6 +37,7 @@ export class CatalogService {
       where: { slug },
       include: {
         collection: true,
+        images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
         units: {
           where: { status: 'AVAILABLE' },
           orderBy: { exactWeightGram: 'asc' },
@@ -83,6 +85,24 @@ export class CatalogService {
       masterSku: product.masterSku,
       purity: product.purity,
       status: product.status,
+      shortDescription: product.shortDescription,
+      story: product.story,
+      goldColor: product.goldColor,
+      styleLabel: product.styleLabel,
+      details: product.details,
+      dimensions: product.dimensions,
+      sizeGuide: product.sizeGuide,
+      careInstructions: product.careInstructions,
+      packagingNote: product.packagingNote,
+      seoTitle: product.seoTitle,
+      seoDescription: product.seoDescription,
+      images: product.images.map((image: any) => ({
+        id: image.id,
+        url: image.url,
+        altText: image.altText,
+        role: image.role,
+        sortOrder: image.sortOrder,
+      })),
       collection: product.collection
         ? {
             id: product.collection.id,
