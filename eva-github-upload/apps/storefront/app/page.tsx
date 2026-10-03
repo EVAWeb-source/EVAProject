@@ -40,7 +40,8 @@ export default function HomePage() {
           <a href="/collections">کالکشن‌ها</a>
           <a href="/gift">هدیه</a>
           <a href="/lightweight">طلای سبک</a>
-          <a href="#trust">درباره ایوا</a>
+          <a href="/about">درباره ایوا</a>
+          <a href="/help">راهنما</a>
         </nav>
         <div className="headerActions" aria-label="ابزارهای فروشگاه">
           <button className="headerAction" aria-label="جستجو">⌕</button>
@@ -163,6 +164,7 @@ export default function HomePage() {
           <span className="eyebrow">THE EVA PROMISE</span>
           <h2>زیبایی، بدون ابهام.</h2>
           <p>اعتماد برای ما بخشی از تجربه خرید است؛ نه متنی که فقط پایین سایت نوشته شود.</p>
+          <a className="textLink" href="/trust">مشاهده مرکز اعتماد EVA</a>
         </div>
         <div className="trustGrid">
           {trustItems.map(([title, body], index) => (
@@ -195,9 +197,9 @@ export default function HomePage() {
           <p>بوتیک آنلاین طلای معاصر؛ با طراحی ظریف و خرید شفاف.</p>
         </div>
         <div className="footerLinks">
-          <div><strong>فروشگاه</strong><a href="/shop">همه محصولات</a><a href="/collections">کالکشن‌ها</a><a href="/lightweight">طلای سبک</a></div>
-          <div><strong>راهنما</strong><a href="/track-order">رهگیری سفارش</a><a href="#trust">قیمت‌گذاری</a><a href="#trust">اصالت و فاکتور</a><a href="/gift">راهنمای هدیه</a></div>
-          <div><strong>ایوا</strong><a href="#trust">درباره ما</a><a href="#trust">تماس</a><a href="#trust">سوالات متداول</a></div>
+          <div><strong>فروشگاه</strong><a href="/shop">همه محصولات</a><a href="/collections">کالکشن‌ها</a><a href="/gift">هدیه</a><a href="/lightweight">طلای سبک</a></div>
+          <div><strong>راهنما</strong><a href="/track-order">رهگیری سفارش</a><a href="/trust">اعتماد و قیمت‌گذاری</a><a href="/shipping-returns">ارسال و مرجوعی</a><a href="/faq">سوالات متداول</a></div>
+          <div><strong>ایوا</strong><a href="/about">درباره ما</a><a href="/contact">تماس</a><a href="/help">مرکز راهنما</a></div>
         </div>
         <div className="footerBottom"><span>© EVA 2026</span><span>طراحی‌شده برای یک تجربه آرام و شفاف از خرید طلا.</span></div>
       </footer>
