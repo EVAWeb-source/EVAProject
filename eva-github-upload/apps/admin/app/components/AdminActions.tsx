@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import ProductContentPanel from './ProductContentPanel';
 
 type Collection = { id: string; nameFa: string; slug: string; code: string };
 type Product = {
@@ -180,6 +181,8 @@ export default function AdminActions({ collections, products, units }: Props) {
           <small className="formHint">پیشنهاد: Unit جدید ابتدا روی «در انتظار QC» ساخته شود و بعد از کنترل وزن روی «موجود» قرار بگیرد.</small>
         </form>
       </div>
+
+      <ProductContentPanel products={products.map(({id,nameFa,masterSku})=>({id,nameFa,masterSku}))} />
 
       <div className="editorBlock">
         <h3>ویرایش محصولات</h3>
