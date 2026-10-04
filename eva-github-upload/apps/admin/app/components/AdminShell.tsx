@@ -13,6 +13,7 @@ const nav = [
   { href:'/inventory', label:'موجودی و Unitها', icon:'▦' },
   { href:'/orders', label:'سفارش‌ها', icon:'≡' },
   { href:'/fulfillment', label:'آماده‌سازی و ارسال', icon:'→' },
+  { href:'/after-sales', label:'لغو و مرجوعی', icon:'↺' },
   { href:'/invoices', label:'فاکتورها', icon:'▤' },
   { href:'/pricing', label:'قیمت‌گذاری', icon:'₮' },
   { href:'/notifications', label:'پیام‌ها', icon:'◌' },
