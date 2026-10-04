@@ -115,6 +115,51 @@ export type CatalogReadiness = {
   }>;
 };
 
+export type CustomerListData = {
+  generatedAt:string;
+  summary:{total:number;withOrders:number;repeatCustomers:number;totalPaidToman:number};
+  items:Array<{
+    id:string;
+    mobile:string;
+    name:string|null;
+    internalNote:string|null;
+    orderCount:number;
+    paidOrderCount:number;
+    refundedOrderCount:number;
+    totalPaidToman:number;
+    lastOrderAt:string|null;
+    createdAt:string;
+    updatedAt:string;
+  }>;
+};
+
+export type CustomerDetailData = {
+  id:string;
+  mobile:string;
+  name:string|null;
+  internalNote:string|null;
+  createdAt:string;
+  updatedAt:string;
+  summary:{orderCount:number;paidOrderCount:number;refundedOrderCount:number;totalPaidToman:number};
+  orders:Array<{
+    id:string;
+    orderNumber:string;
+    status:string;
+    fulfillmentStatus:string;
+    customerName:string;
+    recipientName:string;
+    city:string;
+    province:string;
+    totalToman:number;
+    createdAt:string;
+    paymentStatus:string|null;
+    invoiceNumber:string|null;
+    invoiceStatus:string|null;
+    item:null|{productNameFa:string;unitSku:string;exactWeightGram:string};
+    afterSales:null|{type:string;status:string;reason:string};
+  }>;
+};
+
 export type OperationsOverview = {
   generatedAt:string;
   metrics:{
@@ -164,6 +209,8 @@ async function adminFetch<T>(path: string): Promise<{ data: T | null; error: str
 export function loadDashboard() { return adminFetch<Dashboard>('dashboard'); }
 export function loadFulfillment() { return adminFetch<FulfillmentData>('fulfillment'); }
 export function loadCatalogReadiness() { return adminFetch<CatalogReadiness>('catalog-readiness'); }
+export function loadCustomers() { return adminFetch<CustomerListData>('customers'); }
+export function loadCustomer(id:string) { return adminFetch<CustomerDetailData>(`customers/${encodeURIComponent(id)}`); }
 export function loadOperations() { return adminFetch<OperationsOverview>('operations'); }
 export function loadAuditLog() { return adminFetch<AuditLogData>('audit'); }
 
