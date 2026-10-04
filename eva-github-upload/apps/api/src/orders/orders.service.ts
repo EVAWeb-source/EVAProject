@@ -53,6 +53,12 @@ export class OrdersService {
       throw new BadRequestException('Reservation does not have a locked price');
     }
 
+    const customer = await this.prisma.customer.upsert({
+      where: { mobile: dto.mobile },
+      create: { mobile: dto.mobile, name: dto.customerName },
+      update: {},
+    });
+
     const orderNumber = `EVA-${new Date().getUTCFullYear()}-${randomInt(100000, 999999)}`;
 
     const order = await this.prisma.$transaction(async (tx) => {
@@ -61,6 +67,7 @@ export class OrdersService {
           orderNumber,
           status: 'PENDING_PAYMENT',
           isDemo: true,
+          customerId: customer.id,
           customerName: dto.customerName,
           mobile: dto.mobile,
           province: dto.province,
