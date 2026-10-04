@@ -11,10 +11,10 @@ export default async function AuditPage(){
   return <AdminShell connected={!error}>
     <AdminPageHeader eyebrow="AUDIT TRAIL" title="تاریخچه فعالیت ادمین" description="ثبت تغییرات مهم عملیاتی برای پیگیری اینکه چه چیزی در فروشگاه تغییر کرده است."/>
     {error||!data?<section className="setupCard"><h1>تاریخچه فعالیت قابل دریافت نیست.</h1><p>{error}</p></section>:<>
-      <section className="summaryCards">
-        <article><span>امروز</span><strong>{faNumber(data.summary.today)}</strong></article>
-        <article><span>۷ روز اخیر</span><strong>{faNumber(data.summary.last7Days)}</strong></article>
-        <article><span>نمایش داده‌شده</span><strong>{faNumber(data.summary.totalShown)}</strong></article>
+      <section className="notificationSummary">
+        <article><span>امروز</span><b>{faNumber(data.summary.today)}</b></article>
+        <article><span>۷ روز اخیر</span><b>{faNumber(data.summary.last7Days)}</b></article>
+        <article><span>نمایش داده‌شده</span><b>{faNumber(data.summary.totalShown)}</b></article>
       </section>
       <AuditTable items={data.items}/>
     </>}
