@@ -1,4 +1,4 @@
-import { Controller, Get, Headers, Param, Patch, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Headers, Param, Patch, Post, UnauthorizedException } from '@nestjs/common';
 import { AdminCatalogReadinessService } from './admin-catalog-readiness.service.js';
 
 @Controller('admin/catalog-readiness')
@@ -9,6 +9,12 @@ export class AdminCatalogReadinessController {
   list(@Headers('x-admin-key') key?: string) {
     this.authorize(key);
     return this.readiness.list();
+  }
+
+  @Post('aghaz/drafts')
+  createAghazDrafts(@Headers('x-admin-key') key?: string) {
+    this.authorize(key);
+    return this.readiness.createAghazDrafts();
   }
 
   @Patch(':id/publish')
