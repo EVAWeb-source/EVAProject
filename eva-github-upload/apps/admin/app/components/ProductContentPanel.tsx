@@ -25,14 +25,16 @@ type ProductContent = {
 
 const blankImage=(sortOrder:number):ImageItem=>({url:'',altText:'',role:sortOrder===0?'MAIN':'GALLERY',sortOrder});
 
-export default function ProductContentPanel({products}:{products:Product[]}){
-  const [productId,setProductId]=useState(products[0]?.id ?? '');
+export default function ProductContentPanel({products,initialProductId,hideSelector=false}:{products:Product[];initialProductId?:string;hideSelector?:boolean}){
+  const [productId,setProductId]=useState(initialProductId ?? products[0]?.id ?? '');
   const [data,setData]=useState<ProductContent|null>(null);
   const [images,setImages]=useState<ImageItem[]>([blankImage(0),blankImage(1),blankImage(2),blankImage(3)]);
   const [loading,setLoading]=useState(false);
   const [saving,setSaving]=useState(false);
   const [message,setMessage]=useState('');
   const [error,setError]=useState('');
+
+  useEffect(()=>{if(initialProductId)setProductId(initialProductId);},[initialProductId]);
 
   useEffect(()=>{
     const selectProduct=(event:Event)=>{
@@ -59,26 +61,16 @@ export default function ProductContentPanel({products}:{products:Product[]}){
         const next=[...existing];
         while(next.length<4)next.push(blankImage(next.length));
         setImages(next.slice(0,12).map((item,index)=>({...item,sortOrder:item.sortOrder ?? index})));
-      }catch(cause){
-        if(!cancelled)setError(cause instanceof Error?cause.message:'دریافت اطلاعات محصول انجام نشد.');
-      }finally{if(!cancelled)setLoading(false);}
+      }catch(cause){if(!cancelled)setError(cause instanceof Error?cause.message:'دریافت اطلاعات محصول انجام نشد.');}
+      finally{if(!cancelled)setLoading(false);}
     }
     void load();
     return()=>{cancelled=true;};
   },[productId]);
 
-  function updateImage(index:number,field:keyof ImageItem,value:string|number){
-    setImages(current=>current.map((item,i)=>i===index?({...item,[field]:value} as ImageItem):item));
-  }
-
-  function addImage(){
-    if(images.length>=12)return;
-    setImages(current=>[...current,blankImage(current.length)]);
-  }
-
-  function removeImage(index:number){
-    setImages(current=>current.filter((_,i)=>i!==index).map((item,i)=>({...item,sortOrder:i})));
-  }
+  function updateImage(index:number,field:keyof ImageItem,value:string|number){setImages(current=>current.map((item,i)=>i===index?({...item,[field]:value} as ImageItem):item));}
+  function addImage(){if(images.length<12)setImages(current=>[...current,blankImage(current.length)]);}
+  function removeImage(index:number){setImages(current=>current.filter((_,i)=>i!==index).map((item,i)=>({...item,sortOrder:i})));}
 
   async function submit(event:FormEvent<HTMLFormElement>){
     event.preventDefault();
@@ -86,25 +78,11 @@ export default function ProductContentPanel({products}:{products:Product[]}){
     setSaving(true);setMessage('');setError('');
     const form=new FormData(event.currentTarget);
     const payload={
-      shortDescription:form.get('shortDescription'),
-      story:form.get('story'),
-      goldColor:form.get('goldColor'),
-      styleLabel:form.get('styleLabel'),
-      details:form.get('details'),
-      dimensions:form.get('dimensions'),
-      sizeGuide:form.get('sizeGuide'),
-      careInstructions:form.get('careInstructions'),
-      packagingNote:form.get('packagingNote'),
-      seoTitle:form.get('seoTitle'),
-      seoDescription:form.get('seoDescription'),
-      images:images.filter(image=>image.url.trim()).map((image,index)=>({
-        url:image.url.trim(),altText:image.altText.trim(),role:image.role,sortOrder:index,
-      })),
+      shortDescription:form.get('shortDescription'),story:form.get('story'),goldColor:form.get('goldColor'),styleLabel:form.get('styleLabel'),details:form.get('details'),dimensions:form.get('dimensions'),sizeGuide:form.get('sizeGuide'),careInstructions:form.get('careInstructions'),packagingNote:form.get('packagingNote'),seoTitle:form.get('seoTitle'),seoDescription:form.get('seoDescription'),
+      images:images.filter(image=>image.url.trim()).map((image,index)=>({url:image.url.trim(),altText:image.altText.trim(),role:image.role,sortOrder:index})),
     };
     try{
-      const response=await fetch('/api/admin/products/'+productId+'/content',{
-        method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(payload),
-      });
+      const response=await fetch('/api/admin/products/'+productId+'/content',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
       const raw=await response.text();
       if(!response.ok)throw new Error(raw||'ذخیره انجام نشد.');
       const updated:ProductContent=JSON.parse(raw);
@@ -121,9 +99,7 @@ export default function ProductContentPanel({products}:{products:Product[]}){
   return <section id="product-content" className={styles.panel}>
     <div className={styles.head}>
       <div><span>PRODUCT CONTENT & MEDIA</span><h3>محتوا و تصاویر محصول</h3></div>
-      <select value={productId} onChange={event=>setProductId(event.target.value)} aria-label="انتخاب محصول">
-        {products.map(product=><option key={product.id} value={product.id}>{product.nameFa} — {product.masterSku}</option>)}
-      </select>
+      {!hideSelector&&<select value={productId} onChange={event=>setProductId(event.target.value)} aria-label="انتخاب محصول">{products.map(product=><option key={product.id} value={product.id}>{product.nameFa} — {product.masterSku}</option>)}</select>}
     </div>
 
     {loading&&<div className={styles.notice}>در حال دریافت محتوای محصول...</div>}
@@ -140,7 +116,7 @@ export default function ProductContentPanel({products}:{products:Product[]}){
       <div className={styles.grid2}><label>مراقبت<textarea name="careInstructions" defaultValue={data.careInstructions??''} rows={3} placeholder="روش نگهداری و مراقبت" /></label><label>بسته‌بندی<textarea name="packagingNote" defaultValue={data.packagingNote??''} rows={3} placeholder="توضیح بسته‌بندی این محصول" /></label></div>
 
       <div className={styles.mediaBlock}>
-        <div className={styles.mediaHead}><div><strong>تصاویر محصول</strong><span>فعلاً URL؛ آپلود فایل در مرحله اتصال Storage اضافه می‌شود.</span></div><button type="button" onClick={addImage} disabled={images.length>=12}>+ تصویر</button></div>
+        <div className={styles.mediaHead}><div><strong>تصاویر محصول</strong><span>فعلاً URL؛ Upload فایل در مرحله Storage اضافه می‌شود.</span></div><button type="button" onClick={addImage} disabled={images.length>=12}>+ تصویر</button></div>
         <div className={styles.imageList}>{images.map((image,index)=><div className={styles.imageRow} key={index}>
           <div className={styles.preview}>{image.url?<img src={image.url} alt="پیش‌نمایش" />:<span>{index+1}</span>}</div>
           <label>URL<input value={image.url} onChange={event=>updateImage(index,'url',event.target.value)} dir="ltr" placeholder="https://..." /></label>
