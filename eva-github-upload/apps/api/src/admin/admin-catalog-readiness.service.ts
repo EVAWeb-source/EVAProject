@@ -1,6 +1,24 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 
+const AGHAZ_BLUEPRINT = [
+  { nameFa: 'طلوع', slug: 'tolou', masterSku: 'EVA-AGH-NEC-TOL-001' },
+  { nameFa: 'افق', slug: 'ofogh', masterSku: 'EVA-AGH-NEC-OFG-002' },
+  { nameFa: 'بامداد', slug: 'bamdad', masterSku: 'EVA-AGH-NEC-BMD-003' },
+  { nameFa: 'مسیر', slug: 'masir', masterSku: 'EVA-AGH-RIN-MAS-004' },
+  { nameFa: 'آستانه', slug: 'astaneh', masterSku: 'EVA-AGH-RIN-AST-005' },
+  { nameFa: 'نقطه', slug: 'noghteh', masterSku: 'EVA-AGH-RIN-NOG-006' },
+  { nameFa: 'راه', slug: 'rah', masterSku: 'EVA-AGH-BRA-RAH-007' },
+  { nameFa: 'گام', slug: 'gam', masterSku: 'EVA-AGH-BRA-GAM-008' },
+  { nameFa: 'جهت', slug: 'jahat', masterSku: 'EVA-AGH-BRA-JHT-009' },
+  { nameFa: 'روشن', slug: 'roshan', masterSku: 'EVA-AGH-EAR-ROS-010' },
+  { nameFa: 'نوا', slug: 'nava', masterSku: 'EVA-AGH-EAR-NVA-011' },
+  { nameFa: 'دم', slug: 'dam', masterSku: 'EVA-AGH-EAR-DAM-012' },
+  { nameFa: 'فردا', slug: 'farda', masterSku: 'EVA-AGH-SET-FRD-013' },
+  { nameFa: 'رویش', slug: 'rooyesh', masterSku: 'EVA-AGH-SET-ROY-014' },
+  { nameFa: 'پروا', slug: 'parva', masterSku: 'EVA-AGH-SET-PRV-015' },
+] as const;
+
 @Injectable()
 export class AdminCatalogReadinessService {
   constructor(private readonly prisma: PrismaService) {}
@@ -29,6 +47,79 @@ export class AdminCatalogReadinessService {
         needsInventory: items.filter((item) => !item.checks.inventory).length,
       },
       items,
+    };
+  }
+
+  async createAghazDrafts() {
+    const collection = await this.prisma.collection.findUnique({ where: { slug: 'aghaz' } });
+    if (!collection) throw new NotFoundException('Aghaz collection not found');
+
+    const masterSkus = AGHAZ_BLUEPRINT.map((item) => item.masterSku);
+    const slugs = AGHAZ_BLUEPRINT.map((item) => item.slug);
+    const existingProducts = await this.prisma.masterProduct.findMany({
+      where: {
+        OR: [
+          { masterSku: { in: [...masterSkus] } },
+          { slug: { in: [...slugs] } },
+        ],
+      },
+      select: { id: true, nameFa: true, slug: true, masterSku: true, status: true },
+    });
+
+    const bySku = new Map(existingProducts.map((product) => [product.masterSku, product]));
+    const bySlug = new Map(existingProducts.map((product) => [product.slug, product]));
+    const created: Array<{ id: string; nameFa: string; slug: string; masterSku: string }> = [];
+    const existing: Array<{ id: string; nameFa: string; slug: string; masterSku: string; status: string }> = [];
+    const conflicts: Array<{ nameFa: string; slug: string; masterSku: string; reason: string }> = [];
+
+    for (const blueprint of AGHAZ_BLUEPRINT) {
+      const skuMatch = bySku.get(blueprint.masterSku);
+      if (skuMatch) {
+        if (skuMatch.slug !== blueprint.slug) {
+          conflicts.push({
+            ...blueprint,
+            reason: `Master SKU already exists with slug ${skuMatch.slug}`,
+          });
+        } else {
+          existing.push(skuMatch);
+        }
+        continue;
+      }
+
+      const slugMatch = bySlug.get(blueprint.slug);
+      if (slugMatch) {
+        conflicts.push({
+          ...blueprint,
+          reason: `Slug is already used by ${slugMatch.masterSku}`,
+        });
+        continue;
+      }
+
+      const product = await this.prisma.masterProduct.create({
+        data: {
+          nameFa: blueprint.nameFa,
+          slug: blueprint.slug,
+          masterSku: blueprint.masterSku,
+          purity: 18,
+          status: 'DRAFT',
+          collectionId: collection.id,
+        },
+        select: { id: true, nameFa: true, slug: true, masterSku: true },
+      });
+      created.push(product);
+      bySku.set(product.masterSku, { ...product, status: 'DRAFT' });
+      bySlug.set(product.slug, { ...product, status: 'DRAFT' });
+    }
+
+    return {
+      collection: { id: collection.id, nameFa: collection.nameFa, slug: collection.slug, code: collection.code },
+      planned: AGHAZ_BLUEPRINT.length,
+      createdCount: created.length,
+      existingCount: existing.length,
+      conflictCount: conflicts.length,
+      created,
+      existing,
+      conflicts,
     };
   }
 
