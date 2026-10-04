@@ -97,7 +97,12 @@ export default function CatalogOnboardingPanel({collections}:{collections:Collec
     finally{setLoading(false);}
   },[]);
 
-  useEffect(()=>{void load();},[load]);
+  useEffect(()=>{
+    void load();
+    const refresh=()=>{void load();};
+    window.addEventListener('eva-admin-catalog-change',refresh);
+    return()=>window.removeEventListener('eva-admin-catalog-change',refresh);
+  },[load]);
 
   const bySku=useMemo(()=>new Map((data?.items??[]).map(item=>[item.masterSku,item])),[data]);
   const blueprintSkus=useMemo(()=>new Set(aghaz.map(item=>item.masterSku)),[]);
