@@ -29,6 +29,7 @@ type Readiness = {
   items:ReadinessItem[];
 };
 type Blueprint = { nameFa:string; slug:string; masterSku:string; category:string };
+type BulkDraftResult = { planned:number; createdCount:number; existingCount:number; conflictCount:number; conflicts:Array<{nameFa:string;reason:string}> };
 
 const aghaz:Blueprint[] = [
   {nameFa:'طلوع',slug:'tolou',masterSku:'EVA-AGH-NEC-TOL-001',category:'گردنبند'},
@@ -77,6 +78,7 @@ export default function CatalogOnboardingPanel({collections}:{collections:Collec
   const [busy,setBusy]=useState('');
   const [message,setMessage]=useState('');
   const [error,setError]=useState('');
+  const [bulkResult,setBulkResult]=useState<BulkDraftResult|null>(null);
   const [view,setView]=useState<'AGHAZ'|'ALL'>('AGHAZ');
 
   const load=useCallback(async()=>{
@@ -97,10 +99,13 @@ export default function CatalogOnboardingPanel({collections}:{collections:Collec
   const blueprintSkus=useMemo(()=>new Set(aghaz.map(item=>item.masterSku)),[]);
   const otherProducts=useMemo(()=>(data?.items??[]).filter(item=>!blueprintSkus.has(item.masterSku)),[data,blueprintSkus]);
   const aghazCollection=collections.find(collection=>collection.slug==='aghaz'||collection.code==='AGH');
+  const aghazCreated=aghaz.filter(item=>bySku.has(item.masterSku)).length;
+  const aghazRemaining=aghaz.length-aghazCreated;
+  const aghazPercent=Math.round((aghazCreated/aghaz.length)*100);
 
   async function createDraft(item:Blueprint){
     if(!aghazCollection){setError('کالکشن «آغاز» در دیتابیس پیدا نشد.');return;}
-    setBusy(item.masterSku);setMessage('');setError('');
+    setBusy(item.masterSku);setMessage('');setError('');setBulkResult(null);
     try{
       await request('products','POST',{nameFa:item.nameFa,slug:item.slug,masterSku:item.masterSku,purity:18,collectionId:aghazCollection.id,status:'DRAFT'});
       setMessage(`پیش‌نویس «${item.nameFa}» ساخته شد.`);
@@ -110,8 +115,27 @@ export default function CatalogOnboardingPanel({collections}:{collections:Collec
     finally{setBusy('');}
   }
 
+  async function createAllDrafts(){
+    if(busy)return;
+    setBusy('AGHAZ_BULK');setMessage('');setError('');setBulkResult(null);
+    try{
+      const result:BulkDraftResult=await request('catalog-readiness/aghaz/drafts','POST');
+      setBulkResult(result);
+      setMessage(result.createdCount>0
+        ? `${fa(result.createdCount)} Draft جدید ساخته شد؛ ${fa(result.existingCount)} محصول از قبل وجود داشت.`
+        : `همه Master Productهای آغاز از قبل در دیتابیس وجود داشتند.`);
+      if(result.conflictCount>0){
+        setError(`${fa(result.conflictCount)} مورد تعارض Slug/SKU پیدا شد؛ هیچ داده موجودی بازنویسی نشد.`);
+      }
+      await load();
+      window.dispatchEvent(new Event('eva-admin-catalog-change'));
+      router.refresh();
+    }catch(cause){setError(cause instanceof Error?cause.message:'ساخت گروهی Draftها انجام نشد.');}
+    finally{setBusy('');}
+  }
+
   async function publish(item:ReadinessItem){
-    setBusy(item.id);setMessage('');setError('');
+    setBusy(item.id);setMessage('');setError('');setBulkResult(null);
     try{
       await request(`catalog-readiness/${item.id}/publish`,'PATCH');
       setMessage(`«${item.nameFa}» با موفقیت منتشر شد و وارد کاتالوگ فروش شد.`);
@@ -144,7 +168,7 @@ export default function CatalogOnboardingPanel({collections}:{collections:Collec
       <div className={styles.progressRow}><strong>{fa(done)} / {fa(total)}</strong><div className={styles.progress}><i style={{width:`${percent}%`}}/></div><span>{fa(percent)}٪</span></div>
       <div className={styles.steps}>{stepLabels.map(([key,label])=><span className={item?.checks[key]?styles.stepDone:styles.step} key={key}>{item?.checks[key]?'✓':'○'} {label}</span>)}</div>
       {item&&<div className={styles.facts}><span>{fa(item.imageCount)} تصویر</span><span>{fa(item.unitCount)} Unit</span><span>{fa(item.availableUnitCount)} موجود</span></div>}
-      <div className={styles.cardActions}>{!item&&blueprint?<button className={styles.create} disabled={busy===blueprint.masterSku} onClick={()=>createDraft(blueprint)}>{busy===blueprint.masterSku?'در حال ساخت...':'ساخت Draft'}</button>:item?nextAction(item):null}</div>
+      <div className={styles.cardActions}>{!item&&blueprint?<button className={styles.create} disabled={Boolean(busy)} onClick={()=>createDraft(blueprint)}>{busy===blueprint.masterSku?'در حال ساخت...':'ساخت Draft'}</button>:item?nextAction(item):null}</div>
     </article>;
   }
 
@@ -152,7 +176,17 @@ export default function CatalogOnboardingPanel({collections}:{collections:Collec
     <div className={styles.head}><div><span>CATALOG ONBOARDING</span><h3>آماده‌سازی محصولات برای فروش</h3><p>هر محصول باید قبل از Publish هویت، محتوا، تصویر اصلی، SEO و حداقل یک Unit موجود داشته باشد.</p></div><div className={styles.tabs}><button className={view==='AGHAZ'?styles.tabActive:''} onClick={()=>setView('AGHAZ')}>کالکشن آغاز</button><button className={view==='ALL'?styles.tabActive:''} onClick={()=>setView('ALL')}>همه محصولات</button></div></div>
     {data&&<div className={styles.summary}><div><span>کل محصولات</span><strong>{fa(data.summary.total)}</strong></div><div><span>فعال</span><strong>{fa(data.summary.active)}</strong></div><div><span>آماده Publish</span><strong>{fa(data.summary.readyToPublish)}</strong></div><div><span>محتوای ناقص</span><strong>{fa(data.summary.needsContent)}</strong></div><div><span>بدون تصویر اصلی</span><strong>{fa(data.summary.needsMedia)}</strong></div><div><span>بدون Unit موجود</span><strong>{fa(data.summary.needsInventory)}</strong></div></div>}
     {message&&<div className={styles.success}>{message}</div>}{error&&<div className={styles.error}>{error}</div>}{loading&&<div className={styles.notice}>در حال بررسی آمادگی کاتالوگ...</div>}
-    {!loading&&view==='AGHAZ'&&<><div className={styles.collectionIntro}><div><strong>آغاز</strong><span>۱۵ Master Product برنامه‌ریزی‌شده</span></div><p>اول Draft را می‌سازیم؛ بعد محتوا، تصاویر، Unit و در پایان Publish. هیچ محصول ناقصی از این مسیر وارد فروشگاه نمی‌شود.</p></div><div className={styles.grid}>{aghaz.map(blueprint=><ReadinessCard key={blueprint.masterSku} blueprint={blueprint} item={bySku.get(blueprint.masterSku)}/>)}</div></>}
+    {bulkResult?.conflicts?.length>0&&<div className={styles.conflicts}><strong>تعارض‌ها</strong>{bulkResult.conflicts.map(item=><span key={item.nameFa}>{item.nameFa}: {item.reason}</span>)}</div>}
+    {!loading&&view==='AGHAZ'&&<>
+      <div className={styles.collectionIntro}>
+        <div className={styles.collectionCopy}><strong>آغاز</strong><span>۱۵ Master Product برنامه‌ریزی‌شده</span><p>اول اسکلت همه محصولات را به‌صورت Draft می‌سازیم؛ بعد محتوا، تصاویر و Unit واقعی هر محصول تکمیل می‌شود.</p></div>
+        <div className={styles.batchActions}>
+          <div className={styles.batchProgress}><div><strong>{fa(aghazCreated)} / {fa(aghaz.length)}</strong><span>Master Product ساخته شده</span></div><div className={styles.batchTrack}><i style={{width:`${aghazPercent}%`}}/></div></div>
+          {aghazRemaining>0?<button onClick={createAllDrafts} disabled={Boolean(busy)}>{busy==='AGHAZ_BULK'?'در حال ساخت Draftها...':`ساخت ${fa(aghazRemaining)} Draft باقی‌مانده`}</button>:<span className={styles.batchDone}>✓ اسکلت کالکشن کامل است</span>}
+        </div>
+      </div>
+      <div className={styles.grid}>{aghaz.map(blueprint=><ReadinessCard key={blueprint.masterSku} blueprint={blueprint} item={bySku.get(blueprint.masterSku)}/>)}</div>
+    </>}
     {!loading&&view==='ALL'&&<>{(data?.items.length??0)>0?<div className={styles.grid}>{data?.items.map(item=><ReadinessCard key={item.id} item={item}/>)}</div>:<div className={styles.notice}>هنوز محصولی در دیتابیس ساخته نشده است.</div>}{otherProducts.length>0&&<p className={styles.hint}>محصولاتی که خارج از Blueprint آغاز ساخته می‌شوند هم خودکار وارد همین Readiness می‌شوند.</p>}</>}
   </section>;
 }
