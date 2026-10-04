@@ -8,6 +8,8 @@ import { AdminProductContentController } from './admin-product-content.controlle
 import { AdminProductContentService } from './admin-product-content.service.js';
 import { AdminCatalogReadinessController } from './admin-catalog-readiness.controller.js';
 import { AdminCatalogReadinessService } from './admin-catalog-readiness.service.js';
+import { AdminAfterSalesController } from './admin-after-sales.controller.js';
+import { AdminAfterSalesService } from './admin-after-sales.service.js';
 
 @Module({
   imports: [PricingModule],
@@ -16,12 +18,14 @@ import { AdminCatalogReadinessService } from './admin-catalog-readiness.service.
     AdminPricingController,
     AdminProductContentController,
     AdminCatalogReadinessController,
+    AdminAfterSalesController,
   ],
   providers: [
     AdminService,
     AdminPricingService,
     AdminProductContentService,
     AdminCatalogReadinessService,
+    AdminAfterSalesService,
   ],
 })
 export class AdminModule {}
