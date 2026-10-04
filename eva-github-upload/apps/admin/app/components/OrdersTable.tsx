@@ -3,13 +3,16 @@
 import { useMemo, useState } from 'react';
 
 type Order={id:string;orderNumber:string;status:string;fulfillmentStatus?:string;customerName:string;mobile:string;city:string;totalToman:number;createdAt:string;item:null|{productNameFa:string;unitSku:string;exactWeightGram:string};payment:null|{provider:string;status:string;referenceId:string|null;paidAt:string|null};invoiceNumber:string|null};
-const labels:Record<string,string>={PAID:'پرداخت‌شده',PENDING_PAYMENT:'در انتظار پرداخت',REFUND_PENDING:'در انتظار بازپرداخت',REFUNDED:'بازپرداخت‌شده',CANCELLED:'لغوشده',SUCCEEDED:'موفق',FAILED:'ناموفق',REFUNDED_PAYMENT:'بازپرداخت‌شده',REGISTERED:'ثبت‌شده',PREPARING:'در آماده‌سازی',READY_TO_SHIP:'آماده ارسال',SHIPPED:'ارسال‌شده',DELIVERED:'تحویل‌شده'};
+const labels:Record<string,string>={PAID:'پرداخت‌شده',PENDING_PAYMENT:'در انتظار پرداخت',REFUND_PENDING:'در انتظار بازپرداخت',REFUNDED:'بازپرداخت‌شده',CANCELLED:'لغوشده',SUCCEEDED:'موفق',FAILED:'ناموفق',REGISTERED:'ثبت‌شده',PREPARING:'در آماده‌سازی',READY_TO_SHIP:'آماده ارسال',SHIPPED:'ارسال‌شده',DELIVERED:'تحویل‌شده'};
 const faDate=(value:string)=>new Intl.DateTimeFormat('fa-IR',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));
+const normalize=(value:string)=>value.replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).toLowerCase();
 
-export default function OrdersTable({orders}:{orders:Order[]}){
+export default function OrdersTable({orders,initialStatus,initialFulfillment}:{orders:Order[];initialStatus?:string;initialFulfillment?:string}){
+  const allowedStatus=new Set(['PAID','PENDING_PAYMENT','REFUND_PENDING','REFUNDED','CANCELLED']);
+  const allowedFulfillment=new Set(['REGISTERED','PREPARING','READY_TO_SHIP','SHIPPED','DELIVERED']);
   const [query,setQuery]=useState('');
-  const [status,setStatus]=useState('ALL');
-  const [fulfillment,setFulfillment]=useState('ALL');
+  const [status,setStatus]=useState(initialStatus&&allowedStatus.has(initialStatus)?initialStatus:'ALL');
+  const [fulfillment,setFulfillment]=useState(initialFulfillment&&allowedFulfillment.has(initialFulfillment)?initialFulfillment:'ALL');
   const [period,setPeriod]=useState('ALL');
   const [sort,setSort]=useState('NEWEST');
 
@@ -17,8 +20,8 @@ export default function OrdersTable({orders}:{orders:Order[]}){
     const now=Date.now();
     const days=period==='7D'?7:period==='30D'?30:null;
     return orders.filter(order=>{
-      const q=query.trim().toLowerCase();
-      const text=[order.orderNumber,order.customerName,order.mobile,order.city,order.item?.productNameFa,order.item?.unitSku].filter(Boolean).join(' ').toLowerCase();
+      const q=normalize(query.trim());
+      const text=normalize([order.orderNumber,order.customerName,order.mobile,order.city,order.item?.productNameFa,order.item?.unitSku].filter(Boolean).join(' '));
       const inPeriod=days===null||new Date(order.createdAt).getTime()>=now-days*24*60*60*1000;
       return (!q||text.includes(q))&&(status==='ALL'||order.status===status)&&(fulfillment==='ALL'||order.fulfillmentStatus===fulfillment)&&inPeriod;
     }).sort((a,b)=>{
