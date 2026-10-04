@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import AdminShell from '../../components/AdminShell';
 import AdminPageHeader from '../../components/AdminPageHeader';
+import OrderAfterSalesActions from '../../components/OrderAfterSalesActions';
 import styles from './order.module.css';
 import { faDate, loadDashboard, loadFulfillment, requireAdmin, statusFa, STOREFRONT_BASE, toman } from '../../lib/admin-data';
 
@@ -15,10 +16,11 @@ export default async function OrderDetailPage({params}:{params:Promise<{id:strin
   const order=data?.orders.find(item=>item.id===id);
   if(!order)notFound();
   const full=fulfillment?.orders.find(item=>item.id===id)??null;
-  const current=flow.indexOf(full?.fulfillmentStatus??order.fulfillmentStatus??'REGISTERED');
+  const fulfillmentStatus=full?.fulfillmentStatus??order.fulfillmentStatus??'REGISTERED';
+  const current=flow.indexOf(fulfillmentStatus);
 
   return <AdminShell connected={!error}>
-    <AdminPageHeader eyebrow="ORDER DETAIL" title={order.orderNumber} description={`${order.customerName} • ${statusFa(order.status)}`} actions={<><a href="/orders">← سفارش‌ها</a>{order.status==='PAID'&&<a href="/fulfillment">Fulfillment</a>}</>}/>
+    <AdminPageHeader eyebrow="ORDER DETAIL" title={order.orderNumber} description={`${order.customerName} • ${statusFa(order.status)}`} actions={<><a href="/orders">← سفارش‌ها</a>{order.status==='PAID'&&<a href="/fulfillment">Fulfillment</a>}<a href="/after-sales">لغو و مرجوعی</a></>}/>
     <div className={styles.grid}>
       <section className={styles.card}><div className={styles.head}><span>ORDER</span><h2>اطلاعات سفارش</h2></div><div className={styles.rows}>
         <div className={styles.row}><span>وضعیت سفارش</span><strong>{statusFa(order.status)}</strong></div>
@@ -47,6 +49,8 @@ export default async function OrderDetailPage({params}:{params:Promise<{id:strin
       </div></section>
 
       <section className={styles.card}><div className={styles.head}><span>INVOICE</span><h2>فاکتور</h2></div><div className={styles.rows}><div className={styles.row}><span>شماره فاکتور</span><strong dir="ltr">{order.invoiceNumber??'—'}</strong></div></div>{order.invoiceNumber&&<div className={styles.actions}><a href={`${STOREFRONT_BASE}/invoice/${encodeURIComponent(order.invoiceNumber)}`} target="_blank" rel="noreferrer">باز کردن فاکتور ↗</a></div>}</section>
+
+      <div className={styles.full}><OrderAfterSalesActions orderId={order.id} orderStatus={order.status} fulfillmentStatus={fulfillmentStatus}/></div>
     </div>
   </AdminShell>;
 }
