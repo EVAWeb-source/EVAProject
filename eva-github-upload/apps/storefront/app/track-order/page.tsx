@@ -17,6 +17,7 @@ const flow=['REGISTERED','PREPARING','READY_TO_SHIP','SHIPPED','DELIVERED'] as c
 const labels:Record<(typeof flow)[number],string>={
   REGISTERED:'ثبت شد',PREPARING:'در حال آماده‌سازی',READY_TO_SHIP:'آماده ارسال',SHIPPED:'ارسال شد',DELIVERED:'تحویل شد'
 };
+const orderLabels:Record<string,string>={PAID:'پرداخت‌شده',PENDING_PAYMENT:'در انتظار پرداخت',CANCELLED:'لغوشده',REFUND_PENDING:'در انتظار بازپرداخت',REFUNDED:'بازپرداخت‌شده'};
 
 function latinDigits(value:string){
   return value.replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
@@ -76,7 +77,7 @@ export default function TrackOrderPage(){
           <div><span>محصول</span><strong>{data.item?.name??'—'}</strong></div>
           <div><span>وزن و عیار</span><strong>{data.item?`${weight(data.item.weightGram)} • ${data.item.purity} عیار`:'—'}</strong></div>
           <div><span>ثبت سفارش</span><strong>{date(data.createdAt)}</strong></div>
-          <div><span>پرداخت</span><strong>{data.status==='PAID'?'تأیید شده':data.status}</strong></div>
+          <div><span>وضعیت سفارش</span><strong>{orderLabels[data.status]??data.status}</strong></div>
         </div>
         <div className={styles.shipping}>
           <div><span>روش ارسال</span><strong>{data.shipping.carrier??'—'}</strong></div>
