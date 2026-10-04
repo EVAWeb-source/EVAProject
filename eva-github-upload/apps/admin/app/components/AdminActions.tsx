@@ -75,6 +75,7 @@ export default function AdminActions({ collections, products, units }: Props) {
   function done(text: string) {
     setMessage(text);
     setBusy(false);
+    window.dispatchEvent(new Event('eva-admin-catalog-change'));
     router.refresh();
   }
   function failed(err: unknown) {
