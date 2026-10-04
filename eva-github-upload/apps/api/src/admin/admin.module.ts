@@ -12,6 +12,10 @@ import { AdminAfterSalesController } from './admin-after-sales.controller.js';
 import { AdminAfterSalesService } from './admin-after-sales.service.js';
 import { AdminCustomersController } from './admin-customers.controller.js';
 import { AdminCustomersService } from './admin-customers.service.js';
+import { AdminAuditController } from './admin-audit.controller.js';
+import { AdminAuditService } from './admin-audit.service.js';
+import { AdminOperationsController } from './admin-operations.controller.js';
+import { AdminOperationsService } from './admin-operations.service.js';
 
 @Module({
   imports: [PricingModule],
@@ -22,6 +26,8 @@ import { AdminCustomersService } from './admin-customers.service.js';
     AdminCatalogReadinessController,
     AdminAfterSalesController,
     AdminCustomersController,
+    AdminAuditController,
+    AdminOperationsController,
   ],
   providers: [
     AdminService,
@@ -30,6 +36,8 @@ import { AdminCustomersService } from './admin-customers.service.js';
     AdminCatalogReadinessService,
     AdminAfterSalesService,
     AdminCustomersService,
+    AdminAuditService,
+    AdminOperationsService,
   ],
 })
 export class AdminModule {}
