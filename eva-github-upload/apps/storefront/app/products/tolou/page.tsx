@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import ProductMediaGallery from '../../components/ProductMediaGallery';
 import ProductNotes from '../../components/ProductNotes';
+import ProductStructuredData from '../../components/ProductStructuredData';
+import { publicMetadata } from '../../lib/seo';
 import ProductPurchase from './ProductPurchase';
 import styles from './product.module.css';
 
@@ -13,12 +15,14 @@ type ApiProduct={nameFa:string;slug:string;masterSku:string;purity:number;shortD
 
 async function getTolou():Promise<ApiProduct>{const apiBase=process.env.API_URL??'https://eva-api-production-c864.up.railway.app';const response=await fetch(`${apiBase}/api/v1/products/tolou`,{cache:'no-store'});if(!response.ok)throw new Error(`Failed to load Tolou from EVA API: ${response.status}`);return response.json();}
 function toPersianWeight(value:string){return `${new Intl.NumberFormat('fa-IR',{minimumFractionDigits:2,maximumFractionDigits:3}).format(Number(value))} گرم`;}
-export async function generateMetadata():Promise<Metadata>{const product=await getTolou();return {title:product.seoTitle||`${product.nameFa} | EVA`,description:product.seoDescription||product.shortDescription||'گردنبند طلوع از کالکشن آغاز EVA.'};}
+export async function generateMetadata():Promise<Metadata>{const product=await getTolou();const main=product.images?.find(image=>image.role==='MAIN')?.url;return publicMetadata({title:product.seoTitle||`${product.nameFa} | EVA`,description:product.seoDescription||product.shortDescription||'گردنبند طلوع از کالکشن آغاز EVA.',path:'/products/tolou',images:main?[main]:[]});}
 
 export default async function TolouPage(){
   const product=await getTolou();const collectionName=product.collection?.nameFa??'آغاز';const availableUnits=product.units.filter(unit=>unit.status==='AVAILABLE').map(unit=>({id:unit.id,unitSku:unit.unitSku,weight:toPersianWeight(unit.exactWeightGram),price:Number(unit.currentPriceToman),pricing:unit.pricing}));
   const notes=[product.details&&['جزئیات',product.details],product.dimensions&&['ابعاد / طول',product.dimensions],product.sizeGuide&&['راهنمای سایز',product.sizeGuide],product.careInstructions&&['مراقبت',product.careInstructions],product.packagingNote&&['بسته‌بندی',product.packagingNote]].filter(Boolean) as [string,string][];
+  const structuredDescription=product.seoDescription||product.shortDescription||product.story;
   return <main className={styles.page}>
+    <ProductStructuredData name={product.nameFa} slug={product.slug} sku={product.masterSku} purity={product.purity} category="گردنبند" description={structuredDescription} images={product.images??[]} units={product.units}/>
     <div className={styles.announcement}>ارسال امن • فاکتور معتبر • قیمت شفاف</div><header className={styles.header}><a className={styles.brand} href="/">EVA</a><nav><a href="/shop">فروشگاه</a><a href="/collections">کالکشن‌ها</a><a href="/gift">هدیه</a><a href="/lightweight">طلای سبک</a></nav><div className={styles.actions}><a href="/wishlist">♡</a><a href="/account">حساب</a><a href="/cart" className={styles.cart}>سبد</a></div></header>
     <div className={styles.breadcrumb}><a href="/">خانه</a><span>/</span><a href="/shop">فروشگاه</a><span>/</span><span>{product.nameFa}</span></div>
     <section className={styles.productHero}><ProductMediaGallery images={product.images??[]} name={product.nameFa}/><ProductPurchase product={{name:product.nameFa,slug:product.slug,masterSku:product.masterSku,collection:collectionName,collectionSlug:product.collection?.slug??'aghaz',category:'گردنبند',purity:product.purity,shortDescription:product.shortDescription??undefined}} units={availableUnits}/></section>
