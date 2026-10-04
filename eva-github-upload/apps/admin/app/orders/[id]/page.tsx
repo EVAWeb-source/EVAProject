@@ -3,7 +3,7 @@ import AdminShell from '../../components/AdminShell';
 import AdminPageHeader from '../../components/AdminPageHeader';
 import OrderAfterSalesActions from '../../components/OrderAfterSalesActions';
 import styles from './order.module.css';
-import { faDate, loadDashboard, loadFulfillment, requireAdmin, statusFa, STOREFRONT_BASE, toman } from '../../lib/admin-data';
+import { faDate, loadCustomers, loadDashboard, loadFulfillment, requireAdmin, statusFa, STOREFRONT_BASE, toman } from '../../lib/admin-data';
 
 export const dynamic='force-dynamic';
 const flow=['REGISTERED','PREPARING','READY_TO_SHIP','SHIPPED','DELIVERED'];
@@ -12,15 +12,16 @@ const flowLabels:Record<string,string>={REGISTERED:'ثبت شد',PREPARING:'در
 export default async function OrderDetailPage({params}:{params:Promise<{id:string}>}){
   await requireAdmin();
   const {id}=await params;
-  const [{data,error},{data:fulfillment}]=await Promise.all([loadDashboard(),loadFulfillment()]);
+  const [{data,error},{data:fulfillment},{data:customers}]=await Promise.all([loadDashboard(),loadFulfillment(),loadCustomers()]);
   const order=data?.orders.find(item=>item.id===id);
   if(!order)notFound();
   const full=fulfillment?.orders.find(item=>item.id===id)??null;
+  const customer=customers?.items.find(item=>item.mobile===order.mobile)??null;
   const fulfillmentStatus=full?.fulfillmentStatus??order.fulfillmentStatus??'REGISTERED';
   const current=flow.indexOf(fulfillmentStatus);
 
   return <AdminShell connected={!error}>
-    <AdminPageHeader eyebrow="ORDER DETAIL" title={order.orderNumber} description={`${order.customerName} • ${statusFa(order.status)}`} actions={<><a href="/orders">← سفارش‌ها</a>{order.status==='PAID'&&<a href="/fulfillment">Fulfillment</a>}<a href="/after-sales">لغو و مرجوعی</a></>}/>
+    <AdminPageHeader eyebrow="ORDER DETAIL" title={order.orderNumber} description={`${order.customerName} • ${statusFa(order.status)}`} actions={<><a href="/orders">← سفارش‌ها</a>{customer&&<a href={`/customers/${customer.id}`}>پروفایل مشتری</a>}{order.status==='PAID'&&<a href="/fulfillment">Fulfillment</a>}<a href="/after-sales">لغو و مرجوعی</a></>}/>
     <div className={styles.grid}>
       <section className={styles.card}><div className={styles.head}><span>ORDER</span><h2>اطلاعات سفارش</h2></div><div className={styles.rows}>
         <div className={styles.row}><span>وضعیت سفارش</span><strong>{statusFa(order.status)}</strong></div>
@@ -32,7 +33,7 @@ export default async function OrderDetailPage({params}:{params:Promise<{id:strin
       </div></section>
 
       <section className={styles.card}><div className={styles.head}><span>CUSTOMER</span><h2>مشتری و ارسال</h2></div><div className={styles.rows}>
-        <div className={styles.row}><span>مشتری</span><strong>{order.customerName}</strong></div>
+        <div className={styles.row}><span>مشتری</span><strong>{customer?<a href={`/customers/${customer.id}`}>{customer.name||order.customerName}</a>:order.customerName}</strong></div>
         <div className={styles.row}><span>موبایل</span><strong dir="ltr">{order.mobile}</strong></div>
         <div className={styles.row}><span>گیرنده</span><strong>{full?.recipientName??'—'}</strong></div>
         <div className={styles.row}><span>شهر</span><strong>{full?`${full.province} / ${full.city}`:order.city}</strong></div>
