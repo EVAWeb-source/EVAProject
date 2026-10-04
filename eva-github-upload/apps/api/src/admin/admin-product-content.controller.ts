@@ -1,9 +1,13 @@
 import { Body, Controller, Get, Headers, Param, Patch, UnauthorizedException } from '@nestjs/common';
 import { AdminProductContentService } from './admin-product-content.service.js';
+import { AdminAuditService } from './admin-audit.service.js';
 
 @Controller('admin/products')
 export class AdminProductContentController {
-  constructor(private readonly content: AdminProductContentService) {}
+  constructor(
+    private readonly content: AdminProductContentService,
+    private readonly audit: AdminAuditService,
+  ) {}
 
   @Get(':id/content')
   get(
@@ -15,13 +19,21 @@ export class AdminProductContentController {
   }
 
   @Patch(':id/content')
-  update(
+  async update(
     @Headers('x-admin-key') key: string | undefined,
     @Param('id') id: string,
     @Body() body: Record<string, unknown>,
   ) {
     this.authorize(key);
-    return this.content.update(id, body);
+    const result = await this.content.update(id, body);
+    await this.audit.record({
+      action: 'PRODUCT_CONTENT_UPDATED',
+      entityType: 'PRODUCT',
+      entityId: result.id,
+      summary: `${result.nameFa}؛ محتوا/Media بروزرسانی شد`,
+      metadata: { fields: Object.keys(body), imageCount: result.images?.length ?? 0 },
+    });
+    return result;
   }
 
   private authorize(key?: string) {
