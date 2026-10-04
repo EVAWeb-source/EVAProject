@@ -9,6 +9,7 @@ const nav = [
   { href:'/', label:'داشبورد', icon:'⌂', exact:true },
   { href:'/catalog', label:'کاتالوگ', icon:'◇' },
   { href:'/catalog/onboarding', label:'آماده‌سازی محصولات', icon:'✓' },
+  { href:'/catalog/content', label:'محتوای گروهی', icon:'✎' },
   { href:'/inventory', label:'موجودی و Unitها', icon:'▦' },
   { href:'/orders', label:'سفارش‌ها', icon:'≡' },
   { href:'/fulfillment', label:'آماده‌سازی و ارسال', icon:'→' },
