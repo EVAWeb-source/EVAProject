@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import './order-details.css';
+import './admin-v2.css';
 
 export const metadata: Metadata = { title: 'EVA Admin' };
 
