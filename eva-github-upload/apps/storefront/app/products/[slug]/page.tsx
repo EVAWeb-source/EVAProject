@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ProductMediaGallery from '../../components/ProductMediaGallery';
 import ProductNotes from '../../components/ProductNotes';
+import ProductStructuredData from '../../components/ProductStructuredData';
+import { publicMetadata } from '../../lib/seo';
 import ProductPurchase from '../tolou/ProductPurchase';
 import styles from '../tolou/product.module.css';
 
@@ -17,14 +19,27 @@ function category(sku:string){return categoryLabels[sku.split('-')[2]??'']??'ق�
 function faWeight(value:string){return new Intl.NumberFormat('fa-IR',{minimumFractionDigits:2,maximumFractionDigits:3}).format(Number(value))+' گرم';}
 async function getProduct(slug:string):Promise<ApiProduct|null>{const apiBase=process.env.API_URL??'https://eva-api-production-c864.up.railway.app';const response=await fetch(apiBase+'/api/v1/products/'+encodeURIComponent(slug),{cache:'no-store'});if(response.status===404)return null;if(!response.ok)throw new Error('Failed to load product: '+response.status);return response.json();}
 
-export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{const {slug}=await params;const product=await getProduct(slug);if(!product)return {};return {title:product.seoTitle||`${product.nameFa} | EVA`,description:product.seoDescription||product.shortDescription||`خرید ${product.nameFa} از EVA با وزن و قیمت شفاف.`};}
+export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
+  const {slug}=await params;
+  const product=await getProduct(slug);
+  if(!product)return {robots:{index:false,follow:false}};
+  const main=product.images?.find(image=>image.role==='MAIN')?.url;
+  return publicMetadata({
+    title:product.seoTitle||`${product.nameFa} | EVA`,
+    description:product.seoDescription||product.shortDescription||`خرید ${product.nameFa} از EVA با وزن و قیمت شفاف.`,
+    path:`/products/${product.slug}`,
+    images:main?[main]:[],
+  });
+}
 
 export default async function ProductPage({params}:{params:Promise<{slug:string}>}){
   const {slug}=await params;const product=await getProduct(slug);if(!product)notFound();
   const collectionName=product.collection?.nameFa??'EVA';const availableUnits=product.units.filter(u=>u.status==='AVAILABLE').map(u=>({id:u.id,unitSku:u.unitSku,weight:faWeight(u.exactWeightGram),price:Number(u.currentPriceToman),pricing:u.pricing}));const cat=category(product.masterSku);
   const notes=[product.details&&['جزئیات',product.details],product.dimensions&&['ابعاد / طول',product.dimensions],product.sizeGuide&&['راهنمای سایز',product.sizeGuide],product.careInstructions&&['مراقبت',product.careInstructions],product.packagingNote&&['بسته‌بندی',product.packagingNote]].filter(Boolean) as [string,string][];
+  const structuredDescription=product.seoDescription||product.shortDescription||product.story;
 
   return <main className={styles.page}>
+    <ProductStructuredData name={product.nameFa} slug={product.slug} sku={product.masterSku} purity={product.purity} category={cat} description={structuredDescription} images={product.images??[]} units={product.units}/>
     <div className={styles.announcement}>ارسال امن • فاکتور معتبر • قیمت شفاف</div><header className={styles.header}><a className={styles.brand} href="/">EVA</a><nav><a href="/shop">فروشگاه</a><a href="/collections">کالکشن‌ها</a><a href="/gift">هدیه</a><a href="/lightweight">طلای سبک</a></nav><div className={styles.actions}><a href="/wishlist">♡</a><a href="/account">حساب</a><a href="/cart" className={styles.cart}>سبد</a></div></header>
     <div className={styles.breadcrumb}><a href="/">خانه</a><span>/</span><a href="/shop">فروشگاه</a><span>/</span><span>{product.nameFa}</span></div>
     <section className={styles.productHero}><ProductMediaGallery images={product.images??[]} name={product.nameFa}/><ProductPurchase product={{name:product.nameFa,slug:product.slug,masterSku:product.masterSku,collection:collectionName,collectionSlug:product.collection?.slug??'eva',category:cat,purity:product.purity,shortDescription:product.shortDescription??undefined}} units={availableUnits}/></section>
