@@ -1,6 +1,8 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import FilteredCatalog from '../../components/FilteredCatalog';
 import type { CatalogProduct } from '../../components/CatalogGrid';
+import { publicMetadata } from '../../lib/seo';
 import styles from './category.module.css';
 
 export const dynamic='force-dynamic';
@@ -23,6 +25,13 @@ async function getProducts():Promise<CatalogProduct[]>{
   return response.json();
 }
 
+export async function generateMetadata({params}:{params:Promise<{category:string}>}):Promise<Metadata>{
+  const {category}=await params;
+  const meta=categories[category];
+  if(!meta)return {robots:{index:false,follow:false}};
+  return publicMetadata({title:`${meta.name} طلا | EVA`,description:meta.intro,path:`/shop/${category}`});
+}
+
 export default async function CategoryPage({params}:{params:Promise<{category:string}>}){
   const {category}=await params;
   const meta=categories[category];
@@ -34,7 +43,7 @@ export default async function CategoryPage({params}:{params:Promise<{category:st
     <div className={styles.announcement}>ارسال امن • فاکتور معتبر • قیمت شفاف</div>
     <header className={styles.header}>
       <a className={styles.brand} href="/">EVA</a>
-      <nav><a href="/shop">فروشگاه</a><a href="/collections">کالکشن‌ها</a><a href="/#gift">هدیه</a><a href="/#lightweight">طلای سبک</a></nav>
+      <nav><a href="/shop">فروشگاه</a><a href="/collections">کالکشن‌ها</a><a href="/gift">هدیه</a><a href="/lightweight">طلای سبک</a></nav>
       <div className={styles.actions}><a href="/wishlist">♡</a><a href="/account">حساب</a><a className={styles.cart} href="/cart">سبد</a></div>
     </header>
 
