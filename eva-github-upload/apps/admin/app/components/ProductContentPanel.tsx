@@ -113,6 +113,7 @@ export default function ProductContentPanel({products}:{products:Product[]}){
       while(next.length<4)next.push(blankImage(next.length));
       setImages(next);
       setMessage('محتوا و تصاویر محصول ذخیره شد.');
+      window.dispatchEvent(new Event('eva-admin-catalog-change'));
     }catch(cause){setError(cause instanceof Error?cause.message:'ذخیره انجام نشد.');}
     finally{setSaving(false);}
   }
