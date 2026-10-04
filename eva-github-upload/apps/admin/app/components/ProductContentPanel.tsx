@@ -35,6 +35,16 @@ export default function ProductContentPanel({products}:{products:Product[]}){
   const [error,setError]=useState('');
 
   useEffect(()=>{
+    const selectProduct=(event:Event)=>{
+      const custom=event as CustomEvent<{productId?:string}>;
+      const next=custom.detail?.productId;
+      if(next&&products.some(product=>product.id===next))setProductId(next);
+    };
+    window.addEventListener('eva-admin-select-product',selectProduct);
+    return()=>window.removeEventListener('eva-admin-select-product',selectProduct);
+  },[products]);
+
+  useEffect(()=>{
     if(!productId){setData(null);return;}
     let cancelled=false;
     async function load(){
