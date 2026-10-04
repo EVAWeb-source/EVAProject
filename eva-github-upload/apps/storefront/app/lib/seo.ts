@@ -5,6 +5,10 @@ export const SITE_NAME_FA = 'ایوا';
 export const DEFAULT_DESCRIPTION = 'بوتیک آنلاین طلای مدرن EVA؛ طراحی ظریف، وزن و قیمت شفاف و خرید قابل‌پیگیری.';
 const FALLBACK_SITE_URL = 'https://evaproject-production.up.railway.app';
 
+export function indexingEnabled() {
+  return process.env.SEO_INDEXING_ENABLED === 'true' || process.env.NEXT_PUBLIC_SEO_INDEXING_ENABLED === 'true';
+}
+
 export function siteUrl() {
   const raw = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL ?? FALLBACK_SITE_URL;
   try {
@@ -29,12 +33,17 @@ export function publicMetadata(input: {
   const description = input.description?.trim() || DEFAULT_DESCRIPTION;
   const canonical = absoluteUrl(input.path);
   const images = (input.images ?? []).filter(Boolean).map(absoluteUrl);
+  const index = indexingEnabled();
 
   return {
     title: input.title,
     description,
     alternates: { canonical },
-    robots: { index: true, follow: true },
+    robots: {
+      index,
+      follow: index,
+      googleBot: { index, follow: index },
+    },
     openGraph: {
       type: 'website',
       locale: 'fa_IR',
