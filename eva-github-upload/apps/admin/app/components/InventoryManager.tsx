@@ -8,6 +8,7 @@ type Unit={id:string;productId:string;unitSku:string;productNameFa:string;master
 
 const statuses=[['QC_PENDING','در انتظار QC'],['AVAILABLE','موجود'],['QUALITY_HOLD','توقف QC'],['DAMAGED','آسیب‌دیده'],['UNAVAILABLE','غیرقابل فروش']];
 const labels:Record<string,string>={QC_PENDING:'در انتظار QC',AVAILABLE:'موجود',RESERVED:'رزرو',SOLD:'فروخته‌شده',RETURNED:'مرجوعی',QUALITY_HOLD:'توقف QC',DAMAGED:'آسیب‌دیده',UNAVAILABLE:'غیرقابل فروش'};
+const attentionStatuses=new Set(['QC_PENDING','QUALITY_HOLD','RETURNED','DAMAGED']);
 
 async function request(path:string,method:'POST'|'PATCH',payload:Record<string,unknown>){
   const response=await fetch('/api/admin/'+path,{method,headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
@@ -21,6 +22,8 @@ export default function InventoryManager({products,units,initialProductId}:{prod
   const [query,setQuery]=useState('');
   const [status,setStatus]=useState('ALL');
   const [product,setProduct]=useState(initialProductId??'ALL');
+  const [view,setView]=useState('ALL');
+  const [sort,setSort]=useState('SKU');
   const [busy,setBusy]=useState('');
   const [message,setMessage]=useState('');
   const [error,setError]=useState('');
@@ -28,8 +31,16 @@ export default function InventoryManager({products,units,initialProductId}:{prod
   const result=useMemo(()=>units.filter(unit=>{
     const q=query.trim().toLowerCase();
     const text=[unit.unitSku,unit.productNameFa,unit.masterSku].join(' ').toLowerCase();
-    return (!q||text.includes(q))&&(status==='ALL'||unit.status===status)&&(product==='ALL'||unit.productId===product);
-  }),[units,query,status,product]);
+    const attention=view!=='ATTENTION'||attentionStatuses.has(unit.status);
+    return (!q||text.includes(q))&&(status==='ALL'||unit.status===status)&&(product==='ALL'||unit.productId===product)&&attention;
+  }).sort((a,b)=>{
+    if(sort==='WEIGHT_ASC')return Number(a.exactWeightGram)-Number(b.exactWeightGram);
+    if(sort==='WEIGHT_DESC')return Number(b.exactWeightGram)-Number(a.exactWeightGram);
+    if(sort==='STATUS')return a.status.localeCompare(b.status);
+    return a.unitSku.localeCompare(b.unitSku);
+  }),[units,query,status,product,view,sort]);
+
+  const attentionCount=useMemo(()=>units.filter(unit=>attentionStatuses.has(unit.status)).length,[units]);
 
   async function createUnit(event:FormEvent<HTMLFormElement>){
     event.preventDefault();setBusy('create');setMessage('');setError('');
@@ -65,6 +76,8 @@ export default function InventoryManager({products,units,initialProductId}:{prod
         <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="جستجو در Unit SKU یا محصول"/>
         <select value={product} onChange={e=>setProduct(e.target.value)}><option value="ALL">همه محصولات</option>{products.map(p=><option key={p.id} value={p.id}>{p.nameFa}</option>)}</select>
         <select value={status} onChange={e=>setStatus(e.target.value)}><option value="ALL">همه وضعیت‌ها</option>{Object.entries(labels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select>
+        <select value={view} onChange={e=>setView(e.target.value)}><option value="ALL">همه Unitها</option><option value="ATTENTION">نیازمند توجه ({new Intl.NumberFormat('fa-IR').format(attentionCount)})</option></select>
+        <select value={sort} onChange={e=>setSort(e.target.value)}><option value="SKU">مرتب‌سازی SKU</option><option value="WEIGHT_ASC">وزن کم به زیاد</option><option value="WEIGHT_DESC">وزن زیاد به کم</option><option value="STATUS">وضعیت</option></select>
         <span>{new Intl.NumberFormat('fa-IR').format(result.length)} Unit</span>
       </div>
       <div className="v2EditorList">{result.map(unit=>{
