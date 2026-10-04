@@ -56,6 +56,7 @@ export type Dashboard = {
     orderNumber: string;
     status: string;
     fulfillmentStatus?: string;
+    customerId: string | null;
     customerName: string;
     mobile: string;
     city: string;
@@ -115,6 +116,51 @@ export type CatalogReadiness = {
   }>;
 };
 
+export type CustomersData = {
+  generatedAt: string;
+  summary: { total:number; withOrders:number; repeatCustomers:number; totalPaidToman:number };
+  items: Array<{
+    id:string;
+    mobile:string;
+    name:string|null;
+    internalNote:string|null;
+    orderCount:number;
+    paidOrderCount:number;
+    refundedOrderCount:number;
+    totalPaidToman:number;
+    lastOrderAt:string|null;
+    createdAt:string;
+    updatedAt:string;
+  }>;
+};
+
+export type CustomerDetail = {
+  id:string;
+  mobile:string;
+  name:string|null;
+  internalNote:string|null;
+  createdAt:string;
+  updatedAt:string;
+  summary:{ orderCount:number; paidOrderCount:number; refundedOrderCount:number; totalPaidToman:number };
+  orders:Array<{
+    id:string;
+    orderNumber:string;
+    status:string;
+    fulfillmentStatus:string;
+    customerName:string;
+    recipientName:string;
+    city:string;
+    province:string;
+    totalToman:number;
+    createdAt:string;
+    paymentStatus:string|null;
+    invoiceNumber:string|null;
+    invoiceStatus:string|null;
+    item:null|{ productNameFa:string; unitSku:string; exactWeightGram:string };
+    afterSales:null|{ type:string; status:string; reason:string };
+  }>;
+};
+
 export async function requireAdmin() {
   const expected = sessionValue();
   const store = await cookies();
@@ -139,6 +185,8 @@ async function adminFetch<T>(path: string): Promise<{ data: T | null; error: str
 export function loadDashboard() { return adminFetch<Dashboard>('dashboard'); }
 export function loadFulfillment() { return adminFetch<FulfillmentData>('fulfillment'); }
 export function loadCatalogReadiness() { return adminFetch<CatalogReadiness>('catalog-readiness'); }
+export function loadCustomers() { return adminFetch<CustomersData>('customers'); }
+export function loadCustomer(id:string) { return adminFetch<CustomerDetail>(`customers/${encodeURIComponent(id)}`); }
 
 export function faNumber(value: number | string) {
   return new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 3 }).format(Number(value));
