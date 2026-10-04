@@ -9,10 +9,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AdminService } from './admin.service.js';
+import { AdminAuditService } from './admin-audit.service.js';
 
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly admin: AdminService) {}
+  constructor(
+    private readonly admin: AdminService,
+    private readonly audit: AdminAuditService,
+  ) {}
 
   @Get('dashboard')
   dashboard(@Headers('x-admin-key') key?: string) {
@@ -20,7 +24,6 @@ export class AdminController {
     return this.admin.dashboard();
   }
 
-  // Fulfillment operations are exposed only through the authenticated admin API.
   @Get('fulfillment')
   fulfillment(@Headers('x-admin-key') key?: string) {
     this.authorize(key);
@@ -35,9 +38,18 @@ export class AdminController {
   ) {
     this.authorize(key);
     const updated = await this.admin.updateFulfillment(id, body);
+    await this.audit.record({
+      action: 'FULFILLMENT_UPDATED',
+      entityType: 'ORDER',
+      entityId: updated.id,
+      summary: `${updated.orderNumber} → ${updated.fulfillmentStatus}`,
+      metadata: {
+        fulfillmentStatus: updated.fulfillmentStatus,
+        shippingCarrier: updated.shippingCarrier,
+        trackingCode: updated.trackingCode,
+      },
+    });
 
-    // Return a deliberately JSON-safe payload. The Order model contains BigInt
-    // monetary fields, which must never be serialized directly by Nest/JSON.
     return {
       id: updated.id,
       orderNumber: updated.orderNumber,
@@ -67,41 +79,61 @@ export class AdminController {
   }
 
   @Post('products')
-  createProduct(
+  async createProduct(
     @Headers('x-admin-key') key: string | undefined,
     @Body() body: Record<string, unknown>,
   ) {
     this.authorize(key);
-    return this.admin.createProduct(body);
+    const product = await this.admin.createProduct(body);
+    await this.audit.record({
+      action: 'PRODUCT_CREATED', entityType: 'PRODUCT', entityId: product.id,
+      summary: `${product.nameFa} ساخته شد`, metadata: { masterSku: product.masterSku, status: product.status },
+    });
+    return product;
   }
 
   @Patch('products/:id')
-  updateProduct(
+  async updateProduct(
     @Headers('x-admin-key') key: string | undefined,
     @Param('id') id: string,
     @Body() body: Record<string, unknown>,
   ) {
     this.authorize(key);
-    return this.admin.updateProduct(id, body);
+    const product = await this.admin.updateProduct(id, body);
+    await this.audit.record({
+      action: 'PRODUCT_UPDATED', entityType: 'PRODUCT', entityId: product.id,
+      summary: `${product.nameFa} بروزرسانی شد`, metadata: { fields: Object.keys(body), status: product.status },
+    });
+    return product;
   }
 
   @Post('units')
-  createUnit(
+  async createUnit(
     @Headers('x-admin-key') key: string | undefined,
     @Body() body: Record<string, unknown>,
   ) {
     this.authorize(key);
-    return this.admin.createUnit(body);
+    const unit = await this.admin.createUnit(body);
+    await this.audit.record({
+      action: 'UNIT_CREATED', entityType: 'UNIT', entityId: unit.id,
+      summary: `${unit.unitSku} ساخته شد`, metadata: { productId: unit.productId, status: unit.status, weight: String(unit.exactWeightGram) },
+    });
+    return unit;
   }
 
   @Patch('units/:id')
-  updateUnit(
+  async updateUnit(
     @Headers('x-admin-key') key: string | undefined,
     @Param('id') id: string,
     @Body() body: Record<string, unknown>,
   ) {
     this.authorize(key);
-    return this.admin.updateUnit(id, body);
+    const unit = await this.admin.updateUnit(id, body);
+    await this.audit.record({
+      action: 'UNIT_UPDATED', entityType: 'UNIT', entityId: unit.id,
+      summary: `${unit.unitSku} بروزرسانی شد`, metadata: { fields: Object.keys(body), status: unit.status, weight: String(unit.exactWeightGram) },
+    });
+    return unit;
   }
 
   private authorize(key?: string) {
