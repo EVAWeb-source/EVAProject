@@ -1,22 +1,19 @@
 import type { MetadataRoute } from 'next';
-import { absoluteUrl, siteUrl } from './lib/seo';
+import { absoluteUrl, indexingEnabled, siteUrl } from './lib/seo';
 
 export default function robots(): MetadataRoute.Robots {
+  if (!indexingEnabled()) {
+    return {
+      rules: { userAgent: '*', disallow: '/' },
+      host: siteUrl(),
+    };
+  }
+
   return {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: [
-        '/api/',
-        '/account',
-        '/cart',
-        '/checkout',
-        '/invoice/',
-        '/payment/',
-        '/track-order',
-        '/verify/',
-        '/wishlist',
-      ],
+      disallow: ['/api/'],
     },
     sitemap: absoluteUrl('/sitemap.xml'),
     host: siteUrl(),
