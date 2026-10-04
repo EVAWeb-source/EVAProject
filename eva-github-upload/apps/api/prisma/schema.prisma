@@ -187,12 +187,26 @@ model PricingRule {
   @@index([isActive, updatedAt])
 }
 
+model Customer {
+  id           String   @id @default(cuid())
+  mobile       String   @unique
+  name         String?
+  internalNote String?
+  orders       Order[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([createdAt])
+}
+
 model Order {
   id                String            @id @default(cuid())
   orderNumber       String            @unique
   status            OrderStatus       @default(PENDING_PAYMENT)
   fulfillmentStatus FulfillmentStatus @default(REGISTERED)
   isDemo            Boolean           @default(true)
+  customerId        String?
+  customer          Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
   customerName      String
   mobile            String
   province          String
@@ -213,6 +227,7 @@ model Order {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
+  @@index([customerId, createdAt])
   @@index([mobile, createdAt])
   @@index([status, createdAt])
   @@index([fulfillmentStatus, createdAt])
@@ -300,7 +315,7 @@ model Invoice {
   recipientName    String
   province         String
   city             String
-  address           String
+  address          String
   postalCode       String
   paymentProvider  String
   paymentReference String
