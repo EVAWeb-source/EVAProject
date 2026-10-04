@@ -1,6 +1,8 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import FilteredCatalog from '../../components/FilteredCatalog';
 import type { CatalogProduct } from '../../components/CatalogGrid';
+import { publicMetadata } from '../../lib/seo';
 import styles from './collection.module.css';
 
 export const dynamic='force-dynamic';
@@ -36,6 +38,18 @@ async function getProducts():Promise<CatalogProduct[]>{
   return response.json();
 }
 
+export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
+  const {slug}=await params;
+  const known=knownCollections[slug];
+  if(known)return publicMetadata({title:`کالکشن ${known.name} | EVA`,description:known.story,path:`/collections/${slug}`});
+  try{
+    const products=await getProducts();
+    const live=products.find(product=>product.collection?.slug===slug)?.collection;
+    if(live)return publicMetadata({title:`کالکشن ${live.nameFa} | EVA`,description:`مشاهده قطعه‌های کالکشن ${live.nameFa} از EVA.`,path:`/collections/${slug}`});
+  }catch{}
+  return {robots:{index:false,follow:false}};
+}
+
 export default async function CollectionPage({params}:{params:Promise<{slug:string}>}){
   const {slug}=await params;
   const allProducts=await getProducts();
@@ -55,7 +69,7 @@ export default async function CollectionPage({params}:{params:Promise<{slug:stri
     <div className={styles.announcement}>ارسال امن • فاکتور معتبر • قیمت شفاف</div>
     <header className={styles.header}>
       <a className={styles.brand} href="/">EVA</a>
-      <nav><a href="/shop">فروشگاه</a><a href="/collections">کالکشن‌ها</a><a href="/#gift">هدیه</a><a href="/#lightweight">طلای سبک</a></nav>
+      <nav><a href="/shop">فروشگاه</a><a href="/collections">کالکشن‌ها</a><a href="/gift">هدیه</a><a href="/lightweight">طلای سبک</a></nav>
       <div className={styles.actions}><a href="/wishlist">♡</a><a href="/account">حساب</a><a className={styles.cart} href="/cart">سبد</a></div>
     </header>
 
