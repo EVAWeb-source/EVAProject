@@ -21,7 +21,7 @@ export default function AdminShell({children, connected=true}:{children:ReactNod
   const pathname=usePathname();
   const [open,setOpen]=useState(false);
   const active=(item:(typeof nav)[number])=>{
-    if(item.exact)return pathname===item.href;
+    if('exact' in item&&item.exact)return pathname===item.href;
     if(item.href==='/catalog')return pathname==='/catalog'||pathname.startsWith('/catalog/products/');
     return pathname===item.href||pathname.startsWith(item.href+'/');
   };
