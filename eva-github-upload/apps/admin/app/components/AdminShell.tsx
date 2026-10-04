@@ -18,6 +18,7 @@ const nav = [
   { href:'/invoices', label:'فاکتورها', icon:'▤' },
   { href:'/pricing', label:'قیمت‌گذاری', icon:'₮' },
   { href:'/notifications', label:'پیام‌ها', icon:'◌' },
+  { href:'/audit', label:'تاریخچه فعالیت', icon:'◷' },
   { href:'/settings', label:'تنظیمات', icon:'⚙' },
 ] as const;
 
