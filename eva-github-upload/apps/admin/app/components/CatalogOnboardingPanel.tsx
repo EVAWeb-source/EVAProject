@@ -49,24 +49,13 @@ const aghaz:Blueprint[] = [
 ];
 
 const stepLabels:Array<[keyof Checks,string]> = [
-  ['product','محصول'],
-  ['collection','کالکشن'],
-  ['content','محتوا'],
-  ['media','تصویر'],
-  ['seo','SEO'],
-  ['inventory','Unit'],
-  ['published','انتشار'],
+  ['product','محصول'],['collection','کالکشن'],['content','محتوا'],['media','تصویر'],['seo','SEO'],['inventory','Unit'],['published','انتشار'],
 ];
 
 function fa(value:number){return new Intl.NumberFormat('fa-IR').format(value);}
 
 async function request(path:string, method:'GET'|'POST'|'PATCH'='GET', payload?:Record<string,unknown>){
-  const response=await fetch('/api/admin/'+path,{
-    method,
-    headers:payload?{'content-type':'application/json'}:undefined,
-    body:payload?JSON.stringify(payload):undefined,
-    cache:'no-store',
-  });
+  const response=await fetch('/api/admin/'+path,{method,headers:payload?{'content-type':'application/json'}:undefined,body:payload?JSON.stringify(payload):undefined,cache:'no-store'});
   const raw=await response.text();
   if(!response.ok){
     try{
@@ -74,7 +63,7 @@ async function request(path:string, method:'GET'|'POST'|'PATCH'='GET', payload?:
       const message=Array.isArray(parsed.message)?parsed.message.join('، '):parsed.message;
       throw new Error(message||parsed.error||`HTTP ${response.status}`);
     }catch(error){
-      if(error instanceof Error && error.message!=='Unexpected end of JSON input')throw error;
+      if(error instanceof Error&&error.message!=='Unexpected end of JSON input')throw error;
       throw new Error(raw||`HTTP ${response.status}`);
     }
   }
@@ -113,10 +102,7 @@ export default function CatalogOnboardingPanel({collections}:{collections:Collec
     if(!aghazCollection){setError('کالکشن «آغاز» در دیتابیس پیدا نشد.');return;}
     setBusy(item.masterSku);setMessage('');setError('');
     try{
-      await request('products','POST',{
-        nameFa:item.nameFa,slug:item.slug,masterSku:item.masterSku,purity:18,
-        collectionId:aghazCollection.id,status:'DRAFT',
-      });
+      await request('products','POST',{nameFa:item.nameFa,slug:item.slug,masterSku:item.masterSku,purity:18,collectionId:aghazCollection.id,status:'DRAFT'});
       setMessage(`پیش‌نویس «${item.nameFa}» ساخته شد.`);
       await load();
       router.refresh();
@@ -135,25 +121,13 @@ export default function CatalogOnboardingPanel({collections}:{collections:Collec
     finally{setBusy('');}
   }
 
-  function openContent(productId:string){
-    window.dispatchEvent(new CustomEvent('eva-admin-select-product',{detail:{productId}}));
-    document.getElementById('product-content')?.scrollIntoView({behavior:'smooth',block:'start'});
-  }
-
-  function openUnits(){
-    document.getElementById('unit-create')?.scrollIntoView({behavior:'smooth',block:'center'});
-  }
+  function openContent(productId:string){ window.location.href=`/catalog/products/${productId}`; }
+  function openUnits(productId:string){ window.location.href=`/inventory?productId=${encodeURIComponent(productId)}`; }
 
   function nextAction(item:ReadinessItem){
-    if(!item.checks.content||!item.checks.media||!item.checks.seo){
-      return <button className={styles.secondary} onClick={()=>openContent(item.id)}>تکمیل محتوا و Media</button>;
-    }
-    if(!item.checks.inventory){
-      return <button className={styles.secondary} onClick={openUnits}>افزودن Unit موجود</button>;
-    }
-    if(item.readyToPublish&&item.status!=='ACTIVE'){
-      return <button className={styles.publish} disabled={busy===item.id} onClick={()=>publish(item)}>{busy===item.id?'در حال انتشار...':'Publish محصول'}</button>;
-    }
+    if(!item.checks.content||!item.checks.media||!item.checks.seo)return <button className={styles.secondary} onClick={()=>openContent(item.id)}>تکمیل محصول</button>;
+    if(!item.checks.inventory)return <button className={styles.secondary} onClick={()=>openUnits(item.id)}>افزودن Unit موجود</button>;
+    if(item.readyToPublish&&item.status!=='ACTIVE')return <button className={styles.publish} disabled={busy===item.id} onClick={()=>publish(item)}>{busy===item.id?'در حال انتشار...':'Publish محصول'}</button>;
     if(item.status==='ACTIVE')return <span className={styles.live}>LIVE</span>;
     return null;
   }
@@ -165,54 +139,20 @@ export default function CatalogOnboardingPanel({collections}:{collections:Collec
     const done=item?.completedSteps??0;
     const total=item?.totalSteps??7;
     const percent=Math.round((done/total)*100);
-
     return <article className={styles.card}>
-      <div className={styles.cardTop}>
-        <div><span>{category}</span><h4>{title}</h4><small dir="ltr">{sku}</small></div>
-        <div className={item?.status==='ACTIVE'?styles.statusLive:styles.status}>{item?.status==='ACTIVE'?'فعال':item?'Draft / آماده‌سازی':'ساخته نشده'}</div>
-      </div>
-
+      <div className={styles.cardTop}><div><span>{category}</span><h4>{title}</h4><small dir="ltr">{sku}</small></div><div className={item?.status==='ACTIVE'?styles.statusLive:styles.status}>{item?.status==='ACTIVE'?'فعال':item?'Draft / آماده‌سازی':'ساخته نشده'}</div></div>
       <div className={styles.progressRow}><strong>{fa(done)} / {fa(total)}</strong><div className={styles.progress}><i style={{width:`${percent}%`}}/></div><span>{fa(percent)}٪</span></div>
-
-      <div className={styles.steps}>
-        {stepLabels.map(([key,label])=><span className={item?.checks[key]?styles.stepDone:styles.step} key={key}>{item?.checks[key]?'✓':'○'} {label}</span>)}
-      </div>
-
+      <div className={styles.steps}>{stepLabels.map(([key,label])=><span className={item?.checks[key]?styles.stepDone:styles.step} key={key}>{item?.checks[key]?'✓':'○'} {label}</span>)}</div>
       {item&&<div className={styles.facts}><span>{fa(item.imageCount)} تصویر</span><span>{fa(item.unitCount)} Unit</span><span>{fa(item.availableUnitCount)} موجود</span></div>}
-
-      <div className={styles.cardActions}>
-        {!item&&blueprint?<button className={styles.create} disabled={busy===blueprint.masterSku} onClick={()=>createDraft(blueprint)}>{busy===blueprint.masterSku?'در حال ساخت...':'ساخت Draft'}</button>:item?nextAction(item):null}
-      </div>
+      <div className={styles.cardActions}>{!item&&blueprint?<button className={styles.create} disabled={busy===blueprint.masterSku} onClick={()=>createDraft(blueprint)}>{busy===blueprint.masterSku?'در حال ساخت...':'ساخت Draft'}</button>:item?nextAction(item):null}</div>
     </article>;
   }
 
   return <section id="catalog-onboarding" className={styles.panel}>
-    <div className={styles.head}>
-      <div><span>CATALOG ONBOARDING</span><h3>آماده‌سازی محصولات برای فروش</h3><p>هر محصول باید قبل از Publish هویت، محتوا، تصویر اصلی، SEO و حداقل یک Unit موجود داشته باشد.</p></div>
-      <div className={styles.tabs}><button className={view==='AGHAZ'?styles.tabActive:''} onClick={()=>setView('AGHAZ')}>کالکشن آغاز</button><button className={view==='ALL'?styles.tabActive:''} onClick={()=>setView('ALL')}>همه محصولات</button></div>
-    </div>
-
-    {data&&<div className={styles.summary}>
-      <div><span>کل محصولات</span><strong>{fa(data.summary.total)}</strong></div>
-      <div><span>فعال</span><strong>{fa(data.summary.active)}</strong></div>
-      <div><span>آماده Publish</span><strong>{fa(data.summary.readyToPublish)}</strong></div>
-      <div><span>محتوای ناقص</span><strong>{fa(data.summary.needsContent)}</strong></div>
-      <div><span>بدون تصویر اصلی</span><strong>{fa(data.summary.needsMedia)}</strong></div>
-      <div><span>بدون Unit موجود</span><strong>{fa(data.summary.needsInventory)}</strong></div>
-    </div>}
-
-    {message&&<div className={styles.success}>{message}</div>}
-    {error&&<div className={styles.error}>{error}</div>}
-    {loading&&<div className={styles.notice}>در حال بررسی آمادگی کاتالوگ...</div>}
-
-    {!loading&&view==='AGHAZ'&&<>
-      <div className={styles.collectionIntro}><div><strong>آغاز</strong><span>۱۵ Master Product برنامه‌ریزی‌شده</span></div><p>اول Draft را می‌سازیم؛ بعد محتوا، تصاویر، Unit و در پایان Publish. هیچ محصول ناقصی از این مسیر وارد فروشگاه نمی‌شود.</p></div>
-      <div className={styles.grid}>{aghaz.map(blueprint=><ReadinessCard key={blueprint.masterSku} blueprint={blueprint} item={bySku.get(blueprint.masterSku)}/>)}</div>
-    </>}
-
-    {!loading&&view==='ALL'&&<>
-      {(data?.items.length??0)>0?<div className={styles.grid}>{data?.items.map(item=><ReadinessCard key={item.id} item={item}/>)}</div>:<div className={styles.notice}>هنوز محصولی در دیتابیس ساخته نشده است.</div>}
-      {otherProducts.length>0&&<p className={styles.hint}>محصولاتی که از فرم عمومی Admin ساخته می‌شوند هم بدون نیاز به تغییر کد به‌صورت خودکار وارد همین Readiness می‌شوند.</p>}
-    </>}
+    <div className={styles.head}><div><span>CATALOG ONBOARDING</span><h3>آماده‌سازی محصولات برای فروش</h3><p>هر محصول باید قبل از Publish هویت، محتوا، تصویر اصلی، SEO و حداقل یک Unit موجود داشته باشد.</p></div><div className={styles.tabs}><button className={view==='AGHAZ'?styles.tabActive:''} onClick={()=>setView('AGHAZ')}>کالکشن آغاز</button><button className={view==='ALL'?styles.tabActive:''} onClick={()=>setView('ALL')}>همه محصولات</button></div></div>
+    {data&&<div className={styles.summary}><div><span>کل محصولات</span><strong>{fa(data.summary.total)}</strong></div><div><span>فعال</span><strong>{fa(data.summary.active)}</strong></div><div><span>آماده Publish</span><strong>{fa(data.summary.readyToPublish)}</strong></div><div><span>محتوای ناقص</span><strong>{fa(data.summary.needsContent)}</strong></div><div><span>بدون تصویر اصلی</span><strong>{fa(data.summary.needsMedia)}</strong></div><div><span>بدون Unit موجود</span><strong>{fa(data.summary.needsInventory)}</strong></div></div>}
+    {message&&<div className={styles.success}>{message}</div>}{error&&<div className={styles.error}>{error}</div>}{loading&&<div className={styles.notice}>در حال بررسی آمادگی کاتالوگ...</div>}
+    {!loading&&view==='AGHAZ'&&<><div className={styles.collectionIntro}><div><strong>آغاز</strong><span>۱۵ Master Product برنامه‌ریزی‌شده</span></div><p>اول Draft را می‌سازیم؛ بعد محتوا، تصاویر، Unit و در پایان Publish. هیچ محصول ناقصی از این مسیر وارد فروشگاه نمی‌شود.</p></div><div className={styles.grid}>{aghaz.map(blueprint=><ReadinessCard key={blueprint.masterSku} blueprint={blueprint} item={bySku.get(blueprint.masterSku)}/>)}</div></>}
+    {!loading&&view==='ALL'&&<>{(data?.items.length??0)>0?<div className={styles.grid}>{data?.items.map(item=><ReadinessCard key={item.id} item={item}/>)}</div>:<div className={styles.notice}>هنوز محصولی در دیتابیس ساخته نشده است.</div>}{otherProducts.length>0&&<p className={styles.hint}>محصولاتی که خارج از Blueprint آغاز ساخته می‌شوند هم خودکار وارد همین Readiness می‌شوند.</p>}</>}
   </section>;
 }
