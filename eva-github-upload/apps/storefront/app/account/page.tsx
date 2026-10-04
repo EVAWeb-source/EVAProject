@@ -33,6 +33,9 @@ const labels: Record<(typeof flow)[number], string> = {
   SHIPPED: 'ارسال شد',
   DELIVERED: 'تحویل شد',
 };
+const orderStatusLabels:Record<string,string>={
+  PAID:'پرداخت‌شده',PENDING_PAYMENT:'در انتظار پرداخت',CANCELLED:'لغوشده',REFUND_PENDING:'در انتظار بازپرداخت',REFUNDED:'بازپرداخت‌شده'
+};
 
 function toman(value: number) {
   return `${new Intl.NumberFormat('fa-IR').format(value)} تومان`;
@@ -126,7 +129,7 @@ export default async function AccountPage() {
                     <div><span>محصول</span><strong>{order.item?.name ?? '—'}</strong><small>{order.item ? weight(order.item.weightGram) : '—'}</small></div>
                     <div><span>مبلغ</span><strong>{toman(order.totalToman)}</strong><small>پرداخت: {date(order.payment?.paidAt ?? null)}</small></div>
                     <div><span>گیرنده</span><strong>{order.recipientName}</strong><small>{order.city}، {order.province}</small></div>
-                    <div><span>تاریخ سفارش</span><strong>{date(order.createdAt)}</strong><small>{order.status === 'PAID' ? 'پرداخت‌شده' : order.status}</small></div>
+                    <div><span>تاریخ سفارش</span><strong>{date(order.createdAt)}</strong><small>{orderStatusLabels[order.status]??order.status}</small></div>
                   </div>
 
                   {(order.shippingCarrier || order.trackingCode || order.fulfillmentStatus === 'SHIPPED' || order.fulfillmentStatus === 'DELIVERED') && (
