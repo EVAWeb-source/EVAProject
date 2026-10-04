@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { tryNormalizeIranMobile } from '../common/normalize-mobile.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 @Injectable()
@@ -6,6 +7,7 @@ export class AdminCustomersService {
   constructor(private readonly prisma: PrismaService) {}
 
   async list() {
+    await this.normalizeAndMergeCustomers();
     await this.syncHistoricalOrders();
 
     const customers = await this.prisma.customer.findMany({
@@ -49,6 +51,7 @@ export class AdminCustomersService {
   }
 
   async detail(id: string) {
+    await this.normalizeAndMergeCustomers();
     await this.syncHistoricalOrders();
 
     const customer = await this.prisma.customer.findUnique({
@@ -128,6 +131,69 @@ export class AdminCustomersService {
     return this.detail(id);
   }
 
+  private async normalizeAndMergeCustomers() {
+    const customers = await this.prisma.customer.findMany({
+      select: {
+        id: true,
+        mobile: true,
+        name: true,
+        internalNote: true,
+        createdAt: true,
+        _count: { select: { orders: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const groups = new Map<string, typeof customers>();
+    for (const customer of customers) {
+      const normalized = tryNormalizeIranMobile(customer.mobile);
+      if (!normalized) continue;
+      const group = groups.get(normalized) ?? [];
+      group.push(customer);
+      groups.set(normalized, group);
+    }
+
+    let merged = 0;
+    for (const [mobile, group] of groups) {
+      const exact = group.find((customer) => customer.mobile === mobile);
+      const canonical = exact ?? [...group].sort((a, b) => {
+        const noteDelta = Number(Boolean(b.internalNote)) - Number(Boolean(a.internalNote));
+        if (noteDelta !== 0) return noteDelta;
+        const orderDelta = b._count.orders - a._count.orders;
+        if (orderDelta !== 0) return orderDelta;
+        return a.createdAt.getTime() - b.createdAt.getTime();
+      })[0];
+
+      const duplicates = group.filter((customer) => customer.id !== canonical.id);
+      const notes = [...new Set(group.map((customer) => customer.internalNote?.trim()).filter((note): note is string => Boolean(note)))];
+      const mergedNote = notes.length > 0 ? notes.join('\n\n—\n\n') : null;
+      const preferredName = canonical.name ?? group.find((customer) => customer.name)?.name ?? null;
+
+      await this.prisma.$transaction(async (tx) => {
+        if (duplicates.length > 0) {
+          const duplicateIds = duplicates.map((customer) => customer.id);
+          await tx.order.updateMany({
+            where: { customerId: { in: duplicateIds } },
+            data: { customerId: canonical.id, mobile },
+          });
+          await tx.customer.deleteMany({ where: { id: { in: duplicateIds } } });
+          merged += duplicates.length;
+        }
+
+        await tx.customer.update({
+          where: { id: canonical.id },
+          data: { mobile, name: preferredName, internalNote: mergedNote },
+        });
+        await tx.order.updateMany({
+          where: { customerId: canonical.id, mobile: { not: mobile } },
+          data: { mobile },
+        });
+      });
+    }
+
+    return merged;
+  }
+
   private async syncHistoricalOrders() {
     const orders = await this.prisma.order.findMany({
       where: { customerId: null },
@@ -138,9 +204,11 @@ export class AdminCustomersService {
 
     const groups = new Map<string, { name: string; ids: string[] }>();
     for (const order of orders) {
-      const group = groups.get(order.mobile);
+      const mobile = tryNormalizeIranMobile(order.mobile);
+      if (!mobile) continue;
+      const group = groups.get(mobile);
       if (group) group.ids.push(order.id);
-      else groups.set(order.mobile, { name: order.customerName, ids: [order.id] });
+      else groups.set(mobile, { name: order.customerName, ids: [order.id] });
     }
 
     let linked = 0;
@@ -152,7 +220,7 @@ export class AdminCustomersService {
       });
       const result = await this.prisma.order.updateMany({
         where: { id: { in: group.ids }, customerId: null },
-        data: { customerId: customer.id },
+        data: { customerId: customer.id, mobile },
       });
       linked += result.count;
     }
