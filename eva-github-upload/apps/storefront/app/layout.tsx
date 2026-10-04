@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   description: DEFAULT_DESCRIPTION,
   applicationName: 'EVA',
   category: 'shopping',
+  alternates: { canonical: '/' },
   formatDetection: { telephone: false, address: false, email: false },
   openGraph: {
     type: 'website',
