@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ProductContentPanel from './ProductContentPanel';
+import CatalogOnboardingPanel from './CatalogOnboardingPanel';
 
 type Collection = { id: string; nameFa: string; slug: string; code: string };
 type Product = {
@@ -121,6 +122,15 @@ export default function AdminActions({ collections, products, units }: Props) {
     event.preventDefault();
     start();
     const data = new FormData(event.currentTarget);
+    const currentProduct = products.find((product) => product.id === productId);
+    const nextStatus = String(data.get('status') ?? '');
+
+    if (nextStatus === 'ACTIVE' && currentProduct?.status !== 'ACTIVE') {
+      setBusy(false);
+      setError('برای فعال‌سازی محصول جدید از بخش Catalog Onboarding و دکمه «Publish محصول» استفاده کن تا آمادگی محتوا، تصویر، SEO و موجودی بررسی شود.');
+      return;
+    }
+
     try {
       await adminRequest(`products/${productId}`, 'PATCH', {
         nameFa: data.get('nameFa'),
@@ -153,9 +163,11 @@ export default function AdminActions({ collections, products, units }: Props) {
 
       {(message || error) && <div className={error ? 'actionMessage actionError' : 'actionMessage'}>{error || message}</div>}
 
+      <CatalogOnboardingPanel collections={collections} />
+
       <div className="adminForms">
         <form className="adminForm" onSubmit={createProduct}>
-          <div className="formTitle"><strong>افزودن محصول</strong><span>Master Product</span></div>
+          <div className="formTitle"><strong>افزودن محصول آزاد</strong><span>Master Product</span></div>
           <label>نام فارسی<input name="nameFa" required placeholder="مثلاً افق" /></label>
           <div className="formGrid">
             <label>Slug<input name="slug" required dir="ltr" placeholder="ofogh" /></label>
@@ -164,12 +176,13 @@ export default function AdminActions({ collections, products, units }: Props) {
           <label>Master SKU<input name="masterSku" required dir="ltr" placeholder="EVA-AGH-NEC-OFG-002" /></label>
           <div className="formGrid">
             <label>کالکشن<select name="collectionId" defaultValue=""><option value="">بدون کالکشن</option>{collections.map(c => <option key={c.id} value={c.id}>{c.nameFa}</option>)}</select></label>
-            <label>وضعیت<select name="status" defaultValue="DRAFT">{productStatuses.map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <label>وضعیت<select name="status" defaultValue="DRAFT">{productStatuses.filter(([value])=>value!=='ACTIVE').map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
           </div>
           <button className="primaryButton" disabled={busy}>ساخت محصول</button>
+          <small className="formHint">محصول جدید ابتدا Draft ساخته می‌شود و بعد از تکمیل از Catalog Onboarding منتشر می‌شود.</small>
         </form>
 
-        <form className="adminForm" onSubmit={createUnit}>
+        <form id="unit-create" className="adminForm" onSubmit={createUnit}>
           <div className="formTitle"><strong>افزودن قطعه</strong><span>Physical Unit</span></div>
           <label>محصول<select name="productId" required defaultValue=""><option value="" disabled>انتخاب محصول</option>{products.map(p => <option key={p.id} value={p.id}>{p.nameFa} — {p.masterSku}</option>)}</select></label>
           <label>Unit SKU<input name="unitSku" required dir="ltr" placeholder="EVA-AGH-NEC-OFG-002-U01" /></label>
