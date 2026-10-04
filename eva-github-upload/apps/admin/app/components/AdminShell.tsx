@@ -15,6 +15,7 @@ const nav = [
   { href:'/invoices', label:'فاکتورها', icon:'▤' },
   { href:'/pricing', label:'قیمت‌گذاری', icon:'₮' },
   { href:'/notifications', label:'پیام‌ها', icon:'◌' },
+  { href:'/settings', label:'تنظیمات', icon:'⚙' },
 ] as const;
 
 export default function AdminShell({children, connected=true}:{children:ReactNode; connected?:boolean}){
