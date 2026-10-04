@@ -22,7 +22,7 @@ export class AdminAuditService {
           entityType: input.entityType,
           entityId: input.entityId ?? null,
           summary: input.summary,
-          metadata: input.metadata ?? undefined,
+          metadata: input.metadata ? (input.metadata as any) : undefined,
         },
       });
     } catch (error) {
