@@ -14,6 +14,8 @@ async function forward(request: Request, context: { params: Promise<{ path: stri
     /^products$/,
     /^products\/[^/]+$/,
     /^products\/[^/]+\/content$/,
+    /^catalog-readiness$/,
+    /^catalog-readiness\/[^/]+\/publish$/,
     /^units$/,
     /^units\/[^/]+$/,
     /^pricing\/config$/,
