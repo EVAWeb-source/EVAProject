@@ -1,21 +1,21 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { CustomersData } from '../lib/admin-data';
+import type { CustomerListData } from '../lib/admin-data';
 import styles from './CustomersTable.module.css';
 
-type Item = CustomersData['items'][number];
+type Item = CustomerListData['items'][number];
 
 function fa(value:number){return new Intl.NumberFormat('fa-IR').format(value);}
 function toman(value:number){return `${new Intl.NumberFormat('fa-IR').format(value)} تومان`;}
 function date(value:string|null){return value?new Intl.DateTimeFormat('fa-IR',{dateStyle:'medium'}).format(new Date(value)):'—';}
 
-export default function CustomersTable({data}:{data:CustomersData}){
+export default function CustomersTable({data}:{data:CustomerListData}){
   const [query,setQuery]=useState('');
   const [mode,setMode]=useState<'ALL'|'REPEAT'|'PAID'>('ALL');
   const items=useMemo(()=>{
     const q=query.trim().toLowerCase();
-    return data.items.filter((item)=>{
+    return data.items.filter((item:Item)=>{
       const matches=!q||item.mobile.toLowerCase().includes(q)||(item.name??'').toLowerCase().includes(q);
       if(!matches)return false;
       if(mode==='REPEAT')return item.orderCount>1;
