@@ -150,8 +150,11 @@ export function faDate(value: string | Date) {
 export function statusFa(status: string) {
   const labels: Record<string,string> = {
     ACTIVE:'فعال', DRAFT:'پیش‌نویس', OUT_OF_STOCK:'ناموجود', HIDDEN:'مخفی', DISCONTINUED:'توقف عرضه', ARCHIVED:'آرشیو',
-    AVAILABLE:'موجود', RESERVED:'رزرو', SOLD:'فروخته‌شده', QC_PENDING:'در انتظار QC', QUALITY_HOLD:'توقف QC', DAMAGED:'آسیب‌دیده', UNAVAILABLE:'غیرقابل فروش',
-    PAID:'پرداخت‌شده', PENDING_PAYMENT:'در انتظار پرداخت', CANCELLED:'لغوشده', ISSUED:'صادرشده', SUCCEEDED:'موفق', FAILED:'ناموفق',
+    AVAILABLE:'موجود', RESERVED:'رزرو', SOLD:'فروخته‌شده', RETURNED:'مرجوع‌شده', QC_PENDING:'در انتظار QC', QUALITY_HOLD:'توقف QC', DAMAGED:'آسیب‌دیده', UNAVAILABLE:'غیرقابل فروش',
+    PAID:'پرداخت‌شده', PENDING_PAYMENT:'در انتظار پرداخت', REFUND_PENDING:'در انتظار بازپرداخت', REFUNDED:'بازپرداخت‌شده', CANCELLED:'لغوشده',
+    ISSUED:'صادرشده', VOID:'باطل‌شده', SUCCEEDED:'موفق', FAILED:'ناموفق', EXPIRED:'منقضی',
+    REQUESTED:'درخواست ثبت‌شده', RETURN_IN_TRANSIT:'در مسیر بازگشت', COMPLETED:'تکمیل‌شده', REJECTED:'ردشده',
+    CANCELLATION:'لغو سفارش', RETURN:'مرجوعی',
     REGISTERED:'ثبت‌شده', PREPARING:'در حال آماده‌سازی', READY_TO_SHIP:'آماده ارسال', SHIPPED:'ارسال‌شده', DELIVERED:'تحویل‌شده',
   };
   return labels[status] ?? status;
