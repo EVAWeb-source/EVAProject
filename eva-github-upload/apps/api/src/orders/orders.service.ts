@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomInt } from 'node:crypto';
+import { normalizeIranMobile } from '../common/normalize-mobile.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ReservationsService } from '../reservations/reservations.service.js';
 import { CreateOrderDto } from './create-order.dto.js';
@@ -53,10 +54,11 @@ export class OrdersService {
       throw new BadRequestException('Reservation does not have a locked price');
     }
 
+    const mobile = normalizeIranMobile(dto.mobile);
     const customer = await this.prisma.customer.upsert({
-      where: { mobile: dto.mobile },
-      create: { mobile: dto.mobile, name: dto.customerName },
-      update: {},
+      where: { mobile },
+      create: { mobile, name: dto.customerName },
+      update: { name: dto.customerName },
     });
 
     const orderNumber = `EVA-${new Date().getUTCFullYear()}-${randomInt(100000, 999999)}`;
@@ -69,7 +71,7 @@ export class OrdersService {
           isDemo: true,
           customerId: customer.id,
           customerName: dto.customerName,
-          mobile: dto.mobile,
+          mobile,
           province: dto.province,
           city: dto.city,
           address: dto.address,
