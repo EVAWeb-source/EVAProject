@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import styles from './ProductContentPanel.module.css';
 
 type Product = { id:string; nameFa:string; masterSku:string };
@@ -26,6 +27,7 @@ type ProductContent = {
 const blankImage=(sortOrder:number):ImageItem=>({url:'',altText:'',role:sortOrder===0?'MAIN':'GALLERY',sortOrder});
 
 export default function ProductContentPanel({products,initialProductId,hideSelector=false}:{products:Product[];initialProductId?:string;hideSelector?:boolean}){
+  const router=useRouter();
   const [productId,setProductId]=useState(initialProductId ?? products[0]?.id ?? '');
   const [data,setData]=useState<ProductContent|null>(null);
   const [images,setImages]=useState<ImageItem[]>([blankImage(0),blankImage(1),blankImage(2),blankImage(3)]);
@@ -92,6 +94,7 @@ export default function ProductContentPanel({products,initialProductId,hideSelec
       setImages(next);
       setMessage('محتوا و تصاویر محصول ذخیره شد.');
       window.dispatchEvent(new Event('eva-admin-catalog-change'));
+      router.refresh();
     }catch(cause){setError(cause instanceof Error?cause.message:'ذخیره انجام نشد.');}
     finally{setSaving(false);}
   }
