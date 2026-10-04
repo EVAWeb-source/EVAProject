@@ -20,11 +20,13 @@ export class AdminOperationsService {
       overdueFulfillment,
       readyToShip,
       requestedAfterSales,
+      returnInTransit,
       refundPending,
       qcPendingCases,
       qcPendingUnits,
       qualityHoldUnits,
       returnedUnits,
+      damagedUnits,
       recentAudit,
     ] = await Promise.all([
       this.prisma.masterProduct.findMany({
@@ -49,11 +51,13 @@ export class AdminOperationsService {
       }),
       this.prisma.order.count({ where: { status: 'PAID', fulfillmentStatus: 'READY_TO_SHIP' } }),
       this.prisma.afterSalesCase.count({ where: { status: 'REQUESTED' } }),
+      this.prisma.afterSalesCase.count({ where: { status: 'RETURN_IN_TRANSIT' } }),
       this.prisma.afterSalesCase.count({ where: { status: 'REFUND_PENDING' } }),
       this.prisma.afterSalesCase.count({ where: { status: 'QC_PENDING' } }),
       this.prisma.physicalUnit.count({ where: { status: 'QC_PENDING' } }),
       this.prisma.physicalUnit.count({ where: { status: 'QUALITY_HOLD' } }),
       this.prisma.physicalUnit.count({ where: { status: 'RETURNED' } }),
+      this.prisma.physicalUnit.count({ where: { status: 'DAMAGED' } }),
       this.audit.recent(8),
     ]);
 
@@ -65,6 +69,9 @@ export class AdminOperationsService {
         masterSku: product.masterSku,
         availableUnits: product.units.length,
       }));
+
+    const openAfterSales = requestedAfterSales + returnInTransit + refundPending + qcPendingCases;
+    const inventoryAttention = qcPendingUnits + qualityHoldUnits + returnedUnits + damagedUnits;
 
     const alerts = [
       {
@@ -85,18 +92,18 @@ export class AdminOperationsService {
       },
       {
         key: 'after-sales',
-        severity: requestedAfterSales + refundPending + qcPendingCases > 0 ? 'warning' : 'ok',
+        severity: openAfterSales > 0 ? 'warning' : 'ok',
         title: 'پرونده‌های After Sales باز',
-        detail: `${requestedAfterSales} درخواست • ${refundPending} بازپرداخت • ${qcPendingCases} QC`,
-        count: requestedAfterSales + refundPending + qcPendingCases,
+        detail: `${requestedAfterSales} درخواست • ${returnInTransit} در بازگشت • ${refundPending} بازپرداخت • ${qcPendingCases} QC`,
+        count: openAfterSales,
         href: '/after-sales',
       },
       {
         key: 'inventory-hold',
-        severity: qcPendingUnits + qualityHoldUnits + returnedUnits > 0 ? 'warning' : 'ok',
+        severity: inventoryAttention > 0 ? 'warning' : 'ok',
         title: 'Unitهای نیازمند توجه',
-        detail: `${qcPendingUnits} QC • ${qualityHoldUnits} Hold • ${returnedUnits} Returned`,
-        count: qcPendingUnits + qualityHoldUnits + returnedUnits,
+        detail: `${qcPendingUnits} QC • ${qualityHoldUnits} Hold • ${returnedUnits} Returned • ${damagedUnits} Damaged`,
+        count: inventoryAttention,
         href: '/inventory',
       },
       {
@@ -115,8 +122,8 @@ export class AdminOperationsService {
         readyToShip,
         stalePendingOrders,
         overdueFulfillment,
-        openAfterSales: requestedAfterSales + refundPending + qcPendingCases,
-        inventoryAttention: qcPendingUnits + qualityHoldUnits + returnedUnits,
+        openAfterSales,
+        inventoryAttention,
         lowStockProducts: lowStockProducts.length,
       },
       alerts,
