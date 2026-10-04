@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import SiteChrome from './components/SiteChrome';
-import { DEFAULT_DESCRIPTION, siteUrl } from './lib/seo';
+import { DEFAULT_DESCRIPTION, indexingEnabled, siteUrl } from './lib/seo';
 import './globals.css';
+
+const index = indexingEnabled();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
@@ -10,6 +12,11 @@ export const metadata: Metadata = {
   applicationName: 'EVA',
   category: 'shopping',
   alternates: { canonical: '/' },
+  robots: {
+    index,
+    follow: index,
+    googleBot: { index, follow: index },
+  },
   formatDetection: { telephone: false, address: false, email: false },
   openGraph: {
     type: 'website',
