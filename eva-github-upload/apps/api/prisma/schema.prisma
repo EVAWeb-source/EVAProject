@@ -422,3 +422,18 @@ model SmsNotification {
   @@index([mobile, createdAt])
   @@index([status, createdAt])
 }
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actor      String   @default("ADMIN")
+  action     String
+  entityType String
+  entityId   String?
+  summary    String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action, createdAt])
+  @@index([entityType, entityId, createdAt])
+}
