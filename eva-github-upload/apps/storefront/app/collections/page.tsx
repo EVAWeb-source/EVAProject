@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import styles from './collections.module.css';
 
 export const dynamic='force-dynamic';
@@ -61,13 +62,6 @@ export default async function CollectionsPage(){
   const collections=Array.from(merged.values());
 
   return <main className={styles.page}>
-    <div className={styles.announcement}>ارسال امن • فاکتور معتبر • قیمت شفاف</div>
-    <header className={styles.header}>
-      <a className={styles.brand} href="/">EVA</a>
-      <nav><a href="/shop">فروشگاه</a><a href="/collections">کالکشن‌ها</a><a href="/#gift">هدیه</a><a href="/#lightweight">طلای سبک</a></nav>
-      <div className={styles.actions}><a href="/wishlist">♡</a><a href="/account">حساب</a><a className={styles.cart} href="/cart">سبد</a></div>
-    </header>
-
     <section className={styles.hero}>
       <span>COLLECTIONS</span>
       <h1>کالکشن‌های EVA</h1>
@@ -81,7 +75,7 @@ export default async function CollectionsPage(){
         const minPrice=prices.length?Math.min(...prices):null;
 
         return <article className={styles.card} key={collection.slug}>
-          <a href={'/collections/'+collection.slug}>
+          <Link href={'/collections/'+collection.slug}>
             <div className={styles.visual}>
               <span>{String(index+1).padStart(2,'0')}</span>
               <div className={styles.orbit}><i/><b/></div>
@@ -96,16 +90,14 @@ export default async function CollectionsPage(){
                 <em>{minPrice!==null?'از '+toman(minPrice):'محصولات به‌زودی'}</em>
               </div>
             </div>
-          </a>
+          </Link>
         </article>;
       })}
     </section>
 
     <section className={styles.shopCta}>
       <div><span>ALL PIECES</span><h2>اگر هنوز بین کالکشن‌ها انتخاب نکردی</h2><p>همه قطعه‌های موجود را یک‌جا ببین و بر اساس نوع، وزن و قیمت فیلتر کن.</p></div>
-      <a href="/shop">مشاهده فروشگاه</a>
+      <Link href="/shop">مشاهده فروشگاه</Link>
     </section>
-
-    <footer className={styles.footer}><a className={styles.brand} href="/">EVA</a><p>بوتیک آنلاین طلای معاصر؛ طراحی ظریف و خرید شفاف.</p></footer>
   </main>;
 }
