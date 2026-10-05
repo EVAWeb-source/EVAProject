@@ -50,7 +50,7 @@ export default function CatalogGrid({products,emptyTitle='هنوز محصولی 
     return <article className={styles.card} key={product.id}>
       <div className={styles.media}>
         <button className={liked?styles.heart+' '+styles.liked:styles.heart} onClick={()=>toggle(product.slug)} aria-label={liked?'حذف از علاقه‌مندی‌ها':'افزودن به علاقه‌مندی‌ها'}>{liked?'♥':'♡'}</button>
-        <Link href={href} prefetch={false} aria-label={product.nameFa}>{image?<img className={styles.productImage} src={image.url} alt={image.altText||product.nameFa} loading="lazy" decoding="async"/>:<Visual sku={product.masterSku}/>}</Link>
+        <Link href={href} prefetch={false} aria-label={product.nameFa}>{image?<img className={styles.productImage} src={image.url} alt={image.altText||product.nameFa} loading="lazy" decoding="async" width={800} height={1000}/>:<Visual sku={product.masterSku}/>}</Link>
       </div>
       <Link className={styles.info} href={href} prefetch={false}>
         <div className={styles.topline}><div><h2>{product.nameFa}</h2><p>{category(product.masterSku)}{product.collection?' • '+product.collection.nameFa:''}</p></div><span>{product.purity}K</span></div>
