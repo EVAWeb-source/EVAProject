@@ -8,7 +8,13 @@ export default function ProductMediaGallery({images,name}:{images:ProductImage[]
   if(images.length){
     return <div className={styles.gallery}>
       {images.map((image,index)=><figure className={index===0?styles.card+' '+styles.main:styles.card} key={image.id}>
-        <img src={image.url} alt={image.altText||name} />
+        <img
+          src={image.url}
+          alt={image.altText||name}
+          loading={index===0?'eager':'lazy'}
+          decoding="async"
+          fetchPriority={index===0?'high':'auto'}
+        />
         <figcaption>{labels[image.role]??'تصویر محصول'}</figcaption>
       </figure>)}
     </div>;
