@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import ProductMediaGallery from '../../components/ProductMediaGallery';
 import ProductNotes from '../../components/ProductNotes';
 import ProductStructuredData from '../../components/ProductStructuredData';
@@ -13,7 +14,7 @@ type ApiUnit={id:string;unitSku:string;exactWeightGram:string;currentPriceToman:
 type ProductImage={id:string;url:string;altText:string;role:'MAIN'|'GALLERY'|'ON_BODY'|'DETAIL';sortOrder:number};
 type ApiProduct={nameFa:string;slug:string;masterSku:string;purity:number;shortDescription:string|null;story:string|null;goldColor:string|null;styleLabel:string|null;details:string|null;dimensions:string|null;sizeGuide:string|null;careInstructions:string|null;packagingNote:string|null;seoTitle:string|null;seoDescription:string|null;images:ProductImage[];collection:{nameFa:string;slug:string}|null;units:ApiUnit[]};
 
-async function getTolou():Promise<ApiProduct>{const apiBase=process.env.API_URL??'https://eva-api-production-c864.up.railway.app';const response=await fetch(`${apiBase}/api/v1/products/tolou`,{cache:'no-store'});if(!response.ok)throw new Error(`Failed to load Tolou from EVA API: ${response.status}`);return response.json();}
+const getTolou=cache(async ():Promise<ApiProduct>=>{const apiBase=process.env.API_URL??'https://eva-api-production-c864.up.railway.app';const response=await fetch(`${apiBase}/api/v1/products/tolou`,{cache:'no-store'});if(!response.ok)throw new Error(`Failed to load Tolou from EVA API: ${response.status}`);return response.json();});
 function toPersianWeight(value:string){return `${new Intl.NumberFormat('fa-IR',{minimumFractionDigits:2,maximumFractionDigits:3}).format(Number(value))} گرم`;}
 export async function generateMetadata():Promise<Metadata>{const product=await getTolou();const main=product.images?.find(image=>image.role==='MAIN')?.url;return publicMetadata({title:product.seoTitle||`${product.nameFa} | EVA`,description:product.seoDescription||product.shortDescription||'گردنبند طلوع از کالکشن آغاز EVA.',path:'/products/tolou',images:main?[main]:[]});}
 
