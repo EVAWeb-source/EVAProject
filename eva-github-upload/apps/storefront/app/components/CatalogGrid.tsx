@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import styles from './CatalogGrid.module.css';
 
@@ -37,7 +38,7 @@ export default function CatalogGrid({products,emptyTitle='هنوز محصولی 
     });
   }
 
-  if(available.length===0)return <section className={styles.empty}><span>COMING INTO VIEW</span><h2>{emptyTitle}</h2><p>{emptyText}</p><a href="/shop">مشاهده فروشگاه</a></section>;
+  if(available.length===0)return <section className={styles.empty}><span>COMING INTO VIEW</span><h2>{emptyTitle}</h2><p>{emptyText}</p><Link href="/shop">مشاهده فروشگاه</Link></section>;
 
   return <section className={styles.grid}>{available.map(product=>{
     const prices=product.units.map(unit=>Number(unit.currentPriceToman));
@@ -45,15 +46,16 @@ export default function CatalogGrid({products,emptyTitle='هنوز محصولی 
     const minPrice=Math.min(...prices);const minWeight=Math.min(...weights);const multiple=product.units.length>1;const liked=wishlist.includes(product.slug);
     const sortedImages=[...(product.images??[])].sort((a,b)=>a.sortOrder-b.sortOrder);
     const image=sortedImages.find(item=>item.role==='MAIN')??sortedImages[0];
+    const href='/products/'+product.slug;
     return <article className={styles.card} key={product.id}>
       <div className={styles.media}>
         <button className={liked?styles.heart+' '+styles.liked:styles.heart} onClick={()=>toggle(product.slug)} aria-label={liked?'حذف از علاقه‌مندی‌ها':'افزودن به علاقه‌مندی‌ها'}>{liked?'♥':'♡'}</button>
-        <a href={'/products/'+product.slug} aria-label={product.nameFa}>{image?<img className={styles.productImage} src={image.url} alt={image.altText||product.nameFa} loading="lazy" decoding="async"/>:<Visual sku={product.masterSku}/>}</a>
+        <Link href={href} prefetch={false} aria-label={product.nameFa}>{image?<img className={styles.productImage} src={image.url} alt={image.altText||product.nameFa} loading="lazy" decoding="async"/>:<Visual sku={product.masterSku}/>}</Link>
       </div>
-      <a className={styles.info} href={'/products/'+product.slug}>
+      <Link className={styles.info} href={href} prefetch={false}>
         <div className={styles.topline}><div><h2>{product.nameFa}</h2><p>{category(product.masterSku)}{product.collection?' • '+product.collection.nameFa:''}</p></div><span>{product.purity}K</span></div>
         <div className={styles.meta}><span>{multiple?'از ':''}{weight(minWeight)}</span><strong>{multiple?'از ':''}{toman(minPrice)}</strong></div>
-      </a>
+      </Link>
     </article>;
   })}</section>;
 }
