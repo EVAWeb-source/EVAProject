@@ -16,13 +16,6 @@ export default async function LightweightPage(){
   const lightweight=products.filter(product=>product.units.some(unit=>Number(unit.exactWeightGram)<1));
 
   return <main className={styles.page}>
-    <div className={styles.announcement}>ارسال امن • فاکتور معتبر • قیمت شفاف</div>
-    <header className={styles.header}>
-      <a className={styles.brand} href="/">EVA</a>
-      <nav><a href="/shop">فروشگاه</a><a href="/collections">کالکشن‌ها</a><a href="/gift">هدیه</a><a href="/lightweight">طلای سبک</a></nav>
-      <div className={styles.actions}><a href="/wishlist">♡</a><a href="/account">حساب</a><a className={styles.cart} href="/cart">سبد</a></div>
-    </header>
-
     <section className={styles.hero}>
       <div className={styles.heroCopy}>
         <span>LIGHTWEIGHT GOLD</span>
@@ -59,7 +52,5 @@ export default async function LightweightPage(){
       <div><span>TRANSPARENCY</span><h2>هر گرم مهم است.</h2></div>
       <p>در EVA سبک‌بودن یک برچسب تبلیغاتی نیست. اگر یک مدل چند Unit با وزن متفاوت داشته باشد، وزن و قیمت هر قطعه جداگانه نمایش داده می‌شود و انتخاب نهایی روی همان Unit انجام می‌شود.</p>
     </section>
-
-    <footer className={styles.footer}><a className={styles.brand} href="/">EVA</a><p>بوتیک آنلاین طلای معاصر؛ طراحی ظریف و خرید شفاف.</p></footer>
   </main>;
 }
