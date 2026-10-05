@@ -14,6 +14,8 @@ export default function ProductMediaGallery({images,name}:{images:ProductImage[]
           loading={index===0?'eager':'lazy'}
           decoding="async"
           fetchPriority={index===0?'high':'auto'}
+          width={1200}
+          height={1500}
         />
         <figcaption>{labels[image.role]??'تصویر محصول'}</figcaption>
       </figure>)}
