@@ -295,9 +295,17 @@ export class CustomerService {
   }
 
   private secret() {
-    const secret = process.env.OTP_SECRET ?? process.env.ADMIN_API_KEY;
-    if (!secret) throw new ServiceUnavailableException('OTP secret is not configured');
-    return secret;
+    const dedicated = String(process.env.OTP_SECRET ?? '').trim();
+    if (dedicated) return dedicated;
+
+    // Keep the current demo environment working, but do not allow production
+    // OTP/session hashing to silently reuse the admin credential.
+    if (process.env.OTP_DEMO_MODE === 'true') {
+      const demoFallback = String(process.env.ADMIN_API_KEY ?? '').trim();
+      if (demoFallback) return demoFallback;
+    }
+
+    throw new ServiceUnavailableException('OTP secret is not configured');
   }
 
   private maskMobile(mobile: string) {
