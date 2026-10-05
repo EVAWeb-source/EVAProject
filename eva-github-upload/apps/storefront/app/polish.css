@@ -1,0 +1,80 @@
+:root {
+  --eva-bg: #fffdf9;
+  --eva-surface: #ffffff;
+  --eva-champagne: #f7f3ec;
+  --eva-champagne-soft: #fbf8f3;
+  --eva-champagne-deep: #e8ded0;
+  --eva-charcoal: #272320;
+  --eva-charcoal-soft: #3b3530;
+  --eva-muted: #746b63;
+  --eva-border: #ddd5cb;
+  --eva-border-soft: rgba(39, 35, 32, .10);
+  --eva-gold: #b79558;
+  --eva-gold-deep: #8d6c38;
+  --eva-radius-sm: 8px;
+  --eva-radius-md: 14px;
+  --eva-radius-lg: 22px;
+  --eva-shadow-soft: 0 14px 40px rgba(48, 40, 32, .07);
+  --eva-font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif;
+  --eva-font-display: Georgia, "Times New Roman", serif;
+  --eva-ease: cubic-bezier(.2, .76, .2, 1);
+}
+
+html {
+  scrollbar-gutter: stable;
+  background: var(--eva-bg);
+}
+
+body {
+  background: var(--eva-bg);
+  color: var(--eva-charcoal);
+  font-family: var(--eva-font-ui);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(183, 149, 88, .22);
+  color: var(--eva-charcoal);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a {
+  transition-timing-function: var(--eva-ease);
+}
+
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid rgba(141, 108, 56, .78);
+  outline-offset: 3px;
+}
+
+:where(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
