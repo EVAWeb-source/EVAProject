@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
@@ -79,23 +80,23 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
     <>
       <div className={styles.announcement}>ارسال امن • فاکتور معتبر • قیمت شفاف</div>
       <header className={styles.header}>
-        <a className={styles.brand} href="/" aria-label="EVA">EVA</a>
+        <Link className={styles.brand} href="/" aria-label="EVA">EVA</Link>
 
         <nav className={styles.desktopNav} aria-label="ناوبری اصلی">
           {primaryNav.map(([href, label]) => (
-            <a className={active(href) ? styles.active : ''} href={href} key={href}>{label}</a>
+            <Link className={active(href) ? styles.active : ''} href={href} key={href}>{label}</Link>
           ))}
         </nav>
 
         <div className={styles.actions}>
-          <a className={styles.iconAction} href="/shop" aria-label="جستجو">⌕</a>
-          <a className={styles.iconAction} href="/wishlist" aria-label="علاقه‌مندی‌ها">
+          <Link className={styles.iconAction} href="/shop" aria-label="جستجو">⌕</Link>
+          <Link className={styles.iconAction} href="/wishlist" aria-label="علاقه‌مندی‌ها">
             ♡{wishlistCount > 0 && <small>{new Intl.NumberFormat('fa-IR').format(wishlistCount)}</small>}
-          </a>
-          <a className={styles.accountAction} href="/account">حساب</a>
-          <a className={styles.cartAction} href="/cart">
+          </Link>
+          <Link className={styles.accountAction} href="/account">حساب</Link>
+          <Link className={styles.cartAction} href="/cart">
             سبد{cartCount > 0 && <small>{new Intl.NumberFormat('fa-IR').format(cartCount)}</small>}
-          </a>
+          </Link>
           <button className={styles.menuButton} onClick={() => setMenuOpen(true)} aria-label="باز کردن منو">☰</button>
         </div>
       </header>
@@ -105,13 +106,13 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
       <footer className={styles.footer}>
         <div className={styles.footerTop}>
           <div className={styles.footerBrand}>
-            <a className={styles.brand} href="/">EVA</a>
+            <Link className={styles.brand} href="/">EVA</Link>
             <p>بوتیک آنلاین طلای معاصر؛ طراحی ظریف، وزن دقیق و خرید شفاف.</p>
           </div>
           <div className={styles.footerLinks}>
-            <div><strong>خرید</strong><a href="/shop">فروشگاه</a><a href="/collections">کالکشن‌ها</a><a href="/gift">هدیه</a><a href="/lightweight">طلای سبک</a></div>
-            <div><strong>راهنما</strong><a href="/help">مرکز راهنما</a><a href="/faq">سوالات متداول</a><a href="/shipping-returns">ارسال و مرجوعی</a><a href="/track-order">رهگیری سفارش</a></div>
-            <div><strong>اعتماد</strong><a href="/trust">اعتماد به EVA</a><a href="/about">درباره EVA</a><a href="/contact">تماس</a><a href="/account">حساب من</a></div>
+            <div><strong>خرید</strong><Link href="/shop">فروشگاه</Link><Link href="/collections">کالکشن‌ها</Link><Link href="/gift">هدیه</Link><Link href="/lightweight">طلای سبک</Link></div>
+            <div><strong>راهنما</strong><Link href="/help">مرکز راهنما</Link><Link href="/faq">سوالات متداول</Link><Link href="/shipping-returns">ارسال و مرجوعی</Link><Link href="/track-order">رهگیری سفارش</Link></div>
+            <div><strong>اعتماد</strong><Link href="/trust">اعتماد به EVA</Link><Link href="/about">درباره EVA</Link><Link href="/contact">تماس</Link><Link href="/account">حساب من</Link></div>
           </div>
         </div>
         <div className={styles.footerBottom}><span>© EVA 2026</span><span>طراحی‌شده برای یک تجربه آرام و شفاف از خرید طلا.</span></div>
@@ -120,17 +121,17 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
       {menuOpen && (
         <div className={styles.mobileOverlay} role="dialog" aria-modal="true" aria-label="منوی EVA">
           <button className={styles.closeButton} onClick={() => setMenuOpen(false)} aria-label="بستن منو">×</button>
-          <a className={styles.mobileBrand} href="/">EVA</a>
+          <Link className={styles.mobileBrand} href="/">EVA</Link>
           <nav className={styles.mobileNav}>
-            {primaryNav.map(([href, label]) => <a href={href} key={href}>{label}<span>←</span></a>)}
+            {primaryNav.map(([href, label]) => <Link href={href} key={href}>{label}<span>←</span></Link>)}
           </nav>
           <div className={styles.mobileUtilities}>
-            <a href="/account">حساب من</a>
-            <a href="/wishlist">علاقه‌مندی‌ها {wishlistCount > 0 ? `(${new Intl.NumberFormat('fa-IR').format(wishlistCount)})` : ''}</a>
-            <a href="/cart">سبد خرید {cartCount > 0 ? `(${new Intl.NumberFormat('fa-IR').format(cartCount)})` : ''}</a>
-            <a href="/track-order">رهگیری سفارش</a>
-            <a href="/trust">اعتماد به EVA</a>
-            <a href="/contact">تماس</a>
+            <Link href="/account">حساب من</Link>
+            <Link href="/wishlist">علاقه‌مندی‌ها {wishlistCount > 0 ? `(${new Intl.NumberFormat('fa-IR').format(wishlistCount)})` : ''}</Link>
+            <Link href="/cart">سبد خرید {cartCount > 0 ? `(${new Intl.NumberFormat('fa-IR').format(cartCount)})` : ''}</Link>
+            <Link href="/track-order">رهگیری سفارش</Link>
+            <Link href="/trust">اعتماد به EVA</Link>
+            <Link href="/contact">تماس</Link>
           </div>
         </div>
       )}
