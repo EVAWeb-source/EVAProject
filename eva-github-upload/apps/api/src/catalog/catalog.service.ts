@@ -27,7 +27,8 @@ export class CatalogService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return Promise.all(products.map((product) => this.serializeProduct(product)));
+    const configByPurity = await this.loadPricingConfigs(products.map((product) => product.purity));
+    return products.map((product) => this.serializeProduct(product, configByPurity));
   }
 
   async getProductBySlug(slug: string) {
@@ -49,34 +50,45 @@ export class CatalogService {
       throw new NotFoundException('Product not found');
     }
 
-    return this.serializeProduct(product);
+    const configByPurity = await this.loadPricingConfigs([product.purity]);
+    return this.serializeProduct(product, configByPurity);
   }
 
-  private async serializeProduct(product: any) {
-    const units = await Promise.all(
-      product.units.map(async (unit: any) => {
-        const quote = await this.pricing.priceUnit(unit.id, true);
-
-        return {
-          id: unit.id,
-          unitSku: unit.unitSku,
-          exactWeightGram: unit.exactWeightGram.toString(),
-          currentPriceToman: String(quote.finalPriceToman),
-          status: unit.status,
-          reservedUntil: unit.reservedUntil,
-          pricing: {
-            goldRateTomanPerGram: quote.goldRateTomanPerGram,
-            goldValueToman: quote.goldValueToman,
-            makingToman: quote.makingToman,
-            profitToman: quote.profitToman,
-            taxToman: quote.taxToman,
-            finalPriceToman: quote.finalPriceToman,
-            rateVersion: quote.rateVersion,
-            pricingFormulaVersion: quote.pricingFormulaVersion,
-          },
-        };
-      }),
+  private async loadPricingConfigs(purities: number[]) {
+    const uniquePurities = [...new Set(purities)];
+    const entries = await Promise.all(
+      uniquePurities.map(async (purity) => [purity, await this.pricing.getCurrentConfig(purity)] as const),
     );
+    return new Map<number, any>(entries);
+  }
+
+  private serializeProduct(product: any, configByPurity: Map<number, any>) {
+    const config = configByPurity.get(product.purity);
+    const units = product.units.map((unit: any) => {
+      const quote = this.pricing.calculateQuote(
+        { ...unit, product: { nameFa: product.nameFa, purity: product.purity } },
+        config,
+      );
+
+      return {
+        id: unit.id,
+        unitSku: unit.unitSku,
+        exactWeightGram: unit.exactWeightGram.toString(),
+        currentPriceToman: String(quote.finalPriceToman),
+        status: unit.status,
+        reservedUntil: unit.reservedUntil,
+        pricing: {
+          goldRateTomanPerGram: quote.goldRateTomanPerGram,
+          goldValueToman: quote.goldValueToman,
+          makingToman: quote.makingToman,
+          profitToman: quote.profitToman,
+          taxToman: quote.taxToman,
+          finalPriceToman: quote.finalPriceToman,
+          rateVersion: quote.rateVersion,
+          pricingFormulaVersion: quote.pricingFormulaVersion,
+        },
+      };
+    });
 
     return {
       id: product.id,
