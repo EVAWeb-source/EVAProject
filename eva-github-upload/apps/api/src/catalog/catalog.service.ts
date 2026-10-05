@@ -16,11 +16,24 @@ export class CatalogService {
 
     const products = await this.prisma.masterProduct.findMany({
       where: { status: 'ACTIVE' },
-      include: {
-        collection: true,
-        images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
+      select: {
+        id: true,
+        nameFa: true,
+        slug: true,
+        masterSku: true,
+        purity: true,
+        status: true,
+        shortDescription: true,
+        collection: {
+          select: { id: true, nameFa: true, slug: true, code: true, story: true },
+        },
+        images: {
+          select: { id: true, url: true, altText: true, role: true, sortOrder: true },
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+        },
         units: {
           where: { status: 'AVAILABLE' },
+          select: { id: true, unitSku: true, exactWeightGram: true, status: true },
           orderBy: { exactWeightGram: 'asc' },
         },
       },
