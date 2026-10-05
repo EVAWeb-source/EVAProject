@@ -15,13 +15,6 @@ export default async function GiftPage(){
   const products=await getProducts();
 
   return <main className={styles.page}>
-    <div className={styles.announcement}>ارسال امن • فاکتور معتبر • قیمت شفاف</div>
-    <header className={styles.header}>
-      <a className={styles.brand} href="/">EVA</a>
-      <nav><a href="/shop">فروشگاه</a><a href="/collections">کالکشن‌ها</a><a href="/gift">هدیه</a><a href="/lightweight">طلای سبک</a></nav>
-      <div className={styles.actions}><a href="/wishlist">♡</a><a href="/account">حساب</a><a className={styles.cart} href="/cart">سبد</a></div>
-    </header>
-
     <section className={styles.hero}>
       <div className={styles.heroCopy}>
         <span>EVA GIFT</span>
@@ -53,7 +46,5 @@ export default async function GiftPage(){
       <div><span>NO GUESSWORK</span><h2>وزن و قیمت همچنان شفاف می‌ماند.</h2></div>
       <p>هدیه بودن سفارش چیزی از شفافیت خرید کم نمی‌کند؛ وزن دقیق Unit، عیار و قیمت نهایی قبل از پرداخت مشخص است و فاکتور سفارش در حساب خریدار باقی می‌ماند.</p>
     </section>
-
-    <footer className={styles.footer}><a className={styles.brand} href="/">EVA</a><p>بوتیک آنلاین طلای معاصر؛ طراحی ظریف و خرید شفاف.</p></footer>
   </main>;
 }
