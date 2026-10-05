@@ -50,12 +50,11 @@ function requestPath(req: any) {
 }
 
 function clientIp(req: any) {
-  const forwarded = req.headers?.['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.trim()) {
-    return forwarded.split(',')[0].trim().slice(0, 96);
-  }
-  if (Array.isArray(forwarded) && forwarded[0]) return String(forwarded[0]).slice(0, 96);
-  return String(req.ip ?? req.socket?.remoteAddress ?? 'unknown').slice(0, 96);
+  // Express calculates req.ip after the trusted-proxy setting in main.ts,
+  // so prefer it over raw forwarded headers supplied by the caller.
+  const trusted = String(req.ip ?? '').trim();
+  if (trusted) return trusted.slice(0, 96);
+  return String(req.socket?.remoteAddress ?? 'unknown').slice(0, 96);
 }
 
 function isAdminPath(path: string) {
