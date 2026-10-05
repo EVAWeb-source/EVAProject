@@ -43,11 +43,12 @@ export default function CatalogGrid({products,emptyTitle='هنوز محصولی 
     const prices=product.units.map(unit=>Number(unit.currentPriceToman));
     const weights=product.units.map(unit=>Number(unit.exactWeightGram));
     const minPrice=Math.min(...prices);const minWeight=Math.min(...weights);const multiple=product.units.length>1;const liked=wishlist.includes(product.slug);
-    const image=[...(product.images??[])].sort((a,b)=>a.sortOrder-b.sortOrder).find(item=>item.role==='MAIN')??[...(product.images??[])].sort((a,b)=>a.sortOrder-b.sortOrder)[0];
+    const sortedImages=[...(product.images??[])].sort((a,b)=>a.sortOrder-b.sortOrder);
+    const image=sortedImages.find(item=>item.role==='MAIN')??sortedImages[0];
     return <article className={styles.card} key={product.id}>
       <div className={styles.media}>
         <button className={liked?styles.heart+' '+styles.liked:styles.heart} onClick={()=>toggle(product.slug)} aria-label={liked?'حذف از علاقه‌مندی‌ها':'افزودن به علاقه‌مندی‌ها'}>{liked?'♥':'♡'}</button>
-        <a href={'/products/'+product.slug} aria-label={product.nameFa}>{image?<img className={styles.productImage} src={image.url} alt={image.altText||product.nameFa}/>:<Visual sku={product.masterSku}/>}</a>
+        <a href={'/products/'+product.slug} aria-label={product.nameFa}>{image?<img className={styles.productImage} src={image.url} alt={image.altText||product.nameFa} loading="lazy" decoding="async"/>:<Visual sku={product.masterSku}/>}</a>
       </div>
       <a className={styles.info} href={'/products/'+product.slug}>
         <div className={styles.topline}><div><h2>{product.nameFa}</h2><p>{category(product.masterSku)}{product.collection?' • '+product.collection.nameFa:''}</p></div><span>{product.purity}K</span></div>
