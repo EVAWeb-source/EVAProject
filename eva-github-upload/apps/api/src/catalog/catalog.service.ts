@@ -28,7 +28,7 @@ export class CatalogService {
     });
 
     const configByPurity = await this.loadPricingConfigs(products.map((product) => product.purity));
-    return products.map((product) => this.serializeProduct(product, configByPurity));
+    return products.map((product) => this.serializeListingProduct(product, configByPurity));
   }
 
   async getProductBySlug(slug: string) {
@@ -62,20 +62,26 @@ export class CatalogService {
     return new Map<number, any>(entries);
   }
 
-  private serializeProduct(product: any, configByPurity: Map<number, any>) {
+  private quoteUnits(product: any, configByPurity: Map<number, any>, includeBreakdown: boolean) {
     const config = configByPurity.get(product.purity);
-    const units = product.units.map((unit: any) => {
+    return product.units.map((unit: any) => {
       const quote = this.pricing.calculateQuote(
         { ...unit, product: { nameFa: product.nameFa, purity: product.purity } },
         config,
       );
 
-      return {
+      const base = {
         id: unit.id,
         unitSku: unit.unitSku,
         exactWeightGram: unit.exactWeightGram.toString(),
         currentPriceToman: String(quote.finalPriceToman),
         status: unit.status,
+      };
+
+      if (!includeBreakdown) return base;
+
+      return {
+        ...base,
         reservedUntil: unit.reservedUntil,
         pricing: {
           goldRateTomanPerGram: quote.goldRateTomanPerGram,
@@ -89,7 +95,47 @@ export class CatalogService {
         },
       };
     });
+  }
 
+  private serializeImage(image: any) {
+    return {
+      id: image.id,
+      url: image.url,
+      altText: image.altText,
+      role: image.role,
+      sortOrder: image.sortOrder,
+    };
+  }
+
+  private serializeCollection(collection: any) {
+    return collection
+      ? {
+          id: collection.id,
+          nameFa: collection.nameFa,
+          slug: collection.slug,
+          code: collection.code,
+          story: collection.story,
+        }
+      : null;
+  }
+
+  private serializeListingProduct(product: any, configByPurity: Map<number, any>) {
+    const mainImage = product.images.find((image: any) => image.role === 'MAIN') ?? product.images[0] ?? null;
+    return {
+      id: product.id,
+      nameFa: product.nameFa,
+      slug: product.slug,
+      masterSku: product.masterSku,
+      purity: product.purity,
+      status: product.status,
+      shortDescription: product.shortDescription,
+      images: mainImage ? [this.serializeImage(mainImage)] : [],
+      collection: this.serializeCollection(product.collection),
+      units: this.quoteUnits(product, configByPurity, false),
+    };
+  }
+
+  private serializeProduct(product: any, configByPurity: Map<number, any>) {
     return {
       id: product.id,
       nameFa: product.nameFa,
@@ -108,23 +154,9 @@ export class CatalogService {
       packagingNote: product.packagingNote,
       seoTitle: product.seoTitle,
       seoDescription: product.seoDescription,
-      images: product.images.map((image: any) => ({
-        id: image.id,
-        url: image.url,
-        altText: image.altText,
-        role: image.role,
-        sortOrder: image.sortOrder,
-      })),
-      collection: product.collection
-        ? {
-            id: product.collection.id,
-            nameFa: product.collection.nameFa,
-            slug: product.collection.slug,
-            code: product.collection.code,
-            story: product.collection.story,
-          }
-        : null,
-      units,
+      images: product.images.map((image: any) => this.serializeImage(image)),
+      collection: this.serializeCollection(product.collection),
+      units: this.quoteUnits(product, configByPurity, true),
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };
