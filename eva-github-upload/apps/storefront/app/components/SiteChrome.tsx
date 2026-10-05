@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import type { MutableRefObject, ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import styles from './SiteChrome.module.css';
@@ -53,7 +53,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
 
   const minimal = minimalPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(prefix));
 
-  function clearTimer(ref: React.MutableRefObject<number | null>) {
+  function clearTimer(ref: MutableRefObject<number | null>) {
     if (ref.current !== null) {
       window.clearTimeout(ref.current);
       ref.current = null;
@@ -118,9 +118,9 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    document.body.style.overflow = menuOpen || longLoaderVisible ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
-  }, [menuOpen]);
+  }, [menuOpen, longLoaderVisible]);
 
   useEffect(() => {
     const refresh = () => {
