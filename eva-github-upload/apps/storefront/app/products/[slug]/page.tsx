@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 import ProductMediaGallery from '../../components/ProductMediaGallery';
 import ProductNotes from '../../components/ProductNotes';
 import ProductStructuredData from '../../components/ProductStructuredData';
@@ -17,7 +18,7 @@ type ApiProduct={nameFa:string;slug:string;masterSku:string;purity:number;shortD
 const categoryLabels:Record<string,string>={NEC:'گردنبند',PEN:'آویز',BRA:'دستبند',RIN:'انگشتر',EAR:'گوشواره',SET:'ست',ANK:'پابند',CHM:'چارم'};
 function category(sku:string){return categoryLabels[sku.split('-')[2]??'']??'قطعه طلا';}
 function faWeight(value:string){return new Intl.NumberFormat('fa-IR',{minimumFractionDigits:2,maximumFractionDigits:3}).format(Number(value))+' گرم';}
-async function getProduct(slug:string):Promise<ApiProduct|null>{const apiBase=process.env.API_URL??'https://eva-api-production-c864.up.railway.app';const response=await fetch(apiBase+'/api/v1/products/'+encodeURIComponent(slug),{cache:'no-store'});if(response.status===404)return null;if(!response.ok)throw new Error('Failed to load product: '+response.status);return response.json();}
+const getProduct=cache(async (slug:string):Promise<ApiProduct|null>=>{const apiBase=process.env.API_URL??'https://eva-api-production-c864.up.railway.app';const response=await fetch(apiBase+'/api/v1/products/'+encodeURIComponent(slug),{cache:'no-store'});if(response.status===404)return null;if(!response.ok)throw new Error('Failed to load product: '+response.status);return response.json();});
 
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
   const {slug}=await params;
