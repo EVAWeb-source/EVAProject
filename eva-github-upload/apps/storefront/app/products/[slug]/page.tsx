@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import ProductMediaGallery from '../../components/ProductMediaGallery';
@@ -41,8 +42,7 @@ export default async function ProductPage({params}:{params:Promise<{slug:string}
 
   return <main className={styles.page}>
     <ProductStructuredData name={product.nameFa} slug={product.slug} sku={product.masterSku} purity={product.purity} category={cat} description={structuredDescription} images={product.images??[]} units={product.units}/>
-    <div className={styles.announcement}>ارسال امن • فاکتور معتبر • قیمت شفاف</div><header className={styles.header}><a className={styles.brand} href="/">EVA</a><nav><a href="/shop">فروشگاه</a><a href="/collections">کالکشن‌ها</a><a href="/gift">هدیه</a><a href="/lightweight">طلای سبک</a></nav><div className={styles.actions}><a href="/wishlist">♡</a><a href="/account">حساب</a><a href="/cart" className={styles.cart}>سبد</a></div></header>
-    <div className={styles.breadcrumb}><a href="/">خانه</a><span>/</span><a href="/shop">فروشگاه</a><span>/</span><span>{product.nameFa}</span></div>
+    <div className={styles.breadcrumb}><Link href="/">خانه</Link><span>/</span><Link href="/shop">فروشگاه</Link><span>/</span><span>{product.nameFa}</span></div>
     <section className={styles.productHero}><ProductMediaGallery images={product.images??[]} name={product.nameFa}/><ProductPurchase product={{name:product.nameFa,slug:product.slug,masterSku:product.masterSku,collection:collectionName,collectionSlug:product.collection?.slug??'eva',category:cat,purity:product.purity,shortDescription:product.shortDescription??undefined}} units={availableUnits}/></section>
     <section className={styles.storySection}><div><span className={styles.eyebrow}>THE STORY</span><h2>داستان {product.nameFa}</h2></div><p>{product.story||'این قطعه از زبان مینیمال EVA ساخته شده؛ با وزن دقیق هر Unit و اطلاعات شفاف برای انتخابی آگاهانه.'}</p></section>
     <section className={styles.detailsSection}><div><span className={styles.eyebrow}>DETAILS</span><h2>مشخصات محصول</h2></div><dl><div><dt>دسته</dt><dd>{cat}</dd></div><div><dt>کالکشن</dt><dd>{collectionName}</dd></div><div><dt>عیار</dt><dd>{product.purity} عیار</dd></div>{product.goldColor&&<div><dt>رنگ طلا</dt><dd>{product.goldColor}</dd></div>}{product.styleLabel&&<div><dt>استایل</dt><dd>{product.styleLabel}</dd></div>}<div><dt>SKU</dt><dd dir="ltr">{product.masterSku}</dd></div></dl></section>
