@@ -30,7 +30,10 @@ async function bootstrap() {
   ]);
 
   app.enableCors({
-    origin(origin, callback) {
+    origin(
+      origin: string | undefined,
+      callback: (error: Error | null, allow?: boolean) => void,
+    ) {
       if (!origin || allowedOrigins.has(origin)) return callback(null, true);
       return callback(new Error('Origin is not allowed by EVA API CORS policy'), false);
     },
