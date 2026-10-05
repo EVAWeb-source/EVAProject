@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import styles from './SiteChrome.module.css';
 
@@ -16,6 +16,10 @@ const primaryNav = [
 ] as const;
 
 const minimalPrefixes = ['/invoice/', '/verify/', '/payment/', '/success'];
+const LONG_NAV_DELAY_MS = 1100;
+const LONG_LOADER_MIN_VISIBLE_MS = 460;
+const LONG_LOADER_EXIT_MS = 240;
+const LONG_NAV_SAFETY_MS = 12000;
 
 function readWishlistCount() {
   try {
@@ -39,13 +43,78 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [cartCount, setCartCount] = useState(0);
+  const [longLoaderVisible, setLongLoaderVisible] = useState(false);
+  const [longLoaderLeaving, setLongLoaderLeaving] = useState(false);
+  const showLoaderTimer = useRef<number | null>(null);
+  const hideLoaderTimer = useRef<number | null>(null);
+  const exitLoaderTimer = useRef<number | null>(null);
+  const safetyTimer = useRef<number | null>(null);
+  const loaderShownAt = useRef<number | null>(null);
 
   const minimal = minimalPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(prefix));
+
+  function clearTimer(ref: React.MutableRefObject<number | null>) {
+    if (ref.current !== null) {
+      window.clearTimeout(ref.current);
+      ref.current = null;
+    }
+  }
+
+  function clearNavigationTimers() {
+    clearTimer(showLoaderTimer);
+    clearTimer(hideLoaderTimer);
+    clearTimer(exitLoaderTimer);
+    clearTimer(safetyTimer);
+  }
+
+  function finishLongLoader(immediate = false) {
+    clearTimer(showLoaderTimer);
+    clearTimer(safetyTimer);
+
+    if (!loaderShownAt.current || immediate) {
+      setLongLoaderVisible(false);
+      setLongLoaderLeaving(false);
+      loaderShownAt.current = null;
+      return;
+    }
+
+    const elapsed = Date.now() - loaderShownAt.current;
+    const wait = Math.max(0, LONG_LOADER_MIN_VISIBLE_MS - elapsed);
+    clearTimer(hideLoaderTimer);
+    hideLoaderTimer.current = window.setTimeout(() => {
+      setLongLoaderLeaving(true);
+      clearTimer(exitLoaderTimer);
+      exitLoaderTimer.current = window.setTimeout(() => {
+        setLongLoaderVisible(false);
+        setLongLoaderLeaving(false);
+        loaderShownAt.current = null;
+      }, LONG_LOADER_EXIT_MS);
+    }, wait);
+  }
+
+  function beginLongNavigation() {
+    clearNavigationTimers();
+    setLongLoaderVisible(false);
+    setLongLoaderLeaving(false);
+    loaderShownAt.current = null;
+
+    showLoaderTimer.current = window.setTimeout(() => {
+      loaderShownAt.current = Date.now();
+      setLongLoaderVisible(true);
+    }, LONG_NAV_DELAY_MS);
+
+    safetyTimer.current = window.setTimeout(() => {
+      finishLongLoader();
+    }, LONG_NAV_SAFETY_MS);
+  }
 
   useEffect(() => {
     setMenuOpen(false);
     setWishlistCount(readWishlistCount());
     setCartCount(readCartCount());
+    finishLongLoader();
+    // pathname marks completion of a normal App Router navigation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   useEffect(() => {
@@ -70,6 +139,29 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
       window.removeEventListener('eva-wishlist-change', refresh);
       window.removeEventListener('eva-cart-change', refresh);
     };
+  }, []);
+
+  useEffect(() => {
+    const handleInternalNavigation = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const element = event.target instanceof Element ? event.target : null;
+      const anchor = element?.closest('a[href]') as HTMLAnchorElement | null;
+      if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+
+      const destination = new URL(anchor.href, window.location.href);
+      if (destination.origin !== window.location.origin) return;
+      if (destination.pathname === window.location.pathname) return;
+
+      beginLongNavigation();
+    };
+
+    document.addEventListener('click', handleInternalNavigation, true);
+    return () => {
+      document.removeEventListener('click', handleInternalNavigation, true);
+      clearNavigationTimers();
+    };
+    // Persistent shell: register once. pathname completion is handled separately.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (minimal) return <>{children}</>;
@@ -117,6 +209,17 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
         </div>
         <div className={styles.footerBottom}><span>© EVA 2026</span><span>طراحی‌شده برای یک تجربه آرام و شفاف از خرید طلا.</span></div>
       </footer>
+
+      {longLoaderVisible && (
+        <div className={`${styles.longLoader}${longLoaderLeaving ? ` ${styles.longLoaderLeaving}` : ''}`} role="status" aria-live="polite" aria-busy="true">
+          <span className={styles.srOnly}>در حال بارگذاری صفحه</span>
+          <div className={styles.longLoaderMark} aria-hidden="true">
+            <div className={styles.longLoaderHalo}/>
+            <div className={styles.longLoaderLogo}>EVA</div>
+            <div className={styles.longLoaderShimmer}/>
+          </div>
+        </div>
+      )}
 
       {menuOpen && (
         <div className={styles.mobileOverlay} role="dialog" aria-modal="true" aria-label="منوی EVA">
