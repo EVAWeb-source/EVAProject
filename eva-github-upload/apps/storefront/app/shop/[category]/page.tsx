@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import FilteredCatalog from '../../components/FilteredCatalog';
 import type { CatalogProduct } from '../../components/CatalogGrid';
@@ -40,38 +41,16 @@ export default async function CategoryPage({params}:{params:Promise<{category:st
   const products=(await getProducts()).filter(product=>product.masterSku.split('-')[2]===meta.code);
 
   return <main className={styles.page}>
-    <div className={styles.announcement}>ارسال امن • فاکتور معتبر • قیمت شفاف</div>
-    <header className={styles.header}>
-      <a className={styles.brand} href="/">EVA</a>
-      <nav><a href="/shop">فروشگاه</a><a href="/collections">کالکشن‌ها</a><a href="/gift">هدیه</a><a href="/lightweight">طلای سبک</a></nav>
-      <div className={styles.actions}><a href="/wishlist">♡</a><a href="/account">حساب</a><a className={styles.cart} href="/cart">سبد</a></div>
-    </header>
+    <div className={styles.breadcrumb}><Link href="/">خانه</Link><span>/</span><Link href="/shop">فروشگاه</Link><span>/</span><span>{meta.name}</span></div>
 
-    <div className={styles.breadcrumb}><a href="/">خانه</a><span>/</span><a href="/shop">فروشگاه</a><span>/</span><span>{meta.name}</span></div>
+    <section className={styles.hero}><div><span>{meta.eyebrow}</span><h1>{meta.name}</h1><p>{meta.intro}</p></div><div className={styles.symbol}><i/><b/></div></section>
 
-    <section className={styles.hero}>
-      <div><span>{meta.eyebrow}</span><h1>{meta.name}</h1><p>{meta.intro}</p></div>
-      <div className={styles.symbol}><i/><b/></div>
-    </section>
+    <nav className={styles.categoryNav}>{Object.entries(categories).map(([slug,item])=><Link className={slug===category?styles.active:''} key={slug} href={'/shop/'+slug}>{item.name}</Link>)}</nav>
 
-    <nav className={styles.categoryNav}>
-      {Object.entries(categories).map(([slug,item])=><a className={slug===category?styles.active:''} key={slug} href={'/shop/'+slug}>{item.name}</a>)}
-    </nav>
+    <section className={styles.catalog}><FilteredCatalog products={products} showCollection /></section>
 
-    <section className={styles.catalog}>
-      <FilteredCatalog products={products} showCollection />
-    </section>
+    <section className={styles.guide}><div><span>CATEGORY GUIDE</span><h2>{meta.guideTitle}</h2></div><p>{meta.guide}</p></section>
 
-    <section className={styles.guide}>
-      <div><span>CATEGORY GUIDE</span><h2>{meta.guideTitle}</h2></div>
-      <p>{meta.guide}</p>
-    </section>
-
-    <section className={styles.discovery}>
-      <div><span>DISCOVER</span><h2>از کالکشن‌ها پیدا کن</h2><p>اگر به‌جای نوع محصول، داستان و فضای طراحی برایت مهم‌تر است، کالکشن‌های EVA را ببین.</p></div>
-      <a href="/collections">مشاهده کالکشن‌ها</a>
-    </section>
-
-    <footer className={styles.footer}><a className={styles.brand} href="/">EVA</a><p>بوتیک آنلاین طلای معاصر؛ طراحی ظریف و خرید شفاف.</p></footer>
+    <section className={styles.discovery}><div><span>DISCOVER</span><h2>از کالکشن‌ها پیدا کن</h2><p>اگر به‌جای نوع محصول، داستان و فضای طراحی برایت مهم‌تر است، کالکشن‌های EVA را ببین.</p></div><Link href="/collections">مشاهده کالکشن‌ها</Link></section>
   </main>;
 }
