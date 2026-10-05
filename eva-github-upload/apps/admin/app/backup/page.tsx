@@ -1,6 +1,7 @@
 import AdminShell from '../components/AdminShell';
 import AdminPageHeader from '../components/AdminPageHeader';
 import { API_BASE, faNumber, requireAdmin } from '../lib/admin-data';
+import BackupValidator from './BackupValidator';
 import styles from './backup.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -73,6 +74,8 @@ export default async function BackupPage(){
           <p>هر Backup یک Checksum دارد تا قبل از Restore مشخص شود فایل ناقص یا تغییرکرده نیست.</p>
         </article>
       </section>
+
+      <BackupValidator />
 
       <section className={styles.meta}>
         <div><span>Schema Version</span><code>{data.schemaVersion}</code></div>
