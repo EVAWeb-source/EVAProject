@@ -23,23 +23,16 @@ export class PricingService {
     return { rule, rate };
   }
 
-  async priceUnit(unitId: string, persist = true) {
-    const unit = await this.prisma.physicalUnit.findUnique({
-      where: { id: unitId },
-      include: { product: true },
-    });
-
-    if (!unit) throw new NotFoundException('Unit not found');
-
-    const { rule, rate } = await this.getCurrentConfig(unit.product.purity);
+  calculateQuote(unit: any, config: { rule: any; rate: any }) {
+    const { rule, rate } = config;
     const exactWeightGram = Number(unit.exactWeightGram);
     const goldRateTomanPerGram = Math.round(Number(rate.irrPerGram) / 10);
     const makingPercent = Number(rule.makingPercent);
     const profitPercent = Number(rule.profitPercent);
     const taxPercent = Number(rule.taxPercent);
 
-    // Temporary, configurable test formula. The rule can be replaced later
-    // without changing order/reservation snapshot architecture.
+    // Temporary, configurable test formula. Keep this calculation centralized so
+    // catalog reads and reservation price locks always use the same formula.
     const goldValueToman = Math.round(exactWeightGram * goldRateTomanPerGram);
     const makingToman = Math.round(goldValueToman * (makingPercent / 100));
     const profitToman = Math.round(
@@ -51,18 +44,11 @@ export class PricingService {
     const finalPriceToman =
       goldValueToman + makingToman + profitToman + taxToman;
 
-    if (persist) {
-      await this.prisma.physicalUnit.update({
-        where: { id: unit.id },
-        data: { currentPriceToman: BigInt(finalPriceToman) },
-      });
-    }
-
     return {
       unitId: unit.id,
       unitSku: unit.unitSku,
-      productNameFa: unit.product.nameFa,
-      purity: unit.product.purity,
+      productNameFa: unit.product?.nameFa ?? null,
+      purity: unit.product?.purity ?? rate.purity,
       exactWeightGram: unit.exactWeightGram.toString(),
       goldRateTomanPerGram,
       goldValueToman,
@@ -81,5 +67,26 @@ export class PricingService {
         taxPercent,
       },
     };
+  }
+
+  async priceUnit(unitId: string, persist = true) {
+    const unit = await this.prisma.physicalUnit.findUnique({
+      where: { id: unitId },
+      include: { product: true },
+    });
+
+    if (!unit) throw new NotFoundException('Unit not found');
+
+    const config = await this.getCurrentConfig(unit.product.purity);
+    const quote = this.calculateQuote(unit, config);
+
+    if (persist) {
+      await this.prisma.physicalUnit.update({
+        where: { id: unit.id },
+        data: { currentPriceToman: BigInt(quote.finalPriceToman) },
+      });
+    }
+
+    return quote;
   }
 }
