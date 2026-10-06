@@ -43,7 +43,7 @@ export default function HomePage() {
 
       <HomeBestSellers />
 
-      <section className={styles.storySection} aria-labelledby="home-story-title">
+      <section className={`${styles.storySection} homeStorySection`} aria-labelledby="home-story-title">
         <div className={styles.storyPanel}>
           <div className={styles.storyCopy}>
             <span>OUR STORY</span>
@@ -55,7 +55,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className={styles.collectionsSection} aria-labelledby="home-collections-title">
+      <section className={`${styles.collectionsSection} homeCollectionsSection`} aria-labelledby="home-collections-title">
         <div className={styles.sectionHeading}>
           <span>OUR COLLECTIONS</span>
           <h2 id="home-collections-title">کالکشن‌های ما</h2>
