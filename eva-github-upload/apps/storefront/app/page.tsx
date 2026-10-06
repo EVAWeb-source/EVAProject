@@ -2,6 +2,7 @@ import Link from 'next/link';
 import HomeBestSellers from './components/HomeBestSellers';
 import styles from './page.module.css';
 import cards from './home-cards.module.css';
+import editorial from './home-story.module.css';
 
 const promises = [
   { icon: '◇', title: 'تضمین اصالت', body: 'مشخصات دقیق و قابل‌پیگیری' },
@@ -33,10 +34,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className={styles.promiseStrip} aria-label="مزیت‌های خرید از EVA">
+      <section className={`${styles.promiseStrip} ${editorial.promiseStrip}`} aria-label="مزیت‌های خرید از EVA">
         {promises.map((item) => (
           <article key={item.title}>
-            <span className={styles.promiseIcon} aria-hidden="true">{item.icon}</span>
+            <span className={`${styles.promiseIcon} ${editorial.promiseIcon}`} aria-hidden="true">{item.icon}</span>
             <div><strong>{item.title}</strong><small>{item.body}</small></div>
           </article>
         ))}
@@ -44,15 +45,15 @@ export default function HomePage() {
 
       <HomeBestSellers />
 
-      <section className={`${styles.storySection} homeStorySection`} aria-labelledby="home-story-title">
-        <div className={styles.storyPanel}>
-          <div className={styles.storyCopy}>
+      <section className={`${styles.storySection} ${editorial.storySection} homeStorySection`} aria-labelledby="home-story-title">
+        <div className={`${styles.storyPanel} ${editorial.storyPanel}`}>
+          <div className={`${styles.storyCopy} ${editorial.storyCopy}`}>
             <span>OUR STORY</span>
             <h2 id="home-story-title">داستان EVA</h2>
             <p>در EVA به قطعه‌هایی باور داریم که قرار نیست فقط دیده شوند؛ جواهراتی ظریف و امروزی که با زمان، بخشی از داستان شخصی تو می‌شوند.</p>
-            <Link className={styles.storyButton} href="/about">درباره ما ←</Link>
+            <Link className={`${styles.storyButton} ${editorial.storyButton}`} href="/about">درباره ما ←</Link>
           </div>
-          <div className={styles.storyVisual} aria-hidden="true"><span className={styles.storyFloral} /></div>
+          <div className={`${styles.storyVisual} ${editorial.storyVisual}`} aria-hidden="true"><span className={`${styles.storyFloral} ${editorial.storyFloral}`} /></div>
         </div>
       </section>
 
