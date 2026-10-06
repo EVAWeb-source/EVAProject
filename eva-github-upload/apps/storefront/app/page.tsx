@@ -19,14 +19,14 @@ const collections = [
 export default function HomePage() {
   return (
     <main className={styles.page}>
-      <section className={styles.hero}>
-        <div className={styles.heroCopy}>
+      <section className={`${styles.hero} evaHomeHero`}>
+        <div className={`${styles.heroCopy} evaHomeHeroCopy`}>
           <span>FINE JEWELRY</span>
           <h1>جواهراتی برای لحظه‌های ماندگار</h1>
           <p>طراحی ظریف، وزن دقیق و خرید شفاف؛ برای قطعه‌هایی که قرار است بخشی از داستان تو شوند.</p>
-          <Link className={styles.heroButton} href="/collections/aghaz">مشاهده کالکشن ←</Link>
+          <Link className={`${styles.heroButton} evaHomeHeroButton`} href="/collections/aghaz">مشاهده کالکشن ←</Link>
         </div>
-        <div className={styles.heroVisual} aria-label="فضای تصویری ادیتوریال EVA">
+        <div className={`${styles.heroVisual} evaHomeHeroVisual`} aria-label="فضای تصویری ادیتوریال EVA">
           <span className={styles.heroJewelry} aria-hidden="true" />
           <span className={styles.heroQuote} aria-hidden="true">BEAUTY LIVES IN EVERY DETAIL</span>
         </div>
