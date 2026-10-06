@@ -102,12 +102,19 @@
 }
 
 @media(max-width:820px){
-  .productMedia{aspect-ratio:1.08/1!important}
-  .collectionCard{min-height:150px!important}
+  .productMedia{aspect-ratio:1.08/1!important;background:linear-gradient(145deg,#f6f0e9 0%,#eee2d4 100%)!important}
+  .productInfo{padding:12px 10px 14px!important}
+  .collectionGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+  .collectionCard{min-height:148px!important}
 }
 
 @media(max-width:520px){
-  .productMedia{aspect-ratio:1.08/1!important}
-  .collectionGrid{gap:12px!important}
-  .collectionCard{min-height:146px!important}
+  .productMedia{aspect-ratio:1.06/1!important}
+  .productInfo h3{font-size:13px!important}
+  .productInfo strong{font-size:10px!important}
+  .collectionGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  .collectionCard{min-height:138px!important}
+  .collectionCard>div{right:12px!important;bottom:11px!important}
+  .collectionCard strong{font-size:14px!important}
+  .collectionCard span{font-size:7px!important}
 }
