@@ -69,6 +69,64 @@ a {
   opacity: .58;
 }
 
+/* Homepage rhythm: keep section spacing closer to the approved editorial mockup. */
+.homeBestSection,
+.homeStorySection,
+.homeCollectionsSection {
+  margin-top: 72px !important;
+}
+
+/* Give the best-seller arrows their own side gutters, outside product imagery. */
+.homeCarouselShell {
+  padding-inline: 52px;
+}
+
+.homeCarouselArrow {
+  position: absolute !important;
+  top: 40% !important;
+  z-index: 3;
+  margin: 0 !important;
+  transform: translateY(-50%) !important;
+}
+
+.homeCarouselArrow:hover {
+  transform: translateY(-50%) translateY(-1px) !important;
+}
+
+.homeCarouselArrowLeft {
+  left: 0;
+  right: auto;
+}
+
+.homeCarouselArrowRight {
+  right: 0;
+  left: auto;
+}
+
+@media (max-width: 820px) {
+  .homeBestSection,
+  .homeStorySection,
+  .homeCollectionsSection {
+    margin-top: 60px !important;
+  }
+
+  .homeCarouselShell {
+    padding-inline: 44px;
+  }
+}
+
+@media (max-width: 520px) {
+  .homeBestSection,
+  .homeStorySection,
+  .homeCollectionsSection {
+    margin-top: 52px !important;
+  }
+
+  .homeCarouselShell {
+    padding-inline: 40px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {
