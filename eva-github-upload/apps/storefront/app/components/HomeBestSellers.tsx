@@ -34,12 +34,8 @@ export default function HomeBestSellers() {
 
       <Link className={styles.sectionLink} href="/shop">مشاهده همه محصولات ←</Link>
 
-      <div className={styles.carouselControls} aria-label="کنترل نمایش محبوب‌ترین‌ها">
-        <button className={styles.carouselArrow} type="button" onClick={() => move(-1)} aria-label="محصولات قبلی">→</button>
-        <button className={styles.carouselArrow} type="button" onClick={() => move(1)} aria-label="محصولات بعدی">←</button>
-      </div>
-
       <div className={styles.carouselShell}>
+        <button className={`${styles.carouselArrow} ${styles.carouselLeft}`} type="button" onClick={() => move(-1)} aria-label="نمایش محصولات سمت چپ">←</button>
         <div className={styles.productRail} ref={railRef}>
           {products.map((product) => (
             <article className={styles.productCard} key={product.name}>
@@ -60,6 +56,7 @@ export default function HomeBestSellers() {
             </article>
           ))}
         </div>
+        <button className={`${styles.carouselArrow} ${styles.carouselRight}`} type="button" onClick={() => move(1)} aria-label="نمایش محصولات سمت راست">→</button>
       </div>
     </section>
   );
