@@ -1,0 +1,56 @@
+/* Scroll performance hardening: keep the visual language, remove persistent compositing/repaint work. */
+
+/* The approved header no longer needs to remain composited while the page scrolls. */
+.evaApprovedHeader {
+  position: relative !important;
+  top: auto !important;
+}
+
+/* Do not animate the entire page surface. Long navigations still use the EVA loader. */
+.evaApprovedHeader + div > main {
+  opacity: 1 !important;
+  animation: none !important;
+}
+
+/* Keep typography quality without forcing the browser's heavier legibility mode during scroll. */
+body {
+  text-rendering: auto;
+}
+
+/* Horizontal product browsing should not fight a vertical page gesture. */
+.homeProductRail {
+  scroll-snap-type: x proximity !important;
+  overscroll-behavior-inline: contain;
+  touch-action: pan-x pan-y;
+  contain: layout paint;
+}
+
+/* Cards passing under a stationary mouse must not trigger repaint-heavy hover transitions. */
+.homeProductRail > article {
+  transition: none !important;
+}
+
+.homeProductRail > article:hover {
+  border-color: #ebe3da !important;
+  background: #fff !important;
+}
+
+.homeCollectionsSection a[href^='/shop/'] {
+  transition: none !important;
+}
+
+.homeCollectionsSection a[href^='/shop/']:hover {
+  border-color: #ebe3da !important;
+  background: linear-gradient(145deg,#f3ebe1 0%,#fbf7f1 100%) !important;
+}
+
+/* Avoid unnecessary animated movement in the persistent footer while scrolling past it. */
+body > footer a {
+  transform: none !important;
+}
+
+@media (max-width: 820px) {
+  .homeProductRail {
+    scroll-snap-type: x proximity !important;
+  }
+}
