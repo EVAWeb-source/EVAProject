@@ -174,20 +174,20 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <header className={styles.header}>
-        <Link className={styles.brand} href="/" aria-label="EVA">EVA<small>FINE JEWELRY</small></Link>
+      <header className={`${styles.header} evaApprovedHeader`}>
+        <Link className={`${styles.brand} evaApprovedBrand`} href="/" aria-label="EVA">EVA<small>FINE JEWELRY</small></Link>
 
-        <nav className={styles.desktopNav} aria-label="ناوبری اصلی">
+        <nav className={`${styles.desktopNav} evaApprovedNav`} aria-label="ناوبری اصلی">
           {primaryNav.map(([href, label]) => (
             <Link className={active(href) ? styles.active : ''} href={href} key={href}>{label}</Link>
           ))}
         </nav>
 
-        <div className={styles.actions}>
-          <Link className={styles.iconAction} href="/cart" aria-label="سبد خرید"><HeaderIcon type="bag" />{cartCount > 0 && <small>{new Intl.NumberFormat('fa-IR').format(cartCount)}</small>}</Link>
-          <Link className={styles.iconAction} href="/wishlist" aria-label="علاقه‌مندی‌ها"><HeaderIcon type="heart" />{wishlistCount > 0 && <small>{new Intl.NumberFormat('fa-IR').format(wishlistCount)}</small>}</Link>
-          <Link className={styles.iconAction} href="/account" aria-label="حساب کاربری"><HeaderIcon type="user" /></Link>
-          <Link className={styles.iconAction} href="/shop" aria-label="جستجو"><HeaderIcon type="search" /></Link>
+        <div className={`${styles.actions} evaApprovedActions`}>
+          <Link className={`${styles.iconAction} evaApprovedAction`} href="/cart" aria-label="سبد خرید"><HeaderIcon type="bag" />{cartCount > 0 && <small>{new Intl.NumberFormat('fa-IR').format(cartCount)}</small>}</Link>
+          <Link className={`${styles.iconAction} evaApprovedAction`} href="/wishlist" aria-label="علاقه‌مندی‌ها"><HeaderIcon type="heart" />{wishlistCount > 0 && <small>{new Intl.NumberFormat('fa-IR').format(wishlistCount)}</small>}</Link>
+          <Link className={`${styles.iconAction} evaApprovedAction`} href="/account" aria-label="حساب کاربری"><HeaderIcon type="user" /></Link>
+          <Link className={`${styles.iconAction} evaApprovedAction`} href="/shop" aria-label="جستجو"><HeaderIcon type="search" /></Link>
           <button className={styles.menuButton} onClick={() => setMenuOpen(true)} aria-label="باز کردن منو">☰</button>
         </div>
       </header>
@@ -212,9 +212,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
       {longLoaderVisible && (
         <div className={`${styles.longLoader}${longLoaderLeaving ? ` ${styles.longLoaderLeaving}` : ''}`} role="status" aria-live="polite" aria-busy="true">
           <span className={styles.srOnly}>در حال بارگذاری صفحه</span>
-          <div className={styles.longLoaderMark} aria-hidden="true">
-            <div className={styles.longLoaderHalo}/><div className={styles.longLoaderLogo}>EVA</div><div className={styles.longLoaderShimmer}/>
-          </div>
+          <div className={styles.longLoaderMark} aria-hidden="true"><div className={styles.longLoaderHalo}/><div className={styles.longLoaderLogo}>EVA</div><div className={styles.longLoaderShimmer}/></div>
         </div>
       )}
 
