@@ -1,0 +1,137 @@
+/* EVA final editorial footer — styles the persistent SiteChrome footer only. */
+body > footer {
+  background:#211e1b !important;
+  color:#fffdf9 !important;
+  padding:56px max(24px,calc((100vw - 1240px)/2)) 22px !important;
+  border-top:0 !important;
+}
+
+body > footer::before {
+  right:max(24px,calc((100vw - 1240px)/2)) !important;
+  width:42px !important;
+  background:#b79558 !important;
+  opacity:.9;
+}
+
+body > footer > div:first-child {
+  grid-template-columns:.78fr 1.45fr !important;
+  gap:82px !important;
+  padding-bottom:42px !important;
+}
+
+body > footer > div:first-child > div:first-child {
+  max-width:320px !important;
+}
+
+body > footer > div:first-child > div:first-child > a {
+  position:relative;
+  display:inline-flex !important;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:8px;
+  color:#fffdf9 !important;
+  font-size:36px !important;
+  letter-spacing:.25em !important;
+  line-height:1 !important;
+}
+
+body > footer > div:first-child > div:first-child > a::after {
+  content:'FINE JEWELRY';
+  direction:ltr;
+  font-family:var(--eva-font-ui);
+  font-size:8px;
+  font-weight:500;
+  letter-spacing:.3em;
+  color:#a79d94;
+  white-space:nowrap;
+}
+
+body > footer > div:first-child > div:first-child > p {
+  max-width:280px !important;
+  margin:19px 0 0 !important;
+  color:#aaa198 !important;
+  font-size:11px !important;
+  line-height:2.05 !important;
+}
+
+body > footer > div:first-child > div:nth-child(2) {
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:52px !important;
+}
+
+body > footer > div:first-child > div:nth-child(2) > div {
+  gap:8px !important;
+}
+
+body > footer > div:first-child > div:nth-child(2) strong {
+  margin-bottom:8px !important;
+  color:#eee8e1 !important;
+  font-size:10px !important;
+  font-weight:600 !important;
+  letter-spacing:.02em !important;
+}
+
+body > footer > div:first-child > div:nth-child(2) a {
+  color:#9f978f !important;
+  font-size:10px !important;
+  line-height:1.8;
+  transform:none !important;
+  transition:color .18s ease !important;
+}
+
+body > footer > div:first-child > div:nth-child(2) a:hover {
+  color:#fffdf9 !important;
+  transform:none !important;
+}
+
+body > footer > div:last-child {
+  padding-top:17px !important;
+  border-top:1px solid rgba(255,255,255,.085) !important;
+  color:#746e68 !important;
+  font-size:9px !important;
+}
+
+@media(max-width:1000px){
+  body > footer > div:first-child {
+    grid-template-columns:1fr !important;
+    gap:34px !important;
+  }
+  body > footer > div:first-child > div:first-child {
+    max-width:380px !important;
+  }
+}
+
+@media(max-width:820px){
+  body > footer {
+    padding:46px 18px 20px !important;
+  }
+  body > footer::before {
+    right:18px !important;
+  }
+  body > footer > div:first-child {
+    padding-bottom:34px !important;
+  }
+  body > footer > div:first-child > div:nth-child(2) {
+    grid-template-columns:1fr 1fr !important;
+    gap:28px 36px !important;
+  }
+  body > footer > div:last-child {
+    gap:6px !important;
+  }
+}
+
+@media(max-width:520px){
+  body > footer {
+    padding-top:40px !important;
+  }
+  body > footer > div:first-child > div:first-child > a {
+    font-size:32px !important;
+  }
+  body > footer > div:first-child > div:nth-child(2) {
+    grid-template-columns:1fr !important;
+    gap:24px !important;
+  }
+  body > footer > div:last-child {
+    font-size:8px !important;
+  }
+}
