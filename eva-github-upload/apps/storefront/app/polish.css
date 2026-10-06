@@ -69,11 +69,11 @@ a {
   opacity: .58;
 }
 
-/* Homepage rhythm: keep section spacing closer to the approved editorial mockup. */
+/* Homepage rhythm: keep section spacing close to the approved editorial mockup. */
 .homeBestSection,
 .homeStorySection,
 .homeCollectionsSection {
-  margin-top: 72px !important;
+  margin-top: 60px !important;
 }
 
 /* Give the best-seller arrows their own side gutters, outside product imagery. */
@@ -107,7 +107,7 @@ a {
   .homeBestSection,
   .homeStorySection,
   .homeCollectionsSection {
-    margin-top: 60px !important;
+    margin-top: 52px !important;
   }
 
   .homeCarouselShell {
@@ -119,7 +119,7 @@ a {
   .homeBestSection,
   .homeStorySection,
   .homeCollectionsSection {
-    margin-top: 52px !important;
+    margin-top: 46px !important;
   }
 
   .homeCarouselShell {
