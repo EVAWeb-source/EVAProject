@@ -5,6 +5,7 @@ import './globals.css';
 import './polish.css';
 import './approved-header.css';
 import './home-final.css';
+import './final-footer.css';
 
 const index = indexingEnabled();
 
