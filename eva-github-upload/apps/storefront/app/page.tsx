@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import HomeBestSellers from './components/HomeBestSellers';
 import styles from './page.module.css';
+import cards from './home-cards.module.css';
 
 const promises = [
   { icon: '◇', title: 'تضمین اصالت', body: 'مشخصات دقیق و قابل‌پیگیری' },
@@ -62,9 +63,9 @@ export default function HomePage() {
           <i aria-hidden="true" />
         </div>
 
-        <div className={styles.collectionGrid}>
+        <div className={`${styles.collectionGrid} ${cards.collectionGrid}`}>
           {collections.map((collection) => (
-            <Link className={styles.collectionCard} data-type={collection.type} href={collection.href} key={collection.title}>
+            <Link className={`${styles.collectionCard} ${cards.collectionCard}`} data-type={collection.type} href={collection.href} key={collection.title}>
               <i aria-hidden="true" />
               <div><span>{collection.label}</span><strong>{collection.title}</strong></div>
             </Link>
