@@ -1,0 +1,113 @@
+.productCard{
+  border:1px solid #ebe3da!important;
+  background:#fff!important;
+  transition:border-color .2s ease,background .2s ease;
+}
+
+.productCard:hover{
+  border-color:#cfbea7!important;
+  background:#fffdfa!important;
+}
+
+.productMedia{
+  aspect-ratio:1.16/1!important;
+  background:
+    radial-gradient(circle at 50% 58%,rgba(255,255,255,.92),transparent 26%),
+    linear-gradient(145deg,#f6f0e9 0%,#eee2d4 100%)!important;
+  border-bottom:1px solid #f0e9e1;
+}
+
+.productInfo{
+  padding:14px 13px 16px!important;
+  text-align:center!important;
+  gap:0!important;
+}
+
+.productInfo h3{
+  font-size:14px!important;
+  font-weight:600!important;
+  line-height:1.7!important;
+}
+
+.productInfo span{
+  margin-top:2px!important;
+  font-size:9px!important;
+  color:#938980!important;
+}
+
+.productInfo strong{
+  margin-top:7px!important;
+  font-size:11px!important;
+  color:#8f672b!important;
+  font-weight:600!important;
+}
+
+.heart{
+  top:10px!important;
+  left:10px!important;
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:rgba(255,253,249,.78);
+  color:#4b443e;
+  font-size:16px!important;
+}
+
+.collectionGrid{
+  gap:16px!important;
+}
+
+.collectionCard{
+  min-height:156px!important;
+  border:1px solid #ebe3da!important;
+  background:linear-gradient(145deg,#f3ebe1 0%,#fbf7f1 100%)!important;
+  transition:border-color .2s ease,background .2s ease;
+}
+
+.collectionCard:hover{
+  border-color:#cfbea7!important;
+  background:linear-gradient(145deg,#efe4d7 0%,#faf5ee 100%)!important;
+}
+
+.collectionCard::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(180deg,transparent 48%,rgba(255,253,249,.55) 100%);
+}
+
+.collectionCard>div{
+  right:18px!important;
+  bottom:15px!important;
+  z-index:3!important;
+}
+
+.collectionCard span{
+  font-size:8px!important;
+  letter-spacing:.18em!important;
+  color:#8e8174!important;
+}
+
+.collectionCard strong{
+  margin-top:3px!important;
+  font-size:17px!important;
+  font-weight:600!important;
+}
+
+.collectionCard i{
+  opacity:.82;
+}
+
+@media(max-width:820px){
+  .productMedia{aspect-ratio:1.08/1!important}
+  .collectionCard{min-height:150px!important}
+}
+
+@media(max-width:520px){
+  .productMedia{aspect-ratio:1.08/1!important}
+  .collectionGrid{gap:12px!important}
+  .collectionCard{min-height:146px!important}
+}
