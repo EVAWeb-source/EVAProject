@@ -29,7 +29,7 @@ body {
   background: var(--eva-bg);
   color: var(--eva-charcoal);
   font-family: var(--eva-font-ui);
-  text-rendering: optimizeLegibility;
+  text-rendering: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -69,14 +69,12 @@ a {
   opacity: .58;
 }
 
-/* Homepage rhythm: keep section spacing close to the approved editorial mockup. */
 .homeBestSection,
 .homeStorySection,
 .homeCollectionsSection {
   margin-top: 60px !important;
 }
 
-/* Give the best-seller arrows their own side gutters, outside product imagery. */
 .homeCarouselShell {
   padding-inline: 52px;
 }
@@ -107,11 +105,20 @@ a {
   .homeBestSection,
   .homeStorySection,
   .homeCollectionsSection {
-    margin-top: 52px !important;
+    margin-top: 48px !important;
   }
 
   .homeCarouselShell {
-    padding-inline: 44px;
+    padding-inline: 0 !important;
+  }
+
+  .homeCarouselArrow {
+    display:none !important;
+  }
+
+  .homeProductRail {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-inline: contain;
   }
 }
 
@@ -119,11 +126,11 @@ a {
   .homeBestSection,
   .homeStorySection,
   .homeCollectionsSection {
-    margin-top: 46px !important;
+    margin-top: 42px !important;
   }
 
-  .homeCarouselShell {
-    padding-inline: 40px;
+  .homeProductRail {
+    grid-auto-columns: 72% !important;
   }
 }
 
