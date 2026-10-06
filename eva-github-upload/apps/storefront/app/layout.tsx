@@ -3,6 +3,7 @@ import SiteChrome from './components/SiteChrome';
 import { DEFAULT_DESCRIPTION, indexingEnabled, siteUrl } from './lib/seo';
 import './globals.css';
 import './polish.css';
+import './approved-header.css';
 import './home-final.css';
 
 const index = indexingEnabled();
