@@ -25,7 +25,7 @@ export default function HomeBestSellers() {
   };
 
   return (
-    <section className={styles.bestSection} aria-labelledby="home-best-title">
+    <section className={`${styles.bestSection} homeBestSection`} aria-labelledby="home-best-title">
       <div className={styles.sectionHeading}>
         <span>BEST SELLERS</span>
         <h2 id="home-best-title">محبوب‌ترین‌ها</h2>
@@ -34,9 +34,9 @@ export default function HomeBestSellers() {
 
       <Link className={styles.sectionLink} href="/shop">مشاهده همه محصولات ←</Link>
 
-      <div className={styles.carouselShell}>
-        <button className={`${styles.carouselArrow} ${styles.carouselLeft}`} type="button" onClick={() => move(-1)} aria-label="نمایش محصولات سمت چپ">←</button>
-        <div className={styles.productRail} ref={railRef}>
+      <div className={`${styles.carouselShell} homeCarouselShell`}>
+        <button className={`${styles.carouselArrow} homeCarouselArrow homeCarouselArrowLeft`} type="button" onClick={() => move(-1)} aria-label="نمایش محصولات سمت چپ">←</button>
+        <div className={`${styles.productRail} homeProductRail`} ref={railRef}>
           {products.map((product) => (
             <article className={styles.productCard} key={product.name}>
               <Link href={product.href} prefetch={product.href === '/products/tolou' ? false : undefined}>
@@ -56,7 +56,7 @@ export default function HomeBestSellers() {
             </article>
           ))}
         </div>
-        <button className={`${styles.carouselArrow} ${styles.carouselRight}`} type="button" onClick={() => move(1)} aria-label="نمایش محصولات سمت راست">→</button>
+        <button className={`${styles.carouselArrow} homeCarouselArrow homeCarouselArrowRight`} type="button" onClick={() => move(1)} aria-label="نمایش محصولات سمت راست">→</button>
       </div>
     </section>
   );
