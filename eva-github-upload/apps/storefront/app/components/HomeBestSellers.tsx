@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRef } from 'react';
 import styles from '../page.module.css';
+import cards from '../home-cards.module.css';
 
 const products = [
   { name: 'طلوع', meta: 'کالکشن آغاز', price: '۱۴,۸۵۰,۰۰۰ تومان', art: 'sun', href: '/products/tolou' },
@@ -38,16 +39,16 @@ export default function HomeBestSellers() {
         <button className={`${styles.carouselArrow} homeCarouselArrow homeCarouselArrowLeft`} type="button" onClick={() => move(-1)} aria-label="نمایش محصولات سمت چپ">←</button>
         <div className={`${styles.productRail} homeProductRail`} ref={railRef}>
           {products.map((product) => (
-            <article className={styles.productCard} key={product.name}>
+            <article className={`${styles.productCard} ${cards.productCard}`} key={product.name}>
               <Link href={product.href} prefetch={product.href === '/products/tolou' ? false : undefined}>
-                <div className={styles.productMedia}>
-                  <span className={styles.heart} aria-hidden="true">♡</span>
+                <div className={`${styles.productMedia} ${cards.productMedia}`}>
+                  <span className={`${styles.heart} ${cards.heart}`} aria-hidden="true">♡</span>
                   <div className={styles.jewelryArt} data-art={product.art} aria-hidden="true">
                     <span className={styles.artChain} />
                     <span className={styles.artJewel} />
                   </div>
                 </div>
-                <div className={styles.productInfo}>
+                <div className={`${styles.productInfo} ${cards.productInfo}`}>
                   <h3>{product.name}</h3>
                   <span>{product.meta}</span>
                   <strong>{product.price}</strong>
