@@ -6,6 +6,7 @@ import './polish.css';
 import './approved-header.css';
 import './home-final.css';
 import './final-footer.css';
+import './scroll-performance.css';
 
 const index = indexingEnabled();
 
