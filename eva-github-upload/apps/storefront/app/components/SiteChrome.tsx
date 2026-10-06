@@ -7,12 +7,12 @@ import { usePathname } from 'next/navigation';
 import styles from './SiteChrome.module.css';
 
 const primaryNav = [
-  ['/shop', 'فروشگاه'],
+  ['/', 'خانه'],
   ['/collections', 'کالکشن‌ها'],
-  ['/gift', 'هدیه'],
-  ['/lightweight', 'طلای سبک'],
-  ['/about', 'درباره ایوا'],
-  ['/help', 'راهنما'],
+  ['/shop/necklaces', 'گردنبند'],
+  ['/shop/rings', 'انگشتر'],
+  ['/shop/earrings', 'گوشواره'],
+  ['/about', 'درباره ما'],
 ] as const;
 
 const minimalPrefixes = ['/invoice/', '/verify/', '/payment/', '/success'];
@@ -36,6 +36,13 @@ function readCartCount() {
   } catch {
     return 0;
   }
+}
+
+function HeaderIcon({ type }: { type: 'search' | 'user' | 'heart' | 'bag' }) {
+  if (type === 'search') return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.2"/><path d="m15.5 15.5 4.2 4.2"/></svg>;
+  if (type === 'user') return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.6" r="3.5"/><path d="M5.7 20c.4-4.3 2.5-6.5 6.3-6.5s5.9 2.2 6.3 6.5"/></svg>;
+  if (type === 'heart') return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.3 5.9c-1.8-1.8-4.8-1.8-6.6 0L12 7.6l-1.7-1.7c-1.8-1.8-4.8-1.8-6.6 0s-1.8 4.7 0 6.5L12 20l8.3-7.6c1.8-1.8 1.8-4.7 0-6.5Z"/></svg>;
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.2 8.8h13.6l-1 11H6.2l-1-11Z"/><path d="M8.6 9V6.5A3.4 3.4 0 0 1 12 3.1a3.4 3.4 0 0 1 3.4 3.4V9"/></svg>;
 }
 
 export default function SiteChrome({ children }: { children: ReactNode }) {
@@ -113,7 +120,6 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
     setWishlistCount(readWishlistCount());
     setCartCount(readCartCount());
     finishLongLoader();
-    // pathname marks completion of a normal App Router navigation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
@@ -151,7 +157,6 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
       const destination = new URL(anchor.href, window.location.href);
       if (destination.origin !== window.location.origin) return;
       if (destination.pathname === window.location.pathname) return;
-
       beginLongNavigation();
     };
 
@@ -160,7 +165,6 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
       document.removeEventListener('click', handleInternalNavigation, true);
       clearNavigationTimers();
     };
-    // Persistent shell: register once. pathname completion is handled separately.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -170,9 +174,8 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <div className={styles.announcement}>ارسال امن • فاکتور معتبر • قیمت شفاف</div>
       <header className={styles.header}>
-        <Link className={styles.brand} href="/" aria-label="EVA">EVA</Link>
+        <Link className={styles.brand} href="/" aria-label="EVA">EVA<small>FINE JEWELRY</small></Link>
 
         <nav className={styles.desktopNav} aria-label="ناوبری اصلی">
           {primaryNav.map(([href, label]) => (
@@ -181,14 +184,10 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
         </nav>
 
         <div className={styles.actions}>
-          <Link className={styles.iconAction} href="/shop" aria-label="جستجو">⌕</Link>
-          <Link className={styles.iconAction} href="/wishlist" aria-label="علاقه‌مندی‌ها">
-            ♡{wishlistCount > 0 && <small>{new Intl.NumberFormat('fa-IR').format(wishlistCount)}</small>}
-          </Link>
-          <Link className={styles.accountAction} href="/account">حساب</Link>
-          <Link className={styles.cartAction} href="/cart">
-            سبد{cartCount > 0 && <small>{new Intl.NumberFormat('fa-IR').format(cartCount)}</small>}
-          </Link>
+          <Link className={styles.iconAction} href="/cart" aria-label="سبد خرید"><HeaderIcon type="bag" />{cartCount > 0 && <small>{new Intl.NumberFormat('fa-IR').format(cartCount)}</small>}</Link>
+          <Link className={styles.iconAction} href="/wishlist" aria-label="علاقه‌مندی‌ها"><HeaderIcon type="heart" />{wishlistCount > 0 && <small>{new Intl.NumberFormat('fa-IR').format(wishlistCount)}</small>}</Link>
+          <Link className={styles.iconAction} href="/account" aria-label="حساب کاربری"><HeaderIcon type="user" /></Link>
+          <Link className={styles.iconAction} href="/shop" aria-label="جستجو"><HeaderIcon type="search" /></Link>
           <button className={styles.menuButton} onClick={() => setMenuOpen(true)} aria-label="باز کردن منو">☰</button>
         </div>
       </header>
@@ -214,9 +213,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
         <div className={`${styles.longLoader}${longLoaderLeaving ? ` ${styles.longLoaderLeaving}` : ''}`} role="status" aria-live="polite" aria-busy="true">
           <span className={styles.srOnly}>در حال بارگذاری صفحه</span>
           <div className={styles.longLoaderMark} aria-hidden="true">
-            <div className={styles.longLoaderHalo}/>
-            <div className={styles.longLoaderLogo}>EVA</div>
-            <div className={styles.longLoaderShimmer}/>
+            <div className={styles.longLoaderHalo}/><div className={styles.longLoaderLogo}>EVA</div><div className={styles.longLoaderShimmer}/>
           </div>
         </div>
       )}
@@ -225,16 +222,9 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
         <div className={styles.mobileOverlay} role="dialog" aria-modal="true" aria-label="منوی EVA">
           <button className={styles.closeButton} onClick={() => setMenuOpen(false)} aria-label="بستن منو">×</button>
           <Link className={styles.mobileBrand} href="/">EVA</Link>
-          <nav className={styles.mobileNav}>
-            {primaryNav.map(([href, label]) => <Link href={href} key={href}>{label}<span>←</span></Link>)}
-          </nav>
+          <nav className={styles.mobileNav}>{primaryNav.map(([href, label]) => <Link href={href} key={href}>{label}<span>←</span></Link>)}</nav>
           <div className={styles.mobileUtilities}>
-            <Link href="/account">حساب من</Link>
-            <Link href="/wishlist">علاقه‌مندی‌ها {wishlistCount > 0 ? `(${new Intl.NumberFormat('fa-IR').format(wishlistCount)})` : ''}</Link>
-            <Link href="/cart">سبد خرید {cartCount > 0 ? `(${new Intl.NumberFormat('fa-IR').format(cartCount)})` : ''}</Link>
-            <Link href="/track-order">رهگیری سفارش</Link>
-            <Link href="/trust">اعتماد به EVA</Link>
-            <Link href="/contact">تماس</Link>
+            <Link href="/account">حساب من</Link><Link href="/wishlist">علاقه‌مندی‌ها {wishlistCount > 0 ? `(${new Intl.NumberFormat('fa-IR').format(wishlistCount)})` : ''}</Link><Link href="/cart">سبد خرید {cartCount > 0 ? `(${new Intl.NumberFormat('fa-IR').format(cartCount)})` : ''}</Link><Link href="/track-order">رهگیری سفارش</Link><Link href="/trust">اعتماد به EVA</Link><Link href="/contact">تماس</Link>
           </div>
         </div>
       )}
