@@ -8,6 +8,7 @@ import styles from './SiteChrome.module.css';
 
 const EVA_MARK_SRC = '/brand/eva-mark.webp';
 const EVA_WORDMARK_SRC = '/brand/eva-wordmark.webp';
+const EVA_WORDMARK_LIGHT_SRC = '/brand/eva-wordmark-light.webp';
 
 const brandResetStyle: CSSProperties = {
   paddingLeft: 0,
@@ -210,7 +211,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
         <div className={styles.footerTop}>
           <div className={styles.footerBrand}>
             <Link className={styles.brand} href="/" aria-label="EVA" style={brandResetStyle}>
-              <img src={EVA_WORDMARK_SRC} alt="" width={240} height={103} decoding="async" style={{ display: 'block', width: '138px', height: 'auto' }} />
+              <img src={EVA_WORDMARK_LIGHT_SRC} alt="" width={240} height={103} decoding="async" style={{ display: 'block', width: '138px', height: 'auto' }} />
             </Link>
             <p>بوتیک آنلاین طلای معاصر؛ طراحی ظریف، وزن دقیق و خرید شفاف.</p>
           </div>
