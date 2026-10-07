@@ -23,14 +23,7 @@
 .evaBrandLogoImage{
   display:block;
   width:auto;
-  height:52px;
-  object-fit:contain;
-}
-
-.evaMobileBrandLogo{
-  display:block;
-  width:auto;
-  height:92px;
+  height:45px;
   object-fit:contain;
 }
 
@@ -108,16 +101,11 @@
 @media(max-width:820px){
   .evaApprovedHeader{height:58px!important;padding:0 14px!important;grid-template-columns:1fr auto 1fr!important}
   .evaApprovedBrand{grid-column:2!important}
-  .evaBrandLogoImage{height:47px!important}
+  .evaBrandLogoImage{height:38px!important}
   .evaApprovedNav{display:none!important}
   .evaApprovedActions{grid-column:1!important;gap:7px!important}
   .evaApprovedAction{width:28px!important;min-width:28px!important;height:34px!important;min-height:34px!important}
   .evaApprovedAction svg{width:19px!important;height:19px!important}
   .evaApprovedAction:nth-of-type(2),.evaApprovedAction:nth-of-type(3){display:none!important}
   .evaApprovedHeader button{position:absolute!important;right:14px!important;top:9px!important;width:36px!important;height:36px!important;min-width:36px!important;margin:0!important;background:transparent!important;border:0!important}
-}
-
-@media(max-width:520px){
-  .evaBrandLogoImage{height:45px!important}
-  .evaMobileBrandLogo{height:84px!important}
 }
