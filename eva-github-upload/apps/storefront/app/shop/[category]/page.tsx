@@ -95,6 +95,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
   if (!meta) notFound();
 
   const products = (await getProducts()).filter((product) => product.masterSku.split('-')[2] === meta.code);
+  const heroProduct = products.find((product) => product.images && product.images.length > 0);
+  const heroImages = [...(heroProduct?.images ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
+  const heroImage = heroImages.find((image) => image.role === 'MAIN') ?? heroImages[0];
 
   return (
     <main className={styles.page}>
@@ -103,10 +106,23 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
       </div>
 
       <section className={styles.hero}>
-        <div>
+        <div className={styles.heroCopy}>
           <span>{meta.eyebrow}</span>
           <h1>{meta.name}</h1>
           <p>{meta.intro}</p>
+          <small>{new Intl.NumberFormat('fa-IR').format(products.length)} محصول در این دسته</small>
+        </div>
+
+        <div className={styles.heroVisual}>
+          {heroImage ? (
+            <img src={heroImage.url} alt={heroImage.altText || heroProduct?.nameFa || meta.name} decoding="async" />
+          ) : (
+            <div className={styles.heroFallback} aria-hidden="true"><i/><b/></div>
+          )}
+          <div className={styles.heroCaption}>
+            <span>CURATED BY EVA</span>
+            <b>{heroProduct?.nameFa ?? meta.name}</b>
+          </div>
         </div>
       </section>
 
