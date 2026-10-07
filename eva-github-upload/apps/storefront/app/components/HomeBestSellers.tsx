@@ -6,15 +6,19 @@ import styles from '../page.module.css';
 import cards from '../home-cards.module.css';
 
 const products = [
-  { name: 'طلوع', meta: 'کالکشن آغاز', price: '۱۴,۸۵۰,۰۰۰ تومان', art: 'sun', href: '/products/tolou' },
-  { name: 'افق', meta: 'کالکشن آغاز', price: '۱۵,۴۰۰,۰۰۰ تومان', art: 'drop', href: '/shop' },
-  { name: 'بامداد', meta: 'کالکشن آغاز', price: '۱۳,۹۵۰,۰۰۰ تومان', art: 'double', href: '/shop' },
-  { name: 'مسیر', meta: 'کالکشن آغاز', price: '۱۲,۹۰۰,۰۰۰ تومان', art: 'ring', href: '/shop' },
-  { name: 'آستانه', meta: 'کالکشن آغاز', price: '۱۶,۲۰۰,۰۰۰ تومان', art: 'stone', href: '/shop' },
-  { name: 'نقطه', meta: 'کالکشن آغاز', price: '۱۱,۹۵۰,۰۰۰ تومان', art: 'band', href: '/shop' },
-  { name: 'راه', meta: 'کالکشن آغاز', price: '۱۵,۹۵۰,۰۰۰ تومان', art: 'arc', href: '/shop' },
-  { name: 'گام', meta: 'کالکشن آغاز', price: '۱۳,۴۵۰,۰۰۰ تومان', art: 'line', href: '/shop' },
+  { name: 'طلوع', meta: 'کالکشن آغاز', price: 14850000, art: 'sun', href: '/products/tolou' },
+  { name: 'افق', meta: 'کالکشن آغاز', price: 15400000, art: 'drop', href: '/shop' },
+  { name: 'بامداد', meta: 'کالکشن آغاز', price: 13950000, art: 'double', href: '/shop' },
+  { name: 'مسیر', meta: 'کالکشن آغاز', price: 12900000, art: 'ring', href: '/shop' },
+  { name: 'آستانه', meta: 'کالکشن آغاز', price: 16200000, art: 'stone', href: '/shop' },
+  { name: 'نقطه', meta: 'کالکشن آغاز', price: 11950000, art: 'band', href: '/shop' },
+  { name: 'راه', meta: 'کالکشن آغاز', price: 15950000, art: 'arc', href: '/shop' },
+  { name: 'گام', meta: 'کالکشن آغاز', price: 13450000, art: 'line', href: '/shop' },
 ];
+
+function formatPrice(value: number) {
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value);
+}
 
 export default function HomeBestSellers() {
   const railRef = useRef<HTMLDivElement>(null);
@@ -51,7 +55,10 @@ export default function HomeBestSellers() {
                 <div className={`${styles.productInfo} ${cards.productInfo}`}>
                   <h3>{product.name}</h3>
                   <span>{product.meta}</span>
-                  <strong>{product.price}</strong>
+                  <strong className={cards.price}>
+                    <b dir="ltr">{formatPrice(product.price)}</b>
+                    <small>تومان</small>
+                  </strong>
                 </div>
               </Link>
             </article>
