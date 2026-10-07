@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import CatalogGrid, { type CatalogProduct } from './CatalogGrid';
+import FilterMenu, { type FilterOption } from './FilterMenu';
 import styles from './FilteredCatalog.module.css';
 
 const categoryLabels: Record<string, string> = {
@@ -16,6 +17,20 @@ const categoryLabels: Record<string, string> = {
 };
 
 type SortKey = 'RECOMMENDED' | 'PRICE_ASC' | 'PRICE_DESC' | 'WEIGHT_ASC';
+
+const weightOptions: FilterOption[] = [
+  { value: 'ALL', label: 'همه وزن‌ها' },
+  { value: 'ULTRA', label: 'کمتر از ۰.۷ گرم', note: 'قطعه‌های بسیار سبک' },
+  { value: 'LIGHT', label: '۰.۷ تا ۱ گرم', note: 'سبک و مناسب استفاده روزمره' },
+  { value: 'REGULAR', label: '۱ گرم و بیشتر', note: 'قطعه‌های پرتر و سنگین‌تر' },
+];
+
+const sortOptions: FilterOption[] = [
+  { value: 'RECOMMENDED', label: 'پیشنهادی' },
+  { value: 'PRICE_ASC', label: 'قیمت: کم به زیاد' },
+  { value: 'PRICE_DESC', label: 'قیمت: زیاد به کم' },
+  { value: 'WEIGHT_ASC', label: 'وزن: سبک‌تر اول' },
+];
 
 function categoryCode(sku: string) {
   return sku.split('-')[2] ?? 'OTHER';
@@ -43,6 +58,16 @@ export default function FilteredCatalog({
   const collections = useMemo(
     () => Array.from(new Set(products.map((product) => product.collection?.nameFa).filter(Boolean) as string[])),
     [products],
+  );
+
+  const categoryOptions = useMemo<FilterOption[]>(
+    () => [{ value: 'ALL', label: 'همه انواع' }, ...categories.map((code) => ({ value: code, label: categoryLabels[code] ?? code }))],
+    [categories],
+  );
+
+  const collectionOptions = useMemo<FilterOption[]>(
+    () => [{ value: 'ALL', label: 'همه کالکشن‌ها' }, ...collections.map((name) => ({ value: name, label: name }))],
+    [collections],
   );
 
   const result = useMemo(() => {
@@ -85,48 +110,16 @@ export default function FilteredCatalog({
   return (
     <div className={styles.wrap}>
       <div className={styles.toolbar}>
-        <div className={styles.count} aria-live="polite">{new Intl.NumberFormat('fa-IR').format(result.length)} محصول</div>
+        <div className={styles.toolbarIntro}>
+          <span>FILTER & SORT</span>
+          <strong>{new Intl.NumberFormat('fa-IR').format(result.length)} محصول در این دسته</strong>
+        </div>
 
         <div className={styles.controls}>
-          {showCategory && (
-            <label>
-              <span>نوع محصول</span>
-              <select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="نوع محصول">
-                <option value="ALL">همه انواع</option>
-                {categories.map((code) => <option key={code} value={code}>{categoryLabels[code] ?? code}</option>)}
-              </select>
-            </label>
-          )}
-
-          {showCollection && (
-            <label>
-              <span>کالکشن</span>
-              <select value={collection} onChange={(event) => setCollection(event.target.value)} aria-label="کالکشن">
-                <option value="ALL">همه کالکشن‌ها</option>
-                {collections.map((name) => <option key={name} value={name}>{name}</option>)}
-              </select>
-            </label>
-          )}
-
-          <label>
-            <span>وزن</span>
-            <select value={weight} onChange={(event) => setWeight(event.target.value)} aria-label="وزن">
-              <option value="ALL">همه وزن‌ها</option>
-              <option value="ULTRA">کمتر از ۰.۷ گرم</option>
-              <option value="LIGHT">۰.۷ تا ۱ گرم</option>
-              <option value="REGULAR">۱ گرم و بیشتر</option>
-            </select>
-          </label>
-
-          <label>
-            <span>مرتب‌سازی</span>
-            <select value={sort} onChange={(event) => setSort(event.target.value as SortKey)} aria-label="مرتب‌سازی">
-              <option value="RECOMMENDED">پیشنهادی</option>
-              <option value="PRICE_ASC">قیمت: کم به زیاد</option>
-              <option value="PRICE_DESC">قیمت: زیاد به کم</option>
-              <option value="WEIGHT_ASC">وزن: سبک‌تر اول</option>
-            </select>
-          </label>
+          {showCategory ? <FilterMenu label="نوع محصول" value={category} options={categoryOptions} onChange={setCategory}/> : null}
+          {showCollection ? <FilterMenu label="کالکشن" value={collection} options={collectionOptions} onChange={setCollection}/> : null}
+          <FilterMenu label="وزن" value={weight} options={weightOptions} onChange={setWeight}/>
+          <FilterMenu label="مرتب‌سازی" value={sort} options={sortOptions} onChange={(value) => setSort(value as SortKey)}/>
         </div>
       </div>
 
