@@ -19,6 +19,7 @@ const brandResetStyle: CSSProperties = {
 
 const primaryNav = [
   ['/', 'خانه'],
+  ['/shop', 'فروشگاه'],
   ['/collections', 'کالکشن‌ها'],
   ['/shop/necklaces', 'گردنبند'],
   ['/shop/rings', 'انگشتر'],
@@ -181,7 +182,11 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
 
   if (minimal) return <>{children}</>;
 
-  const active = (href: string) => href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/');
+  const active = (href: string) => {
+    if (href === '/') return pathname === '/';
+    if (href === '/shop') return pathname === '/shop';
+    return pathname === href || pathname.startsWith(href + '/');
+  };
 
   return (
     <>
