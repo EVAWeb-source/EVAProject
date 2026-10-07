@@ -17,7 +17,7 @@ const products = [
 ];
 
 function formatPrice(value: number) {
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat('fa-IR').format(value);
 }
 
 export default function HomeBestSellers() {
@@ -55,10 +55,10 @@ export default function HomeBestSellers() {
                 <div className={`${styles.productInfo} ${cards.productInfo}`}>
                   <h3>{product.name}</h3>
                   <span>{product.meta}</span>
-                  <strong className={cards.price}>
-                    <b dir="ltr">{formatPrice(product.price)}</b>
-                    <small>تومان</small>
-                  </strong>
+                  <div className={cards.priceTag}>
+                    <small className={cards.priceCurrency}><span>تو</span><span>مان</span></small>
+                    <strong className={cards.priceValue}>{formatPrice(product.price)}</strong>
+                  </div>
                 </div>
               </Link>
             </article>
