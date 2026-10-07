@@ -1,5 +1,6 @@
 'use client';
 
+import type { MouseEvent } from 'react';
 import styles from './FilterMenu.module.css';
 
 export type FilterOption = {
@@ -21,7 +22,7 @@ export default function FilterMenu({
 }) {
   const current = options.find((option) => option.value === value) ?? options[0];
 
-  function closeOtherMenus(event: React.MouseEvent<HTMLElement>) {
+  function closeOtherMenus(event: MouseEvent<HTMLElement>) {
     const currentMenu = event.currentTarget.closest('details');
     document.querySelectorAll<HTMLDetailsElement>('details[data-eva-filter="true"][open]').forEach((menu) => {
       if (menu !== currentMenu) menu.removeAttribute('open');
