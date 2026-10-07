@@ -75,6 +75,12 @@ a {
   margin-top: 60px !important;
 }
 
+/* Keep the visual rhythm from headings to their card rows consistent. */
+.homeCarouselShell,
+.homeCollectionsSection > div:last-child {
+  margin-top: 32px !important;
+}
+
 .homeCarouselShell {
   padding-inline: 52px;
 }
@@ -108,6 +114,11 @@ a {
     margin-top: 48px !important;
   }
 
+  .homeCarouselShell,
+  .homeCollectionsSection > div:last-child {
+    margin-top: 24px !important;
+  }
+
   .homeCarouselShell {
     padding-inline: 0 !important;
   }
@@ -127,6 +138,11 @@ a {
   .homeStorySection,
   .homeCollectionsSection {
     margin-top: 42px !important;
+  }
+
+  .homeCarouselShell,
+  .homeCollectionsSection > div:last-child {
+    margin-top: 22px !important;
   }
 
   .homeProductRail {
