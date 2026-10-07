@@ -1,9 +1,14 @@
 /* Scroll performance hardening: keep the visual language, remove persistent compositing/repaint work. */
 
-/* The approved header no longer needs to remain composited while the page scrolls. */
+/* Keep the approved header visible while scrolling without expensive backdrop/filter effects. */
 .evaApprovedHeader {
-  position: relative !important;
-  top: auto !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 80 !important;
+  background: #fffdf9 !important;
+  will-change: auto !important;
+  transform: none !important;
+  backface-visibility: visible !important;
 }
 
 /* Do not animate the entire page surface. Long navigations still use the EVA loader. */
