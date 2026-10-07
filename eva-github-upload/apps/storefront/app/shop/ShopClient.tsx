@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import FilterMenu, { type FilterOption } from '../components/FilterMenu';
 import styles from './shop.module.css';
 
 type Unit = {
@@ -66,6 +67,20 @@ const categorySlugs: Record<string, string> = {
   CHM: 'charms',
 };
 
+const weightOptions: FilterOption[] = [
+  { value: 'ALL', label: 'همه وزن‌ها' },
+  { value: 'ULTRA', label: 'کمتر از ۰.۷ گرم', note: 'قطعه‌های بسیار سبک' },
+  { value: 'LIGHT', label: '۰.۷ تا ۱ گرم', note: 'سبک و مناسب استفاده روزمره' },
+  { value: 'REGULAR', label: '۱ گرم و بیشتر', note: 'قطعه‌های پرتر و سنگین‌تر' },
+];
+
+const sortOptions: FilterOption[] = [
+  { value: 'RECOMMENDED', label: 'پیشنهادی' },
+  { value: 'PRICE_ASC', label: 'قیمت: کم به زیاد' },
+  { value: 'PRICE_DESC', label: 'قیمت: زیاد به کم' },
+  { value: 'WEIGHT_ASC', label: 'وزن: سبک‌تر اول' },
+];
+
 function categoryCode(masterSku: string) {
   return masterSku.split('-')[2] ?? 'OTHER';
 }
@@ -83,6 +98,11 @@ function weight(value: number) {
 
 function normalize(value: string) {
   return value.trim().toLocaleLowerCase('fa').replace(/ي/g, 'ی').replace(/ك/g, 'ک');
+}
+
+function primaryImage(product: ShopProduct) {
+  const sorted = [...(product.images ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
+  return sorted.find((image) => image.role === 'MAIN') ?? sorted[0];
 }
 
 function Visual({ code }: { code: string }) {
@@ -107,7 +127,6 @@ function Visual({ code }: { code: string }) {
 
 export default function ShopClient({ products }: { products: ShopProduct[] }) {
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('ALL');
   const [collection, setCollection] = useState('ALL');
   const [weightBand, setWeightBand] = useState('ALL');
   const [sort, setSort] = useState<SortKey>('RECOMMENDED');
@@ -150,10 +169,23 @@ export default function ShopClient({ products }: { products: ShopProduct[] }) {
     [products],
   );
 
+  const collectionOptions = useMemo<FilterOption[]>(
+    () => [{ value: 'ALL', label: 'همه کالکشن‌ها' }, ...collections.map((name) => ({ value: name, label: name }))],
+    [collections],
+  );
+
   const categoryCodes = useMemo(
     () => Array.from(new Set(prepared.map((item) => item.code))),
     [prepared],
   );
+
+  const hero = useMemo(() => {
+    for (const product of products) {
+      const image = primaryImage(product);
+      if (image) return { product, image };
+    }
+    return null;
+  }, [products]);
 
   const result = useMemo(() => {
     const q = normalize(deferredQuery);
@@ -163,7 +195,6 @@ export default function ShopClient({ products }: { products: ShopProduct[] }) {
 
       return (
         (!q || item.searchText.includes(q)) &&
-        (category === 'ALL' || item.code === category) &&
         (collection === 'ALL' || product.collection?.nameFa === collection) &&
         (
           weightBand === 'ALL' ||
@@ -180,14 +211,10 @@ export default function ShopClient({ products }: { products: ShopProduct[] }) {
       if (sort === 'WEIGHT_ASC') return a.minWeight - b.minWeight;
       return a.originalIndex - b.originalIndex;
     });
-  }, [prepared, deferredQuery, category, collection, weightBand, sort]);
+  }, [prepared, deferredQuery, collection, weightBand, sort]);
 
   const filtersActive = Boolean(
-    query ||
-    category !== 'ALL' ||
-    collection !== 'ALL' ||
-    weightBand !== 'ALL' ||
-    sort !== 'RECOMMENDED',
+    query || collection !== 'ALL' || weightBand !== 'ALL' || sort !== 'RECOMMENDED',
   );
 
   function toggleWishlist(slug: string) {
@@ -203,7 +230,6 @@ export default function ShopClient({ products }: { products: ShopProduct[] }) {
 
   function reset() {
     setQuery('');
-    setCategory('ALL');
     setCollection('ALL');
     setWeightBand('ALL');
     setSort('RECOMMENDED');
@@ -211,89 +237,73 @@ export default function ShopClient({ products }: { products: ShopProduct[] }) {
 
   return (
     <>
-      <section className={styles.intro}>
-        <div>
+      <div className={styles.breadcrumb}>
+        <Link href="/">خانه</Link><span>/</span><span>فروشگاه</span>
+      </div>
+
+      <section className={styles.hero}>
+        <div className={styles.heroCopy}>
           <span>EVA SHOP</span>
           <h1>فروشگاه</h1>
-          <p>قطعه‌های موجود ایوا را بر اساس نوع، وزن، کالکشن و بودجه پیدا کن.</p>
+          <p>قطعه‌های موجود ایوا را با وزن و قیمت شفاف ببین و انتخابت را بر اساس کالکشن، وزن یا بودجه محدود کن.</p>
+          <small>{new Intl.NumberFormat('fa-IR').format(result.length)} محصول برای انتخاب</small>
         </div>
-        <div className={styles.count}>{new Intl.NumberFormat('fa-IR').format(result.length)} محصول</div>
+
+        <div className={styles.heroVisual}>
+          {hero ? (
+            <img src={hero.image.url} alt={hero.image.altText || hero.product.nameFa} decoding="async" />
+          ) : (
+            <Visual code="NEC"/>
+          )}
+          <div className={styles.heroCaption}>
+            <span>CURATED BY EVA</span>
+            <b>{hero?.product.nameFa ?? 'جواهرات ایوا'}</b>
+          </div>
+        </div>
       </section>
+
+      <nav className={styles.categoryNav} aria-label="دسته‌بندی محصولات">
+        <Link className={styles.active} href="/shop">همه محصولات</Link>
+        {categoryCodes.map((code) => (
+          <Link key={code} href={'/shop/' + (categorySlugs[code] ?? '')}>{categories[code] ?? code}</Link>
+        ))}
+      </nav>
 
       <section className={styles.searchArea} aria-label="جستجوی محصولات">
         <label className={styles.searchBox}>
           <span aria-hidden="true">⌕</span>
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="جستجو در نام محصول، توضیح، کالکشن یا SKU"
-            aria-label="جستجو در فروشگاه"
-          />
+          <div>
+            <small>جستجو در فروشگاه</small>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="نام محصول، کالکشن یا کد محصول را بنویس..."
+              aria-label="جستجو در فروشگاه"
+            />
+          </div>
           {query && (
             <button type="button" onClick={() => setQuery('')} aria-label="پاک کردن جستجو">×</button>
           )}
         </label>
       </section>
 
-      <nav className={styles.categoryPages} aria-label="صفحه‌های دسته‌بندی">
-        <span>دسته‌ها</span>
-        <Link className={styles.allProductsLink} href="/shop">همه محصولات</Link>
-        {categoryCodes.map((code) => (
-          <Link key={code} href={'/shop/' + (categorySlugs[code] ?? '')}>{categories[code] ?? code}</Link>
-        ))}
-      </nav>
-
       <section className={styles.toolbar} aria-label="فیلتر و مرتب‌سازی محصولات">
-        <div className={styles.quickFilter}>
-          <span className={styles.toolbarLabel}>نوع محصول</span>
-          <div className={styles.chips}>
-            <button type="button" className={category === 'ALL' ? styles.active : ''} onClick={() => setCategory('ALL')}>همه</button>
-            {categoryCodes.map((code) => (
-              <button
-                type="button"
-                key={code}
-                className={category === code ? styles.active : ''}
-                onClick={() => setCategory(code)}
-              >
-                {categories[code] ?? code}
-              </button>
-            ))}
-          </div>
+        <div className={styles.toolbarIntro}>
+          <span>FILTER & SORT</span>
+          <strong>انتخابت را دقیق‌تر کن</strong>
         </div>
 
         <div className={styles.tools}>
-          <label>
-            <span>کالکشن</span>
-            <select value={collection} onChange={(event) => setCollection(event.target.value)} aria-label="کالکشن">
-              <option value="ALL">همه کالکشن‌ها</option>
-              {collections.map((name) => <option key={name} value={name}>{name}</option>)}
-            </select>
-          </label>
-          <label>
-            <span>وزن</span>
-            <select value={weightBand} onChange={(event) => setWeightBand(event.target.value)} aria-label="وزن">
-              <option value="ALL">همه وزن‌ها</option>
-              <option value="ULTRA">کمتر از ۰.۷ گرم</option>
-              <option value="LIGHT">۰.۷ تا ۱ گرم</option>
-              <option value="REGULAR">۱ گرم و بیشتر</option>
-            </select>
-          </label>
-          <label>
-            <span>مرتب‌سازی</span>
-            <select value={sort} onChange={(event) => setSort(event.target.value as SortKey)} aria-label="مرتب‌سازی">
-              <option value="RECOMMENDED">پیشنهادی</option>
-              <option value="PRICE_ASC">قیمت: کم به زیاد</option>
-              <option value="PRICE_DESC">قیمت: زیاد به کم</option>
-              <option value="WEIGHT_ASC">وزن: سبک‌تر اول</option>
-            </select>
-          </label>
+          <FilterMenu label="کالکشن" value={collection} options={collectionOptions} onChange={setCollection}/>
+          <FilterMenu label="وزن" value={weightBand} options={weightOptions} onChange={setWeightBand}/>
+          <FilterMenu label="مرتب‌سازی" value={sort} options={sortOptions} onChange={(value) => setSort(value as SortKey)}/>
         </div>
       </section>
 
       {filtersActive && (
         <div className={styles.filterState}>
-          <span>{new Intl.NumberFormat('fa-IR').format(result.length)} نتیجه با فیلتر فعلی</span>
-          <button type="button" onClick={reset}>پاک‌کردن همه فیلترها</button>
+          <span>{new Intl.NumberFormat('fa-IR').format(result.length)} نتیجه با انتخاب فعلی</span>
+          <button type="button" onClick={reset}>پاک‌کردن جستجو و فیلترها</button>
         </div>
       )}
 
@@ -303,8 +313,7 @@ export default function ShopClient({ products }: { products: ShopProduct[] }) {
             const product = item.product;
             const multiple = product.units.length > 1;
             const liked = wishlist.includes(product.slug);
-            const sorted = [...(product.images ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
-            const image = sorted.find((candidate) => candidate.role === 'MAIN') ?? sorted[0];
+            const image = primaryImage(product);
             const href = '/products/' + product.slug;
 
             return (
@@ -357,8 +366,8 @@ export default function ShopClient({ products }: { products: ShopProduct[] }) {
       ) : (
         <section className={styles.emptyState}>
           <span>NO RESULTS</span>
-          <h2>محصولی با این فیلتر پیدا نشد.</h2>
-          <p>فیلترها را تغییر بده یا دوباره همه محصولات را ببین.</p>
+          <h2>محصولی با این انتخاب پیدا نشد.</h2>
+          <p>جستجو یا فیلترها را تغییر بده و دوباره محصولات را ببین.</p>
           <button type="button" onClick={reset}>نمایش همه محصولات</button>
         </section>
       )}
