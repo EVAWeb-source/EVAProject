@@ -36,10 +36,37 @@
 }
 
 .productInfo strong{
-  margin-top:7px!important;
-  font-size:11px!important;
-  color:#8f672b!important;
-  font-weight:600!important;
+  margin-top:8px!important;
+  color:#302a25!important;
+  font-weight:400!important;
+}
+
+.price{
+  display:inline-flex!important;
+  align-items:baseline!important;
+  justify-content:center!important;
+  gap:6px!important;
+  direction:rtl!important;
+  white-space:nowrap!important;
+}
+
+.price b{
+  direction:ltr!important;
+  unicode-bidi:isolate!important;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif!important;
+  font-size:12px!important;
+  line-height:1!important;
+  font-weight:650!important;
+  letter-spacing:.018em!important;
+  font-variant-numeric:tabular-nums lining-nums!important;
+  color:#2f2a26!important;
+}
+
+.price small{
+  font-family:var(--eva-font-ui)!important;
+  font-size:8px!important;
+  font-weight:500!important;
+  color:#8f8175!important;
 }
 
 .heart{
@@ -111,7 +138,8 @@
 @media(max-width:520px){
   .productMedia{aspect-ratio:1.06/1!important}
   .productInfo h3{font-size:13px!important}
-  .productInfo strong{font-size:10px!important}
+  .price b{font-size:11px!important}
+  .price small{font-size:7px!important}
   .collectionGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
   .collectionCard{min-height:138px!important}
   .collectionCard>div{right:12px!important;bottom:11px!important}
