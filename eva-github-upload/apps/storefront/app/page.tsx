@@ -49,7 +49,7 @@ export default function HomePage() {
         <div className={`${styles.storyPanel} ${editorial.storyPanel}`}>
           <div className={`${styles.storyCopy} ${editorial.storyCopy}`}>
             <span>OUR STORY</span>
-            <h2 id="home-story-title">داستان EVA</h2>
+            <h2 id="home-story-title">داستان ایوا</h2>
             <p>در EVA به قطعه‌هایی باور داریم که قرار نیست فقط دیده شوند؛ جواهراتی ظریف و امروزی که با زمان، بخشی از داستان شخصی تو می‌شوند.</p>
             <Link className={`${styles.storyButton} ${editorial.storyButton}`} href="/about">درباره ما ←</Link>
           </div>
