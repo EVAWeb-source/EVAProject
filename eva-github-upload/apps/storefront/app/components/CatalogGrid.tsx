@@ -35,8 +35,8 @@ function category(sku: string) {
   return categoryLabels[code(sku)] ?? 'طلا';
 }
 
-function toman(value: number) {
-  return new Intl.NumberFormat('fa-IR').format(value) + ' تومان';
+function price(value: number) {
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value);
 }
 
 function weight(value: number) {
@@ -161,7 +161,11 @@ export default function CatalogGrid({
               </div>
               <div className={styles.meta}>
                 <span>{multiple ? 'از ' : ''}{weight(minWeight)}</span>
-                <strong>{multiple ? 'از ' : ''}{toman(minPrice)}</strong>
+                <strong className={styles.price}>
+                  {multiple ? <small>از</small> : null}
+                  <b dir="ltr">{price(minPrice)}</b>
+                  <small>تومان</small>
+                </strong>
               </div>
             </Link>
           </article>
