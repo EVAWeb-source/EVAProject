@@ -21,9 +21,16 @@ export default function FilterMenu({
 }) {
   const current = options.find((option) => option.value === value) ?? options[0];
 
+  function closeOtherMenus(event: React.MouseEvent<HTMLElement>) {
+    const currentMenu = event.currentTarget.closest('details');
+    document.querySelectorAll<HTMLDetailsElement>('details[data-eva-filter="true"][open]').forEach((menu) => {
+      if (menu !== currentMenu) menu.removeAttribute('open');
+    });
+  }
+
   return (
-    <details className={styles.menu}>
-      <summary className={styles.trigger}>
+    <details className={styles.menu} data-eva-filter="true">
+      <summary className={styles.trigger} onClick={closeOtherMenus}>
         <span className={styles.label}>{label}</span>
         <strong>{current?.label}</strong>
         <i aria-hidden="true">⌄</i>
