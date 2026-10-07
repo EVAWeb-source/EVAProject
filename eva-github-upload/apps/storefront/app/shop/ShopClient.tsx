@@ -85,8 +85,8 @@ function categoryCode(masterSku: string) {
   return masterSku.split('-')[2] ?? 'OTHER';
 }
 
-function toman(value: number) {
-  return new Intl.NumberFormat('fa-IR').format(value) + ' تومان';
+function price(value: number) {
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value);
 }
 
 function weight(value: number) {
@@ -174,11 +174,6 @@ export default function ShopClient({ products }: { products: ShopProduct[] }) {
     [collections],
   );
 
-  const categoryCodes = useMemo(
-    () => Array.from(new Set(prepared.map((item) => item.code))),
-    [prepared],
-  );
-
   const hero = useMemo(() => {
     for (const product of products) {
       const image = primaryImage(product);
@@ -264,8 +259,8 @@ export default function ShopClient({ products }: { products: ShopProduct[] }) {
 
       <nav className={styles.categoryNav} aria-label="دسته‌بندی محصولات">
         <Link className={styles.active} href="/shop">همه محصولات</Link>
-        {categoryCodes.map((code) => (
-          <Link key={code} href={'/shop/' + (categorySlugs[code] ?? '')}>{categories[code] ?? code}</Link>
+        {Object.entries(categorySlugs).map(([code, slug]) => (
+          <Link key={code} href={'/shop/' + slug}>{categories[code] ?? code}</Link>
         ))}
       </nav>
 
@@ -355,7 +350,11 @@ export default function ShopClient({ products }: { products: ShopProduct[] }) {
                     </div>
                     <div className={styles.meta}>
                       <span>{multiple ? 'از ' : ''}{weight(item.minWeight)}</span>
-                      <strong>{multiple ? 'از ' : ''}{toman(item.minPrice)}</strong>
+                      <strong className={styles.price}>
+                        {multiple ? <small>از</small> : null}
+                        <b dir="ltr">{price(item.minPrice)}</b>
+                        <small>تومان</small>
+                      </strong>
                     </div>
                   </div>
                 </Link>
