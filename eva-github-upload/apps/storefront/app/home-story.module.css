@@ -158,8 +158,21 @@
   .promiseIcon{font-size:18px!important}
   .storyPanel{grid-template-columns:1fr!important}
   .storyVisual{order:-1;min-height:260px!important;background:linear-gradient(145deg,#e9dece 0%,#f7f1e9 58%,#ddcab4 100%)!important}
-  .storyCopy{padding:34px 24px!important}
-  .storyCopy::before{right:24px}
+  .storyCopy{
+    padding:34px 24px!important;
+    align-items:center!important;
+    text-align:center!important;
+  }
+  .storyCopy::before{
+    right:50%!important;
+    transform:translateX(50%);
+  }
+  .storyCopy p{
+    margin:0 auto!important;
+  }
+  .storyButton{
+    align-self:center!important;
+  }
 }
 
 @media(max-width:520px){
@@ -169,7 +182,6 @@
   .promiseStrip strong{font-size:9px!important;white-space:nowrap}
   .promiseIcon{font-size:17px!important}
   .storyCopy{padding:30px 18px!important}
-  .storyCopy::before{right:18px}
   .storyCopy h2{font-size:29px!important}
   .storyCopy p{font-size:11px!important;line-height:2.05!important}
   .storyVisual{min-height:225px!important}
