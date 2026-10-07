@@ -1,12 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import type { MutableRefObject, ReactNode } from 'react';
+import type { CSSProperties, MutableRefObject, ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import styles from './SiteChrome.module.css';
 
-const EVA_LOGO_DATA_URI = 'data:image/webp;base64,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';
+const EVA_MARK_SRC = '/brand/eva-mark.webp';
+const EVA_WORDMARK_SRC = '/brand/eva-wordmark.webp';
+
+const brandResetStyle: CSSProperties = {
+  paddingLeft: 0,
+  letterSpacing: 0,
+  fontSize: 0,
+  lineHeight: 0,
+};
 
 const primaryNav = [
   ['/', 'خانه'],
@@ -177,7 +185,9 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
   return (
     <>
       <header className={`${styles.header} evaApprovedHeader`}>
-        <Link className={`${styles.brand} evaApprovedBrand`} href="/" aria-label="EVA"><img className="evaBrandLogoImage" src={EVA_LOGO_DATA_URI} alt="EVA" /></Link>
+        <Link className={`${styles.brand} evaApprovedBrand`} href="/" aria-label="EVA">
+          <img className="evaBrandLogoImage" src={EVA_MARK_SRC} alt="" width={160} height={137} decoding="async" />
+        </Link>
 
         <nav className={`${styles.desktopNav} evaApprovedNav`} aria-label="ناوبری اصلی">
           {primaryNav.map(([href, label]) => (
@@ -199,7 +209,9 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
       <footer className={styles.footer}>
         <div className={styles.footerTop}>
           <div className={styles.footerBrand}>
-            <Link className={styles.brand} href="/">EVA</Link>
+            <Link className={styles.brand} href="/" aria-label="EVA" style={brandResetStyle}>
+              <img src={EVA_WORDMARK_SRC} alt="" width={240} height={103} decoding="async" style={{ display: 'block', width: '138px', height: 'auto' }} />
+            </Link>
             <p>بوتیک آنلاین طلای معاصر؛ طراحی ظریف، وزن دقیق و خرید شفاف.</p>
           </div>
           <div className={styles.footerLinks}>
@@ -214,14 +226,27 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
       {longLoaderVisible && (
         <div className={`${styles.longLoader}${longLoaderLeaving ? ` ${styles.longLoaderLeaving}` : ''}`} role="status" aria-live="polite" aria-busy="true">
           <span className={styles.srOnly}>در حال بارگذاری صفحه</span>
-          <div className={styles.longLoaderMark} aria-hidden="true"><div className={styles.longLoaderHalo}/><div className={styles.longLoaderLogo}>EVA</div><div className={styles.longLoaderShimmer}/></div>
+          <div className={styles.longLoaderMark} aria-hidden="true">
+            <div className={styles.longLoaderHalo}/>
+            <img
+              src={EVA_WORDMARK_SRC}
+              alt=""
+              width={240}
+              height={103}
+              decoding="async"
+              style={{ position: 'relative', zIndex: 2, display: 'block', width: '132px', height: 'auto', animation: 'longLogoEnter .48s var(--eva-ease) forwards' }}
+            />
+            <div className={styles.longLoaderShimmer}/>
+          </div>
         </div>
       )}
 
       {menuOpen && (
         <div className={styles.mobileOverlay} role="dialog" aria-modal="true" aria-label="منوی EVA">
           <button className={styles.closeButton} onClick={() => setMenuOpen(false)} aria-label="بستن منو">×</button>
-          <Link className={styles.mobileBrand} href="/" aria-label="EVA"><img className="evaMobileBrandLogo" src={EVA_LOGO_DATA_URI} alt="EVA" /></Link>
+          <Link className={styles.mobileBrand} href="/" aria-label="EVA" style={{ ...brandResetStyle, display: 'inline-flex', alignItems: 'center' }}>
+            <img src={EVA_WORDMARK_SRC} alt="" width={240} height={103} decoding="async" style={{ display: 'block', width: '126px', height: 'auto' }} />
+          </Link>
           <nav className={styles.mobileNav}>{primaryNav.map(([href, label]) => <Link href={href} key={href}>{label}<span>←</span></Link>)}</nav>
           <div className={styles.mobileUtilities}>
             <Link href="/account">حساب من</Link><Link href="/wishlist">علاقه‌مندی‌ها {wishlistCount > 0 ? `(${new Intl.NumberFormat('fa-IR').format(wishlistCount)})` : ''}</Link><Link href="/cart">سبد خرید {cartCount > 0 ? `(${new Intl.NumberFormat('fa-IR').format(cartCount)})` : ''}</Link><Link href="/track-order">رهگیری سفارش</Link><Link href="/trust">اعتماد به EVA</Link><Link href="/contact">تماس</Link>
