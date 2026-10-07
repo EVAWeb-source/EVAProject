@@ -29,22 +29,14 @@ body > footer > div:first-child > div:first-child > a {
   display:inline-flex !important;
   flex-direction:column;
   align-items:flex-start;
-  gap:8px;
+  gap:0;
   color:#fffdf9 !important;
-  font-size:36px !important;
-  letter-spacing:.25em !important;
-  line-height:1 !important;
+  line-height:0 !important;
 }
 
 body > footer > div:first-child > div:first-child > a::after {
-  content:'FINE JEWELRY';
-  direction:ltr;
-  font-family:var(--eva-font-ui);
-  font-size:8px;
-  font-weight:500;
-  letter-spacing:.3em;
-  color:#a79d94;
-  white-space:nowrap;
+  content:none !important;
+  display:none !important;
 }
 
 body > footer > div:first-child > div:first-child > p {
@@ -150,9 +142,6 @@ body > footer > div:last-child {
 @media(max-width:520px){
   body > footer {
     padding:36px 12px 18px !important;
-  }
-  body > footer > div:first-child > div:first-child > a {
-    font-size:30px !important;
   }
   body > footer > div:first-child > div:nth-child(2) {
     grid-template-columns:repeat(3,minmax(0,1fr)) !important;
