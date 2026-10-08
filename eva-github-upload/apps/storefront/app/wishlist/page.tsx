@@ -1,2 +1,25 @@
+import type { Metadata } from 'next';
 import WishlistClient from './WishlistClient';
-export default function WishlistPage(){return <WishlistClient/>;}
+import { publicMetadata } from '../lib/seo';
+
+export const dynamic='force-dynamic';
+
+export const metadata:Metadata=publicMetadata({
+  title:'علاقه‌مندی‌ها | ایوا',
+  description:'قطعه‌هایی که برای بعد نگه داشته‌ای، با موجودی و قیمت فعلی ایوا.',
+  path:'/wishlist',
+});
+
+type Product={id:string;nameFa:string;slug:string;masterSku:string;purity:number;images?:Array<{url:string;altText:string;role:string;sortOrder:number}>;collection:{nameFa:string}|null;units:Array<{exactWeightGram:string;currentPriceToman:string;status:string}>};
+
+async function getProducts():Promise<Product[]>{
+  const apiBase=process.env.API_URL ?? 'https://eva-api-production-c864.up.railway.app';
+  const response=await fetch(apiBase+'/api/v1/products',{cache:'no-store'});
+  if(!response.ok)throw new Error('Failed to load EVA catalog: '+response.status);
+  return response.json();
+}
+
+export default async function WishlistPage(){
+  const products=await getProducts();
+  return <WishlistClient products={products}/>;
+}
