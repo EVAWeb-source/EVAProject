@@ -21,9 +21,8 @@ const primaryNav = [
   ['/', 'خانه'],
   ['/shop', 'فروشگاه'],
   ['/collections', 'کالکشن‌ها'],
-  ['/shop/necklaces', 'گردنبند'],
-  ['/shop/rings', 'انگشتر'],
-  ['/shop/earrings', 'گوشواره'],
+  ['/gift', 'هدیه'],
+  ['/lightweight', 'طلای سبک'],
   ['/about', 'درباره ما'],
 ] as const;
 
