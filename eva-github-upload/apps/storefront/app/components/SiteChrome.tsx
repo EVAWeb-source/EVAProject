@@ -70,7 +70,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
   const loaderShownAt = useRef<number | null>(null);
 
   const minimal = minimalPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(prefix));
-  const commerceWorkspace = pathname === '/shop' || pathname === '/lightweight';
+  const commerceWorkspace = pathname === '/shop';
 
   function clearTimer(ref: MutableRefObject<number | null>) {
     if (ref.current !== null) {
