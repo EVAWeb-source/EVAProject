@@ -68,20 +68,22 @@ export default function LightweightCatalog({products}:{products:CatalogProduct[]
         {categoryOrder.filter(code=>categories.has(code)).map(code=><button type="button" key={code} className={category===code?styles.activeTab:''} onClick={()=>setCategory(code)}>{categoryLabels[code]}</button>)}
       </nav>
       <div className={styles.toolbar}>
-        <div className={styles.toolbarIntro}><span>LIGHT FILTER</span><strong>{new Intl.NumberFormat('fa-IR').format(result.length)} محصول برای انتخاب</strong></div>
+        <div className={styles.toolbarIntro}><span>LIGHT FILTER</span><strong>{new Intl.NumberFormat('fa-IR').format(result.length)} محصول</strong></div>
         <div className={styles.controls}>
           <FilterMenu label="وزن" value={band} options={weightOptions} onChange={setBand}/>
           <FilterMenu label="مرتب‌سازی" value={sort} options={sortOptions} onChange={setSort}/>
         </div>
+        {filtered&&<button className={styles.clearFilters} type="button" onClick={reset}>پاک‌کردن</button>}
       </div>
     </div>
 
-    {filtered&&<div className={styles.filterState}><span>{new Intl.NumberFormat('fa-IR').format(result.length)} نتیجه با انتخاب فعلی</span><button type="button" onClick={reset}>پاک‌کردن فیلترها</button></div>}
-
-    <CatalogGrid
-      products={result}
-      emptyTitle="فعلاً محصولی در این بازه وزن نداریم."
-      emptyText="محدوده وزن یا دسته را تغییر بده تا گزینه‌های دیگر طلای سبک را ببینی."
-    />
+    <div className={styles.catalogGridWrap}>
+      <CatalogGrid
+        compact
+        products={result}
+        emptyTitle="فعلاً محصولی در این بازه وزن نداریم."
+        emptyText="محدوده وزن یا دسته را تغییر بده تا گزینه‌های دیگر طلای سبک را ببینی."
+      />
+    </div>
   </section>;
 }
