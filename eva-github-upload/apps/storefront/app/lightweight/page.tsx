@@ -20,45 +20,26 @@ async function getProducts():Promise<CatalogProduct[]> {
   return response.json();
 }
 
-function primaryImage(products:CatalogProduct[]){
-  for(const product of products){
-    const sorted=[...(product.images??[])].sort((a,b)=>a.sortOrder-b.sortOrder);
-    const image=sorted.find(item=>item.role==='MAIN')??sorted[0];
-    if(image)return {image,product};
-  }
-  return null;
-}
-
 export default async function LightweightPage(){
   const products=await getProducts();
   const lightweight=products.filter(product=>product.units.some(unit=>Number(unit.exactWeightGram)<1));
-  const hero=primaryImage(lightweight);
   const weights=lightweight.flatMap(product=>product.units.map(unit=>Number(unit.exactWeightGram))).filter(value=>value<1&&Number.isFinite(value));
   const minWeight=weights.length?Math.min(...weights):null;
 
   return <main className={styles.page}>
     <div className={styles.breadcrumb}><Link href="/">خانه</Link><span>/</span><span>طلای سبک</span></div>
 
-    <section className={styles.hero}>
-      <div className={styles.heroCopy}>
-        <span>LIGHTWEIGHT GOLD</span>
-        <h1>طلای سبک، برای استفاده بیشتر.</h1>
-        <p>این صفحه فقط محصولاتی را نشان می‌دهد که حداقل یک Unit زیر یک گرم دارند؛ وزن و قیمت دقیق هر قطعه در انتخاب نهایی حفظ می‌شود.</p>
-        <a href="#lightweight-catalog">مشاهده قطعه‌های سبک</a>
-        <small>{new Intl.NumberFormat('fa-IR').format(lightweight.length)} محصول{minWeight!==null?` • شروع وزن از ${new Intl.NumberFormat('fa-IR',{maximumFractionDigits:3}).format(minWeight)} گرم`:''}</small>
-      </div>
-      <div className={styles.heroVisual}>
-        {hero?<img src={hero.image.url} alt={hero.image.altText||hero.product.nameFa} decoding="async" fetchPriority="high"/>:<div className={styles.heroArt} aria-hidden="true"><div className={styles.halo}/><span className={styles.chain}/><span className={styles.pendant}/></div>}
-        <div className={styles.weightTag}><strong>&lt; ۱ گرم</strong><span>LIVE UNIT FILTER</span></div>
-      </div>
+    <section className={styles.compactHero}>
+      <div><span>LIGHTWEIGHT GOLD</span><h1>طلای سبک</h1><p>قطعه‌هایی با حداقل یک Unit زیر ۱ گرم؛ برای انتخاب سریع‌تر، سبک‌تر و شفاف‌تر.</p></div>
+      <div className={styles.quickStats}><span><b>&lt; ۱ گرم</b><small>معیار این صفحه</small></span><span><b>{new Intl.NumberFormat('fa-IR').format(lightweight.length)}</b><small>محصول برای انتخاب</small></span>{minWeight!==null&&<span><b>{new Intl.NumberFormat('fa-IR',{maximumFractionDigits:3}).format(minWeight)} گرم</b><small>کمترین وزن موجود</small></span>}</div>
     </section>
+
+    <LightweightCatalog products={lightweight}/>
 
     <section className={styles.definition}>
       <div><span>WHAT LIGHTWEIGHT MEANS</span><h2>سبک یعنی وزن کمتر؛ نه اطلاعات کمتر.</h2></div>
       <p>ممکن است یک مدل چند Unit با وزن متفاوت داشته باشد. در این صفحه فقط Unitهای زیر یک گرم وارد انتخاب می‌شوند و قیمت هر گزینه بر اساس همان Unit واقعی نمایش داده می‌شود.</p>
     </section>
-
-    <div id="lightweight-catalog"><LightweightCatalog products={lightweight}/></div>
 
     <section className={styles.why}>
       <div className={styles.whyHead}><span>WHY LIGHTWEIGHT</span><h2>چه زمانی انتخاب خوبی است؟</h2></div>
