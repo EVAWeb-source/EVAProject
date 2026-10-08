@@ -86,6 +86,18 @@ body > footer a {
   color: #77736e !important;
 }
 
+/* Product page numbers: keep mobile untouched, make desktop match its softer visual feel. */
+[class*='purchasePanel'] [class*='primaryPrice'] strong,
+[class*='purchasePanel'] [class*='primaryPrice'] > span,
+[class*='purchasePanel'] [class*='priceMeta'],
+[class*='purchasePanel'] [class*='units'] button > span,
+[class*='purchasePanel'] [class*='units'] small,
+[class*='purchasePanel'] [class*='selectedSku'] b,
+[class*='purchasePanel'] [class*='breakdownRows'] > div,
+[class*='purchasePanel'] [class*='breakdownRows'] strong {
+  font-family: var(--eva-font-product-number-desktop) !important;
+}
+
 /* Product page numbers need more presence than catalog-card prices. */
 [class*='purchasePanel'] [class*='primaryPrice'] strong {
   font-size: 28px !important;
@@ -153,6 +165,17 @@ body > footer a {
   [class*='priceCurrency'],
   [class*='priceCurrency'] span {
     font-size: 6px !important;
+  }
+
+  [class*='purchasePanel'] [class*='primaryPrice'] strong,
+  [class*='purchasePanel'] [class*='primaryPrice'] > span,
+  [class*='purchasePanel'] [class*='priceMeta'],
+  [class*='purchasePanel'] [class*='units'] button > span,
+  [class*='purchasePanel'] [class*='units'] small,
+  [class*='purchasePanel'] [class*='selectedSku'] b,
+  [class*='purchasePanel'] [class*='breakdownRows'] > div,
+  [class*='purchasePanel'] [class*='breakdownRows'] strong {
+    font-family: var(--eva-font-ui) !important;
   }
 
   [class*='purchasePanel'] [class*='primaryPrice'] strong {
