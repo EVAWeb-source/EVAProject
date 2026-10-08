@@ -121,7 +121,10 @@ export default function CartPage(){
               <div className={styles.itemPrice}><strong>{toman(item.price)}</strong><span>تومان</span></div>
             </div>
             <div className={styles.sku}><span>کد قطعه</span><b dir="ltr">{item.unitSku??item.unitId}</b></div>
-            <div className={styles.itemActions}><button type="button" onClick={removeItem}>حذف از سبد</button>{item.slug&&<button type="button" onClick={saveForLater}>ذخیره برای بعد</button>}</div>
+            <div className={styles.itemActions}>
+              {item.slug&&<button type="button" className={styles.saveAction} onClick={saveForLater}><span aria-hidden="true">♡</span> ذخیره برای بعد</button>}
+              <button type="button" className={styles.removeAction} onClick={removeItem}><span aria-hidden="true">×</span> حذف از سبد</button>
+            </div>
           </div>
         </article>
 
