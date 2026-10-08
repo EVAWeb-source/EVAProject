@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@500;600&display=swap');
+
 :root {
   --eva-bg: #fffdf9;
   --eva-surface: #ffffff;
@@ -17,6 +19,7 @@
   --eva-shadow-soft: 0 14px 40px rgba(48, 40, 32, .07);
   --eva-font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif;
   --eva-font-price: Arial, sans-serif;
+  --eva-font-product-number-desktop: "Noto Sans Arabic", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
   --eva-font-display: Georgia, "Times New Roman", serif;
   --eva-ease: cubic-bezier(.2, .76, .2, 1);
 }
