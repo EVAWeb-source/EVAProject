@@ -43,7 +43,11 @@ function readWishlistCount() {
 
 function readCartCount() {
   try {
-    return window.localStorage.getItem('eva-cart') ? 1 : 0;
+    const raw=window.localStorage.getItem('eva-cart');
+    if(!raw)return 0;
+    const value=JSON.parse(raw);
+    if(Array.isArray(value))return value.filter(item=>item&&typeof item==='object'&&item.unitId).length;
+    return value&&typeof value==='object'&&value.unitId?1:0;
   } catch {
     return 0;
   }
