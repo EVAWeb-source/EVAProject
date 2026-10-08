@@ -70,6 +70,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
   const loaderShownAt = useRef<number | null>(null);
 
   const minimal = minimalPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(prefix));
+  const commerceWorkspace = pathname === '/shop' || pathname === '/lightweight';
 
   function clearTimer(ref: MutableRefObject<number | null>) {
     if (ref.current !== null) {
@@ -211,7 +212,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
 
       <div className={styles.content}>{children}</div>
 
-      <footer className={styles.footer}>
+      {!commerceWorkspace && <footer className={styles.footer}>
         <div className={styles.footerTop}>
           <div className={styles.footerBrand}>
             <Link className={styles.brand} href="/" aria-label="EVA" style={brandResetStyle}>
@@ -226,7 +227,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
           </div>
         </div>
         <div className={styles.footerBottom}><span>© EVA 2026</span><span>طراحی‌شده برای یک تجربه آرام و شفاف از خرید طلا.</span></div>
-      </footer>
+      </footer>}
 
       {longLoaderVisible && (
         <div className={`${styles.longLoader}${longLoaderLeaving ? ` ${styles.longLoaderLeaving}` : ''}`} role="status" aria-live="polite" aria-busy="true">
