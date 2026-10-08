@@ -71,11 +71,9 @@ export default function ShopClient({products}:{products:ShopProduct[]}){
   function toggleWishlist(slug:string){ setWishlist((current)=>{ const next=current.includes(slug)?current.filter((item)=>item!==slug):[...current,slug]; window.localStorage.setItem('eva-wishlist',JSON.stringify(next)); window.dispatchEvent(new Event('eva-wishlist-change')); return next; }); }
   function reset(){ setQuery(''); setCategory('ALL'); setCollection('ALL'); setWeightBand('ALL'); setSort('RECOMMENDED'); }
 
-  return <>
-    <div className={styles.breadcrumb}><Link href="/">خانه</Link><span>/</span><span>فروشگاه</span></div>
-
+  return <div className={styles.workspace}>
     <section className={styles.shopHeader}>
-      <div className={styles.shopTitle}><div><span>EVA SHOP</span><h1>فروشگاه</h1></div><p><strong>{new Intl.NumberFormat('fa-IR').format(result.length)}</strong> محصول برای انتخاب</p></div>
+      <div className={styles.shopTitle}><div><span>EVA SHOP</span><h1>فروشگاه</h1></div><p><strong>{new Intl.NumberFormat('fa-IR').format(result.length)}</strong> محصول</p></div>
       <label className={styles.searchBox}><span aria-hidden="true">⌕</span><input value={query} onChange={(event)=>setQuery(event.target.value)} placeholder="جستجوی محصول، کالکشن یا کد..." aria-label="جستجو در فروشگاه"/>{query&&<button type="button" onClick={()=>setQuery('')} aria-label="پاک کردن جستجو">×</button>}</label>
     </section>
 
@@ -85,13 +83,14 @@ export default function ShopClient({products}:{products:ShopProduct[]}){
         {categoryOrder.filter(code=>availableCategoryCodes.has(code)).map(code=><button type="button" key={code} className={category===code?styles.activeTab:''} onClick={()=>setCategory(code)}>{categories[code]}</button>)}
       </nav>
       <section className={styles.toolbar} aria-label="فیلتر و مرتب‌سازی محصولات">
-        <div className={styles.toolbarIntro}><span>FILTER & SORT</span><strong>انتخابت را دقیق‌تر کن</strong></div>
+        <div className={styles.toolbarIntro}><span>FILTER</span><strong>فیلتر و مرتب‌سازی</strong></div>
         <div className={styles.tools}><FilterMenu label="کالکشن" value={collection} options={collectionOptions} onChange={setCollection}/><FilterMenu label="وزن" value={weightBand} options={weightOptions} onChange={setWeightBand}/><FilterMenu label="مرتب‌سازی" value={sort} options={sortOptions} onChange={(value)=>setSort(value as SortKey)}/></div>
+        {filtersActive&&<button className={styles.clearFilters} type="button" onClick={reset}>پاک‌کردن</button>}
       </section>
     </div>
 
-    {filtersActive&&<div className={styles.filterState}><span>{new Intl.NumberFormat('fa-IR').format(result.length)} نتیجه با انتخاب فعلی</span><button type="button" onClick={reset}>پاک‌کردن همه فیلترها</button></div>}
-
-    {result.length>0?<section className={styles.grid} aria-label="محصولات فروشگاه">{result.map((item)=>{ const product=item.product; const multiple=product.units.length>1; const liked=wishlist.includes(product.slug); const image=primaryImage(product); const href='/products/'+product.slug; return <article className={styles.card} key={product.id}><div className={styles.media}><button type="button" className={liked?styles.heart+' '+styles.heartActive:styles.heart} onClick={()=>toggleWishlist(product.slug)} aria-label={liked?'حذف از علاقه‌مندی‌ها':'افزودن به علاقه‌مندی‌ها'}>{liked?'♥':'♡'}</button><Link href={href} prefetch={false} aria-label={product.nameFa}>{image?<img className={styles.productImage} src={image.url} alt={image.altText||product.nameFa} loading="lazy" decoding="async" width={800} height={1000}/>:<Visual code={item.code}/>}</Link></div><Link className={styles.cardBody} href={href} prefetch={false}><div className={styles.info}><div className={styles.infoTop}><div><h2>{product.nameFa}</h2><p>{item.label}{product.collection?' • کالکشن '+product.collection.nameFa:''}</p></div><span className={styles.purity}>{product.purity}K</span></div><div className={styles.meta}><span>{multiple?'از ':''}{weight(item.minWeight)}</span><div className={styles.priceTag}>{multiple?<em className={styles.pricePrefix}>از</em>:null}<small className={styles.priceCurrency}><span>تو</span><span>مان</span></small><strong className={styles.priceValue}>{formatPrice(item.minPrice)}</strong></div></div></div></Link></article>; })}</section>:<section className={styles.emptyState}><span>NO RESULTS</span><h2>محصولی با این انتخاب پیدا نشد.</h2><p>جستجو یا فیلترها را تغییر بده و دوباره محصولات را ببین.</p><button type="button" onClick={reset}>نمایش همه محصولات</button></section>}
-  </>;
+    <div className={styles.productScroller}>
+      {result.length>0?<section className={styles.grid} aria-label="محصولات فروشگاه">{result.map((item)=>{ const product=item.product; const multiple=product.units.length>1; const liked=wishlist.includes(product.slug); const image=primaryImage(product); const href='/products/'+product.slug; return <article className={styles.card} key={product.id}><div className={styles.media}><button type="button" className={liked?styles.heart+' '+styles.heartActive:styles.heart} onClick={()=>toggleWishlist(product.slug)} aria-label={liked?'حذف از علاقه‌مندی‌ها':'افزودن به علاقه‌مندی‌ها'}>{liked?'♥':'♡'}</button><Link href={href} prefetch={false} aria-label={product.nameFa}>{image?<img className={styles.productImage} src={image.url} alt={image.altText||product.nameFa} loading="lazy" decoding="async" width={800} height={1000}/>:<Visual code={item.code}/>}</Link></div><Link className={styles.cardBody} href={href} prefetch={false}><div className={styles.info}><div className={styles.infoTop}><div><h2>{product.nameFa}</h2><p>{item.label}{product.collection?' • '+product.collection.nameFa:''}</p></div><span className={styles.purity}>{product.purity}K</span></div><div className={styles.meta}><span>{multiple?'از ':''}{weight(item.minWeight)}</span><div className={styles.priceTag}>{multiple?<em className={styles.pricePrefix}>از</em>:null}<small className={styles.priceCurrency}><span>تو</span><span>مان</span></small><strong className={styles.priceValue}>{formatPrice(item.minPrice)}</strong></div></div></div></Link></article>; })}</section>:<section className={styles.emptyState}><span>NO RESULTS</span><h2>محصولی با این انتخاب پیدا نشد.</h2><p>جستجو یا فیلترها را تغییر بده و دوباره محصولات را ببین.</p><button type="button" onClick={reset}>نمایش همه محصولات</button></section>}
+    </div>
+  </div>;
 }
