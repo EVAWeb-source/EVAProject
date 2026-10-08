@@ -205,7 +205,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
           <Link className={`${styles.iconAction} evaApprovedAction`} href="/cart" aria-label="سبد خرید"><HeaderIcon type="bag" />{cartCount > 0 && <small>{new Intl.NumberFormat('fa-IR').format(cartCount)}</small>}</Link>
           <Link className={`${styles.iconAction} evaApprovedAction`} href="/wishlist" aria-label="علاقه‌مندی‌ها"><HeaderIcon type="heart" />{wishlistCount > 0 && <small>{new Intl.NumberFormat('fa-IR').format(wishlistCount)}</small>}</Link>
           <Link className={`${styles.iconAction} evaApprovedAction`} href="/account" aria-label="حساب کاربری"><HeaderIcon type="user" /></Link>
-          <Link className={`${styles.iconAction} evaApprovedAction`} href="/shop" aria-label="جستجو"><HeaderIcon type="search" /></Link>
+          <Link className={`${styles.iconAction} evaApprovedAction`} href="/search" aria-label="جستجو"><HeaderIcon type="search" /></Link>
           <button className={styles.menuButton} onClick={() => setMenuOpen(true)} aria-label="باز کردن منو">☰</button>
         </div>
       </header>
@@ -255,7 +255,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
           </Link>
           <nav className={styles.mobileNav}>{primaryNav.map(([href, label]) => <Link href={href} key={href}>{label}<span>←</span></Link>)}</nav>
           <div className={styles.mobileUtilities}>
-            <Link href="/account">حساب من</Link><Link href="/wishlist">علاقه‌مندی‌ها {wishlistCount > 0 ? `(${new Intl.NumberFormat('fa-IR').format(wishlistCount)})` : ''}</Link><Link href="/cart">سبد خرید {cartCount > 0 ? `(${new Intl.NumberFormat('fa-IR').format(cartCount)})` : ''}</Link><Link href="/track-order">رهگیری سفارش</Link><Link href="/trust">اعتماد به EVA</Link><Link href="/contact">تماس</Link>
+            <Link href="/search">جستجو</Link><Link href="/account">حساب من</Link><Link href="/wishlist">علاقه‌مندی‌ها {wishlistCount > 0 ? `(${new Intl.NumberFormat('fa-IR').format(wishlistCount)})` : ''}</Link><Link href="/cart">سبد خرید {cartCount > 0 ? `(${new Intl.NumberFormat('fa-IR').format(cartCount)})` : ''}</Link><Link href="/track-order">رهگیری سفارش</Link><Link href="/trust">اعتماد به EVA</Link><Link href="/contact">تماس</Link>
           </div>
         </div>
       )}
