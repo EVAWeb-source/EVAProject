@@ -24,7 +24,7 @@ function Visual({sku}:{sku:string}){
   return <div className={styles.visual+' '+variant}><span className={styles.chain}/><span className={styles.jewel}/></div>;
 }
 
-export default function CatalogGrid({products,emptyTitle='هنوز محصولی در این بخش موجود نیست.',emptyText='با اضافه‌شدن محصولات جدید، این صفحه به‌صورت خودکار به‌روزرسانی می‌شود.'}:{products:CatalogProduct[];emptyTitle?:string;emptyText?:string}){
+export default function CatalogGrid({products,emptyTitle='هنوز محصولی در این بخش موجود نیست.',emptyText='با اضافه‌شدن محصولات جدید، این صفحه به‌صورت خودکار به‌روزرسانی می‌شود.',compact=false}:{products:CatalogProduct[];emptyTitle?:string;emptyText?:string;compact?:boolean}){
   const [wishlist,setWishlist]=useState<string[]>([]);
   useEffect(()=>{try{setWishlist(JSON.parse(localStorage.getItem('eva-wishlist')??'[]'));}catch{setWishlist([]);}},[]);
   const available=useMemo(()=>products.filter((product)=>product.units.length>0),[products]);
@@ -33,7 +33,7 @@ export default function CatalogGrid({products,emptyTitle='هنوز محصولی 
 
   if(available.length===0)return <section className={styles.empty}><span>COMING INTO VIEW</span><h2>{emptyTitle}</h2><p>{emptyText}</p><Link href="/shop">مشاهده فروشگاه</Link></section>;
 
-  return <section className={styles.grid} aria-label="محصولات این دسته">{available.map((product)=>{
+  return <section className={compact?styles.grid+' '+styles.compact:styles.grid} aria-label="محصولات این دسته">{available.map((product)=>{
     const prices=product.units.map((unit)=>Number(unit.currentPriceToman));
     const weights=product.units.map((unit)=>Number(unit.exactWeightGram));
     const minPrice=Math.min(...prices); const minWeight=Math.min(...weights); const multiple=product.units.length>1; const liked=wishlist.includes(product.slug);
