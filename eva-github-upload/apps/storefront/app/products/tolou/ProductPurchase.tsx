@@ -138,7 +138,7 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
     <div className={styles.availability}><span aria-hidden="true"/> موجود و قابل سفارش</div>
 
     <button type="button" className={added?styles.addToCart+' '+styles.addedToCart:styles.addToCart} onClick={addToCart}>{added?'✓ به سبد اضافه شد':'افزودن به سبد خرید'}</button>
-    {added&&<Link href="/cart" className={styles.cartLink}>مشاهده سبد خرید ←</Link>}
+    {added&&<div className={styles.afterAdd}><Link href="/cart" className={styles.cartLink}><span>مشاهده سبد خرید</span><b aria-hidden="true">←</b></Link></div>}
     <div className={styles.actionStatus} aria-live="polite">{added?'قطعه انتخاب‌شده به سبد خرید اضافه شد.':shareState}</div>
 
     <div className={styles.secondaryActions}>
