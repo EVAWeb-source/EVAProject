@@ -254,12 +254,25 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
       {menuOpen && (
         <div className={styles.mobileOverlay} role="dialog" aria-modal="true" aria-label="منوی EVA">
           <button className={styles.closeButton} onClick={() => setMenuOpen(false)} aria-label="بستن منو">×</button>
-          <Link className={styles.mobileBrand} href="/" aria-label="EVA" style={{ ...brandResetStyle, display: 'inline-flex', alignItems: 'center' }}>
-            <img src={EVA_WORDMARK_SRC} alt="" width={240} height={103} decoding="async" style={{ display: 'block', width: '126px', height: 'auto' }} />
-          </Link>
-          <nav className={styles.mobileNav}>{primaryNav.map(([href, label]) => <Link href={href} key={href}>{label}<span>←</span></Link>)}</nav>
+          <div className={styles.mobileMenuHead}>
+            <Link className={styles.mobileBrand} href="/" aria-label="EVA" style={{ ...brandResetStyle, display: 'inline-flex', alignItems: 'center' }}>
+              <img src={EVA_WORDMARK_SRC} alt="" width={240} height={103} decoding="async" style={{ display: 'block', width: '118px', height: 'auto' }} />
+            </Link>
+            <span>منوی ایوا</span>
+          </div>
+
+          <div className={styles.mobileQuickActions} aria-label="دسترسی سریع">
+            <Link href="/search"><HeaderIcon type="search"/><b>جستجو</b></Link>
+            <Link href="/wishlist"><span className={styles.quickIcon}><HeaderIcon type="heart"/>{wishlistCount>0&&<small>{new Intl.NumberFormat('fa-IR').format(wishlistCount)}</small>}</span><b>علاقه‌مندی</b></Link>
+            <Link href="/cart"><span className={styles.quickIcon}><HeaderIcon type="bag"/>{cartCount>0&&<small>{new Intl.NumberFormat('fa-IR').format(cartCount)}</small>}</span><b>سبد خرید</b></Link>
+          </div>
+
+          <span className={styles.mobileSectionLabel}>خرید و آشنایی</span>
+          <nav className={styles.mobileNav}>{primaryNav.map(([href, label]) => <Link className={active(href)?styles.mobileActive:''} href={href} key={href}>{label}<span>←</span></Link>)}</nav>
+
+          <span className={styles.mobileSectionLabel}>خدمات</span>
           <div className={styles.mobileUtilities}>
-            <Link href="/search">جستجو</Link><Link href="/account">حساب من</Link><Link href="/wishlist">علاقه‌مندی‌ها {wishlistCount > 0 ? `(${new Intl.NumberFormat('fa-IR').format(wishlistCount)})` : ''}</Link><Link href="/cart">سبد خرید {cartCount > 0 ? `(${new Intl.NumberFormat('fa-IR').format(cartCount)})` : ''}</Link><Link href="/track-order">رهگیری سفارش</Link><Link href="/trust">اعتماد به EVA</Link><Link href="/contact">تماس</Link>
+            <Link href="/account">حساب من</Link><Link href="/track-order">رهگیری سفارش</Link><Link href="/trust">اعتماد به ایوا</Link><Link href="/contact">تماس با ما</Link>
           </div>
         </div>
       )}
