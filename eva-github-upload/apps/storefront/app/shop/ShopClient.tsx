@@ -12,7 +12,7 @@ type PreparedProduct = { product:ShopProduct; code:string; label:string; minWeig
 type SortKey = 'RECOMMENDED' | 'PRICE_ASC' | 'PRICE_DESC' | 'WEIGHT_ASC';
 
 const categories: Record<string,string> = { NEC:'گردنبند', PEN:'آویز', BRA:'دستبند', RIN:'انگشتر', EAR:'گوشواره', SET:'ست', ANK:'پابند', CHM:'چارم' };
-const categorySlugs: Record<string,string> = { NEC:'necklaces', PEN:'pendants', BRA:'bracelets', RIN:'rings', EAR:'earrings', SET:'sets', ANK:'anklets', CHM:'charms' };
+const categoryOrder=['NEC','PEN','BRA','RIN','EAR','SET','ANK','CHM'];
 const weightOptions: FilterOption[] = [
   { value:'ALL', label:'همه وزن‌ها' },
   { value:'ULTRA', label:'کمتر از ۰.۷ گرم', note:'قطعه‌های بسیار سبک' },
@@ -35,6 +35,7 @@ function Visual({code}:{code:string}){ const variant=code==='RIN'?styles.ring:co
 
 export default function ShopClient({products}:{products:ShopProduct[]}){
   const [query,setQuery]=useState('');
+  const [category,setCategory]=useState('ALL');
   const [collection,setCollection]=useState('ALL');
   const [weightBand,setWeightBand]=useState('ALL');
   const [sort,setSort]=useState<SortKey>('RECOMMENDED');
@@ -51,28 +52,46 @@ export default function ShopClient({products}:{products:ShopProduct[]}){
 
   const collections=useMemo(()=>Array.from(new Set(products.map((product)=>product.collection?.nameFa).filter(Boolean) as string[])),[products]);
   const collectionOptions=useMemo<FilterOption[]>(()=>[{value:'ALL',label:'همه کالکشن‌ها'},...collections.map((name)=>({value:name,label:name}))],[collections]);
-  const hero=useMemo(()=>{ for(const product of products){ const image=primaryImage(product); if(image)return {product,image}; } return null; },[products]);
+  const availableCategoryCodes=useMemo(()=>new Set(prepared.map(item=>item.code)),[prepared]);
 
   const result=useMemo(()=>{
     const q=normalize(deferredQuery);
-    const filtered=prepared.filter((item)=>{ const {product,minWeight}=item; if(product.units.length===0)return false; return (!q||item.searchText.includes(q))&&(collection==='ALL'||product.collection?.nameFa===collection)&&(weightBand==='ALL'||(weightBand==='ULTRA'&&minWeight<0.7)||(weightBand==='LIGHT'&&minWeight>=0.7&&minWeight<1)||(weightBand==='REGULAR'&&minWeight>=1)); });
+    const filtered=prepared.filter((item)=>{
+      const {product,minWeight}=item;
+      if(product.units.length===0)return false;
+      return (!q||item.searchText.includes(q))
+        &&(category==='ALL'||item.code===category)
+        &&(collection==='ALL'||product.collection?.nameFa===collection)
+        &&(weightBand==='ALL'||(weightBand==='ULTRA'&&minWeight<0.7)||(weightBand==='LIGHT'&&minWeight>=0.7&&minWeight<1)||(weightBand==='REGULAR'&&minWeight>=1));
+    });
     return [...filtered].sort((a,b)=>{ if(sort==='PRICE_ASC')return a.minPrice-b.minPrice; if(sort==='PRICE_DESC')return b.minPrice-a.minPrice; if(sort==='WEIGHT_ASC')return a.minWeight-b.minWeight; return a.originalIndex-b.originalIndex; });
-  },[prepared,deferredQuery,collection,weightBand,sort]);
+  },[prepared,deferredQuery,category,collection,weightBand,sort]);
 
-  const filtersActive=Boolean(query||collection!=='ALL'||weightBand!=='ALL'||sort!=='RECOMMENDED');
+  const filtersActive=Boolean(query||category!=='ALL'||collection!=='ALL'||weightBand!=='ALL'||sort!=='RECOMMENDED');
   function toggleWishlist(slug:string){ setWishlist((current)=>{ const next=current.includes(slug)?current.filter((item)=>item!==slug):[...current,slug]; window.localStorage.setItem('eva-wishlist',JSON.stringify(next)); window.dispatchEvent(new Event('eva-wishlist-change')); return next; }); }
-  function reset(){ setQuery(''); setCollection('ALL'); setWeightBand('ALL'); setSort('RECOMMENDED'); }
+  function reset(){ setQuery(''); setCategory('ALL'); setCollection('ALL'); setWeightBand('ALL'); setSort('RECOMMENDED'); }
 
   return <>
     <div className={styles.breadcrumb}><Link href="/">خانه</Link><span>/</span><span>فروشگاه</span></div>
-    <section className={styles.hero}>
-      <div className={styles.heroCopy}><span>EVA SHOP</span><h1>فروشگاه</h1><p>قطعه‌های موجود ایوا را با وزن و قیمت شفاف ببین و انتخابت را بر اساس کالکشن، وزن یا بودجه محدود کن.</p><small>{new Intl.NumberFormat('fa-IR').format(result.length)} محصول برای انتخاب</small></div>
-      <div className={styles.heroVisual}>{hero?<img src={hero.image.url} alt={hero.image.altText||hero.product.nameFa} decoding="async"/>:<Visual code="NEC"/>}<div className={styles.heroCaption}><span>CURATED BY EVA</span><b>{hero?.product.nameFa??'جواهرات ایوا'}</b></div></div>
+
+    <section className={styles.shopHeader}>
+      <div className={styles.shopTitle}><div><span>EVA SHOP</span><h1>فروشگاه</h1></div><p><strong>{new Intl.NumberFormat('fa-IR').format(result.length)}</strong> محصول برای انتخاب</p></div>
+      <label className={styles.searchBox}><span aria-hidden="true">⌕</span><input value={query} onChange={(event)=>setQuery(event.target.value)} placeholder="جستجوی محصول، کالکشن یا کد..." aria-label="جستجو در فروشگاه"/>{query&&<button type="button" onClick={()=>setQuery('')} aria-label="پاک کردن جستجو">×</button>}</label>
     </section>
-    <nav className={styles.categoryNav} aria-label="دسته‌بندی محصولات"><Link className={styles.active} href="/shop">همه محصولات</Link>{Object.entries(categorySlugs).map(([code,slug])=><Link key={code} href={'/shop/'+slug}>{categories[code]??code}</Link>)}</nav>
-    <section className={styles.searchArea} aria-label="جستجوی محصولات"><label className={styles.searchBox}><span aria-hidden="true">⌕</span><div><small>جستجو در فروشگاه</small><input value={query} onChange={(event)=>setQuery(event.target.value)} placeholder="نام محصول، کالکشن یا کد محصول را بنویس..." aria-label="جستجو در فروشگاه"/></div>{query&&<button type="button" onClick={()=>setQuery('')} aria-label="پاک کردن جستجو">×</button>}</label></section>
-    <section className={styles.toolbar} aria-label="فیلتر و مرتب‌سازی محصولات"><div className={styles.toolbarIntro}><span>FILTER & SORT</span><strong>انتخابت را دقیق‌تر کن</strong></div><div className={styles.tools}><FilterMenu label="کالکشن" value={collection} options={collectionOptions} onChange={setCollection}/><FilterMenu label="وزن" value={weightBand} options={weightOptions} onChange={setWeightBand}/><FilterMenu label="مرتب‌سازی" value={sort} options={sortOptions} onChange={(value)=>setSort(value as SortKey)}/></div></section>
-    {filtersActive&&<div className={styles.filterState}><span>{new Intl.NumberFormat('fa-IR').format(result.length)} نتیجه با انتخاب فعلی</span><button type="button" onClick={reset}>پاک‌کردن جستجو و فیلترها</button></div>}
+
+    <div className={styles.filterDock}>
+      <nav className={styles.categoryTabs} aria-label="دسته‌بندی محصولات">
+        <button type="button" className={category==='ALL'?styles.activeTab:''} onClick={()=>setCategory('ALL')}>همه</button>
+        {categoryOrder.filter(code=>availableCategoryCodes.has(code)).map(code=><button type="button" key={code} className={category===code?styles.activeTab:''} onClick={()=>setCategory(code)}>{categories[code]}</button>)}
+      </nav>
+      <section className={styles.toolbar} aria-label="فیلتر و مرتب‌سازی محصولات">
+        <div className={styles.toolbarIntro}><span>FILTER & SORT</span><strong>انتخابت را دقیق‌تر کن</strong></div>
+        <div className={styles.tools}><FilterMenu label="کالکشن" value={collection} options={collectionOptions} onChange={setCollection}/><FilterMenu label="وزن" value={weightBand} options={weightOptions} onChange={setWeightBand}/><FilterMenu label="مرتب‌سازی" value={sort} options={sortOptions} onChange={(value)=>setSort(value as SortKey)}/></div>
+      </section>
+    </div>
+
+    {filtersActive&&<div className={styles.filterState}><span>{new Intl.NumberFormat('fa-IR').format(result.length)} نتیجه با انتخاب فعلی</span><button type="button" onClick={reset}>پاک‌کردن همه فیلترها</button></div>}
+
     {result.length>0?<section className={styles.grid} aria-label="محصولات فروشگاه">{result.map((item)=>{ const product=item.product; const multiple=product.units.length>1; const liked=wishlist.includes(product.slug); const image=primaryImage(product); const href='/products/'+product.slug; return <article className={styles.card} key={product.id}><div className={styles.media}><button type="button" className={liked?styles.heart+' '+styles.heartActive:styles.heart} onClick={()=>toggleWishlist(product.slug)} aria-label={liked?'حذف از علاقه‌مندی‌ها':'افزودن به علاقه‌مندی‌ها'}>{liked?'♥':'♡'}</button><Link href={href} prefetch={false} aria-label={product.nameFa}>{image?<img className={styles.productImage} src={image.url} alt={image.altText||product.nameFa} loading="lazy" decoding="async" width={800} height={1000}/>:<Visual code={item.code}/>}</Link></div><Link className={styles.cardBody} href={href} prefetch={false}><div className={styles.info}><div className={styles.infoTop}><div><h2>{product.nameFa}</h2><p>{item.label}{product.collection?' • کالکشن '+product.collection.nameFa:''}</p></div><span className={styles.purity}>{product.purity}K</span></div><div className={styles.meta}><span>{multiple?'از ':''}{weight(item.minWeight)}</span><div className={styles.priceTag}>{multiple?<em className={styles.pricePrefix}>از</em>:null}<small className={styles.priceCurrency}><span>تو</span><span>مان</span></small><strong className={styles.priceValue}>{formatPrice(item.minPrice)}</strong></div></div></div></Link></article>; })}</section>:<section className={styles.emptyState}><span>NO RESULTS</span><h2>محصولی با این انتخاب پیدا نشد.</h2><p>جستجو یا فیلترها را تغییر بده و دوباره محصولات را ببین.</p><button type="button" onClick={reset}>نمایش همه محصولات</button></section>}
   </>;
 }
