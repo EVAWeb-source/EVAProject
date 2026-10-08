@@ -9,6 +9,7 @@ const categoryLabels:Record<string,string>={
   NEC:'گردنبند', PEN:'آویز', BRA:'دستبند', RIN:'انگشتر',
   EAR:'گوشواره', SET:'ست', ANK:'پابند', CHM:'چارم',
 };
+const categoryOrder=['NEC','PEN','BRA','RIN','EAR','SET','ANK','CHM'];
 
 const weightOptions:FilterOption[]=[
   {value:'ALL',label:'همه وزن‌های سبک'},
@@ -30,11 +31,7 @@ export default function LightweightCatalog({products}:{products:CatalogProduct[]
   const [category,setCategory]=useState('ALL');
   const [sort,setSort]=useState('WEIGHT_ASC');
 
-  const categories=useMemo(()=>Array.from(new Set(products.map(product=>categoryCode(product.masterSku)))),[products]);
-  const categoryOptions=useMemo<FilterOption[]>(()=>[
-    {value:'ALL',label:'همه دسته‌ها'},
-    ...categories.map(code=>({value:code,label:categoryLabels[code]??code})),
-  ],[categories]);
+  const categories=useMemo(()=>new Set(products.map(product=>categoryCode(product.masterSku))),[products]);
 
   const result=useMemo(()=>{
     const prepared=products.map(product=>{
@@ -64,17 +61,22 @@ export default function LightweightCatalog({products}:{products:CatalogProduct[]
   function reset(){setBand('ALL');setCategory('ALL');setSort('WEIGHT_ASC');}
   const filtered=band!=='ALL'||category!=='ALL'||sort!=='WEIGHT_ASC';
 
-  return <section className={styles.catalogSection}>
-    <div className={styles.toolbar}>
-      <div className={styles.toolbarIntro}><span>LIGHT FILTER</span><strong>{new Intl.NumberFormat('fa-IR').format(result.length)} محصول برای انتخاب</strong><small>همه گزینه‌ها حداقل یک Unit زیر ۱ گرم دارند.</small></div>
-      <div className={styles.controls}>
-        <FilterMenu label="وزن" value={band} options={weightOptions} onChange={setBand}/>
-        <FilterMenu label="دسته" value={category} options={categoryOptions} onChange={setCategory}/>
-        <FilterMenu label="مرتب‌سازی" value={sort} options={sortOptions} onChange={setSort}/>
+  return <section className={styles.catalogSection} id="lightweight-catalog">
+    <div className={styles.filterDock}>
+      <nav className={styles.categoryTabs} aria-label="دسته‌بندی طلای سبک">
+        <button type="button" className={category==='ALL'?styles.activeTab:''} onClick={()=>setCategory('ALL')}>همه</button>
+        {categoryOrder.filter(code=>categories.has(code)).map(code=><button type="button" key={code} className={category===code?styles.activeTab:''} onClick={()=>setCategory(code)}>{categoryLabels[code]}</button>)}
+      </nav>
+      <div className={styles.toolbar}>
+        <div className={styles.toolbarIntro}><span>LIGHT FILTER</span><strong>{new Intl.NumberFormat('fa-IR').format(result.length)} محصول برای انتخاب</strong></div>
+        <div className={styles.controls}>
+          <FilterMenu label="وزن" value={band} options={weightOptions} onChange={setBand}/>
+          <FilterMenu label="مرتب‌سازی" value={sort} options={sortOptions} onChange={setSort}/>
+        </div>
       </div>
     </div>
 
-    {filtered&&<div className={styles.filterState}><span>فیلتر فعال است</span><button type="button" onClick={reset}>پاک‌کردن فیلترها</button></div>}
+    {filtered&&<div className={styles.filterState}><span>{new Intl.NumberFormat('fa-IR').format(result.length)} نتیجه با انتخاب فعلی</span><button type="button" onClick={reset}>پاک‌کردن فیلترها</button></div>}
 
     <CatalogGrid
       products={result}
