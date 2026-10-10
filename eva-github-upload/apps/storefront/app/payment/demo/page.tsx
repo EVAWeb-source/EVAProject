@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import styles from './payment.module.css';
 
+type PaymentItem={name:string;unitSku:string;weightGram:string;purity:number;priceToman:number};
 type Payment = {
   token:string;
   provider:string;
@@ -17,9 +18,10 @@ type Payment = {
     status:string;
     totalToman:number;
     customerName:string;
-    item:{name:string;unitSku:string;weightGram:string;purity:number;priceToman:number}|null;
+    item:PaymentItem|null;
+    items:PaymentItem[];
   };
-  reservation:{status:string;expiresAt:string;remainingSeconds:number}|null;
+  reservation:{status:string;expiresAt:string;remainingSeconds:number;count?:number}|null;
 };
 
 const apiBase=process.env.NEXT_PUBLIC_API_URL ?? 'https://eva-api-production-c864.up.railway.app';
@@ -83,11 +85,12 @@ export default function DemoPaymentPage(){
       setPayment(data);
 
       if(kind==='success' && data.status==='SUCCEEDED'){
-        const item=data.order.item;
+        const items=data.order.items?.length?data.order.items:(data.order.item?[data.order.item]:[]);
         window.localStorage.setItem('eva-last-order',JSON.stringify({
           number:data.order.number,
-          name:item?.name ?? 'سفارش EVA',
-          weight:item ? faWeight(item.weightGram) : '',
+          name:items.length===1?items[0].name:`${new Intl.NumberFormat('fa-IR').format(items.length)} قطعه از ایوا`,
+          weight:items.length===1?faWeight(items[0].weightGram):'',
+          items,
           price:data.order.totalToman,
           status:'پرداخت شد',
           referenceId:data.referenceId,
@@ -96,13 +99,17 @@ export default function DemoPaymentPage(){
         }));
         window.localStorage.removeItem('eva-cart');
         window.localStorage.removeItem('eva-reservation');
+        window.localStorage.removeItem('eva-reservations');
+        window.localStorage.removeItem('eva-gift-order');
         window.localStorage.removeItem('eva-pending-order');
+        window.dispatchEvent(new Event('eva-cart-change'));
         window.location.href=`/success?order=${encodeURIComponent(data.order.number)}`;
         return;
       }
 
       if(kind==='fail'){
         window.localStorage.removeItem('eva-reservation');
+        window.localStorage.removeItem('eva-reservations');
         window.localStorage.removeItem('eva-pending-order');
       }
     }catch(err){
@@ -119,6 +126,7 @@ export default function DemoPaymentPage(){
 
   const active=payment.status==='INITIATED' && secondsLeft>0;
   const failed=payment.status==='FAILED' || payment.status==='EXPIRED' || payment.order.status==='CANCELLED';
+  const items=payment.order.items?.length?payment.order.items:(payment.order.item?[payment.order.item]:[]);
 
   return <main className={styles.page}>
     <section className={styles.card}>
@@ -129,15 +137,16 @@ export default function DemoPaymentPage(){
 
       <div className={styles.rows}>
         <div><span>شماره سفارش</span><strong dir="ltr">{payment.order.number}</strong></div>
-        <div><span>محصول</span><strong>{payment.order.item?.name ?? '—'}</strong></div>
-        <div><span>وزن</span><strong>{payment.order.item ? faWeight(payment.order.item.weightGram) : '—'}</strong></div>
+        <div><span>تعداد قطعات</span><strong>{new Intl.NumberFormat('fa-IR').format(items.length)}</strong></div>
         <div><span>وضعیت سفارش</span><strong>{payment.order.status}</strong></div>
       </div>
 
-      {active&&<div className={styles.timer}><span>زمان باقی‌مانده رزرو</span><strong>{clock}</strong></div>}
+      {items.length>0&&<div className={styles.orderItems}>{items.map(item=><div key={item.unitSku}><span><strong>{item.name}</strong><small>{faWeight(item.weightGram)} • {item.purity} عیار</small></span><b>{toman(item.priceToman)}</b></div>)}</div>}
+
+      {active&&<div className={styles.timer}><span>زمان باقی‌مانده رزرو همه قطعات</span><strong>{clock}</strong></div>}
 
       {payment.status==='SUCCEEDED'&&<div className={styles.successBox}><strong>✓ پرداخت آزمایشی موفق است</strong><span>کد مرجع: {payment.referenceId}</span>{payment.invoice&&<span>فاکتور: {payment.invoice.invoiceNumber}</span>}</div>}
-      {failed&&<div className={styles.failBox}><strong>پرداخت ناموفق/منقضی شده</strong><span>قطعه از رزرو خارج شده و دوباره قابل خرید است.</span></div>}
+      {failed&&<div className={styles.failBox}><strong>پرداخت ناموفق/منقضی شده</strong><span>همه قطعه‌های این سفارش از رزرو خارج شده‌اند و دوباره قابل خرید هستند.</span></div>}
       {error&&<p className={styles.error}>{error}</p>}
 
       {active&&<div className={styles.actions}>
@@ -145,7 +154,7 @@ export default function DemoPaymentPage(){
         <button className={styles.fail} disabled={acting} onClick={()=>finish('fail')}>شبیه‌سازی پرداخت ناموفق</button>
       </div>}
 
-      {failed&&<div className={styles.actions}><a className={styles.secondary} href="/checkout">تلاش دوباره از Checkout</a><a className={styles.textLink} href="/products/tolou">بازگشت به محصول</a></div>}
+      {failed&&<div className={styles.actions}><a className={styles.secondary} href="/checkout">رزرو دوباره از Checkout</a><a className={styles.textLink} href="/cart">بازگشت به سبد خرید</a></div>}
       {payment.status==='SUCCEEDED'&&<div className={styles.actions}>{payment.invoice&&<a className={styles.secondary} href={`/invoice/${encodeURIComponent(payment.invoice.invoiceNumber)}`}>مشاهده فاکتور</a>}<a className={styles.textLink} href={`/success?order=${encodeURIComponent(payment.order.number)}`}>مشاهده نتیجه سفارش</a></div>}
     </section>
   </main>;
