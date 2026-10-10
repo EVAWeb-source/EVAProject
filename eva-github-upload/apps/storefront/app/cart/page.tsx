@@ -18,26 +18,32 @@ type CartItem = {
 };
 
 type GiftState = { enabled:boolean; message:string; hidePrice:boolean };
+type StoredReservation={token:string;unitId:string;expiresAt:string};
 
 const apiBase=process.env.NEXT_PUBLIC_API_URL ?? 'https://eva-api-production-c864.up.railway.app';
 const emptyGift:GiftState={enabled:false,message:'',hidePrice:true};
 
 function toman(value:number){return new Intl.NumberFormat('fa-IR').format(value);}
+function readCart():CartItem[]{
+  try{
+    const raw=window.localStorage.getItem('eva-cart');
+    if(!raw)return [];
+    const value=JSON.parse(raw);
+    const items=Array.isArray(value)?value:[value];
+    return items.filter((item):item is CartItem=>Boolean(item&&typeof item==='object'&&item.unitId&&item.name));
+  }catch{return [];}
+}
 
 export default function CartPage(){
-  const [item,setItem]=useState<CartItem|null>(null);
+  const [items,setItems]=useState<CartItem[]>([]);
   const [gift,setGift]=useState<GiftState>(emptyGift);
   const [ready,setReady]=useState(false);
 
   useEffect(()=>{
-    try{
-      const raw=window.localStorage.getItem('eva-cart');
-      if(raw){
-        const parsed=JSON.parse(raw) as CartItem;
-        if(parsed?.unitId&&parsed?.name)setItem(parsed);
-        else window.localStorage.removeItem('eva-cart');
-      }
-    }catch{window.localStorage.removeItem('eva-cart');}
+    const current=readCart();
+    setItems(current);
+    if(current.length)window.localStorage.setItem('eva-cart',JSON.stringify(current));
+    else window.localStorage.removeItem('eva-cart');
 
     try{
       const giftRaw=window.localStorage.getItem('eva-gift-order');
@@ -52,29 +58,52 @@ export default function CartPage(){
     else window.localStorage.removeItem('eva-gift-order');
   },[gift,ready]);
 
-  const total=useMemo(()=>item?.price??0,[item]);
+  const total=useMemo(()=>items.reduce((sum,item)=>sum+Number(item.price||0),0),[items]);
 
-  async function releaseReservation(){
-    const reservationRaw=window.localStorage.getItem('eva-reservation');
-    if(!reservationRaw)return;
+  async function releaseReservationFor(unitId:string){
+    let reservations:StoredReservation[]=[];
     try{
-      const reservation=JSON.parse(reservationRaw) as {token?:string};
-      if(reservation.token)await fetch(`${apiBase}/api/v1/reservations/${reservation.token}/release`,{method:'POST'}).catch(()=>undefined);
+      const raw=window.localStorage.getItem('eva-reservations');
+      if(raw){
+        const parsed=JSON.parse(raw);
+        reservations=Array.isArray(parsed)?parsed:[];
+      }
     }catch{}
-    window.localStorage.removeItem('eva-reservation');
+
+    const matching=reservations.filter(item=>item.unitId===unitId);
+    await Promise.all(matching.map(item=>fetch(`${apiBase}/api/v1/reservations/${encodeURIComponent(item.token)}/release`,{method:'POST'}).catch(()=>undefined)));
+    const remaining=reservations.filter(item=>item.unitId!==unitId);
+    if(remaining.length)window.localStorage.setItem('eva-reservations',JSON.stringify(remaining));
+    else window.localStorage.removeItem('eva-reservations');
+
+    const legacyRaw=window.localStorage.getItem('eva-reservation');
+    if(legacyRaw){
+      try{
+        const legacy=JSON.parse(legacyRaw) as StoredReservation;
+        if(legacy.unitId===unitId&&legacy.token){
+          await fetch(`${apiBase}/api/v1/reservations/${encodeURIComponent(legacy.token)}/release`,{method:'POST'}).catch(()=>undefined);
+          window.localStorage.removeItem('eva-reservation');
+        }
+      }catch{window.localStorage.removeItem('eva-reservation');}
+    }
   }
 
-  async function removeItem(){
-    await releaseReservation();
-    window.localStorage.removeItem('eva-cart');
-    window.localStorage.removeItem('eva-gift-order');
-    setItem(null);
-    setGift(emptyGift);
-    window.dispatchEvent(new Event('eva-cart-change'));
+  async function removeItem(unitId:string){
+    await releaseReservationFor(unitId);
+    setItems(current=>{
+      const next=current.filter(item=>item.unitId!==unitId);
+      if(next.length)window.localStorage.setItem('eva-cart',JSON.stringify(next));
+      else{
+        window.localStorage.removeItem('eva-cart');
+        window.localStorage.removeItem('eva-gift-order');
+        setGift(emptyGift);
+      }
+      window.dispatchEvent(new Event('eva-cart-change'));
+      return next;
+    });
   }
 
-  async function saveForLater(){
-    if(!item)return;
+  async function saveForLater(item:CartItem){
     try{
       const current:string[]=JSON.parse(window.localStorage.getItem('eva-wishlist')??'[]');
       if(item.slug&&!current.includes(item.slug)){
@@ -82,12 +111,12 @@ export default function CartPage(){
         window.dispatchEvent(new Event('eva-wishlist-change'));
       }
     }catch{}
-    await removeItem();
+    await removeItem(item.unitId);
   }
 
   if(!ready)return <main className={styles.page}><div className={styles.loading}>در حال آماده‌کردن سبد خرید...</div></main>;
 
-  if(!item){
+  if(items.length===0){
     return <main className={styles.page}>
       <section className={styles.empty}>
         <span>YOUR CART</span>
@@ -108,9 +137,9 @@ export default function CartPage(){
 
     <section className={styles.cartWrap}>
       <div className={styles.cartMain}>
-        <div className={styles.listHead}><span>قطعه انتخاب‌شده</span><b>۱ قطعه</b></div>
+        <div className={styles.listHead}><span>قطعه‌های انتخاب‌شده</span><b>{new Intl.NumberFormat('fa-IR').format(items.length)} قطعه</b></div>
 
-        <article className={styles.itemCard}>
+        <div className={styles.itemsList}>{items.map(item=><article className={styles.itemCard} key={item.unitId}>
           <Link href={item.slug?`/products/${item.slug}`:'/shop'} className={styles.media} aria-label={item.name}>
             {item.imageUrl?<img src={item.imageUrl} alt={item.name} decoding="async"/>:<div className={styles.visual} aria-hidden="true"><span className={styles.chain}/><span className={styles.jewel}/></div>}
           </Link>
@@ -122,13 +151,13 @@ export default function CartPage(){
             </div>
             <div className={styles.sku}><span>کد قطعه</span><b dir="ltr">{item.unitSku??item.unitId}</b></div>
             <div className={styles.itemActions}>
-              {item.slug&&<button type="button" className={styles.saveAction} onClick={saveForLater}><span aria-hidden="true">♡</span> ذخیره برای بعد</button>}
-              <button type="button" className={styles.removeAction} onClick={removeItem}><span aria-hidden="true">×</span> حذف از سبد</button>
+              {item.slug&&<button type="button" className={styles.saveAction} onClick={()=>saveForLater(item)}><span aria-hidden="true">♡</span> ذخیره برای بعد</button>}
+              <button type="button" className={styles.removeAction} onClick={()=>removeItem(item.unitId)}><span aria-hidden="true">×</span> حذف از سبد</button>
             </div>
           </div>
-        </article>
+        </article>)}</div>
 
-        <div className={styles.priceNote}><span aria-hidden="true">◎</span><div><strong>قیمت نهایی در Checkout دوباره تأیید می‌شود.</strong><p>با ورود به مرحله بعد، همین Unit برای مدت محدود رزرو و قیمت همان قطعه روی سفارش قفل می‌شود.</p></div></div>
+        <div className={styles.priceNote}><span aria-hidden="true">◎</span><div><strong>هر وزن یک قطعه فیزیکی مستقل است.</strong><p>می‌توانی چند وزن متفاوت از یک مدل را همزمان سفارش بدهی. در Checkout همه Unitهای این سبد با هم برای ۱۰ دقیقه رزرو و قیمت هرکدام جداگانه قفل می‌شود.</p></div></div>
 
         <section className={styles.giftBlock}>
           <label className={styles.giftOption}>
@@ -146,14 +175,15 @@ export default function CartPage(){
       <aside className={styles.summary}>
         <div className={styles.summaryHead}><span>ORDER SUMMARY</span><h2>خلاصه سفارش</h2></div>
         <div className={styles.summaryRows}>
-          <div><span>قیمت قطعه</span><strong>{toman(item.price)} <small>تومان</small></strong></div>
+          <div><span>تعداد قطعات</span><strong>{new Intl.NumberFormat('fa-IR').format(items.length)}</strong></div>
+          <div><span>جمع محصولات</span><strong>{toman(total)} <small>تومان</small></strong></div>
           <div><span>ارسال</span><strong>مرحله بعد</strong></div>
-          {gift.enabled&&<div><span>بسته‌بندی هدیه</span><strong>بدون هزینه</strong></div>}
+          {gift.enabled&&<div><span>سفارش هدیه</span><strong>فعال</strong></div>}
         </div>
         <div className={styles.total}><span>جمع فعلی</span><strong>{toman(total)} <small>تومان</small></strong></div>
         <Link href="/checkout" className={styles.checkoutButton}>ادامه و ثبت اطلاعات ارسال <span>←</span></Link>
         <div className={styles.trust}><span>وزن دقیق</span><span>فاکتور معتبر</span><span>پرداخت امن</span></div>
-        <p>رزرو این قطعه از زمان ورود به Checkout شروع می‌شود.</p>
+        <p>رزرو همه قطعات از زمان ورود به Checkout شروع می‌شود.</p>
       </aside>
     </section>
   </main>;
