@@ -1,6 +1,17 @@
-import { IsString, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsBoolean,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+  ValidateNested,
+} from 'class-validator';
 
-export class CreateOrderDto {
+export class CreateOrderItemDto {
   @IsString()
   @MinLength(1)
   unitId!: string;
@@ -8,6 +19,15 @@ export class CreateOrderDto {
   @IsString()
   @MinLength(10)
   reservationToken!: string;
+}
+
+export class CreateOrderDto {
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(10)
+  @ValidateNested({ each: true })
+  @Type(() => CreateOrderItemDto)
+  items!: CreateOrderItemDto[];
 
   @IsString()
   @MinLength(2)
@@ -36,4 +56,17 @@ export class CreateOrderDto {
   @IsString()
   @MinLength(2)
   recipientName!: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isGift?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(220)
+  giftMessage?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  hidePriceInPackage?: boolean;
 }
