@@ -3,13 +3,16 @@
 import { useEffect, useState } from 'react';
 import styles from './success.module.css';
 
-type Order = { number:string; name:string; weight:string; price:number; status:string; referenceId?:string|null; invoiceNumber?:string|null; verificationCode?:string|null };
+type OrderItem={name:string;weight:string};
+type Order = { number:string; name:string; weight:string; items?:OrderItem[]; price:number; status:string; referenceId?:string|null; invoiceNumber?:string|null; verificationCode?:string|null };
+type ApiOrderItem={name:string;weightGram:string};
 type ApiOrder = {
   number:string;
   status:string;
   totalToman:number;
   payment:{status:string;referenceId:string|null}|null;
-  item:{name:string;weightGram:string}|null;
+  item:ApiOrderItem|null;
+  items:ApiOrderItem[];
 };
 type ApiInvoice={invoiceNumber:string;verificationCode:string};
 
@@ -35,10 +38,13 @@ export default function SuccessPage(){
             const data:ApiOrder=await orderResponse.json();
             const invoice:ApiInvoice|null=invoiceResponse.ok?await invoiceResponse.json():null;
             if(cancelled)return;
+            const apiItems=data.items?.length?data.items:(data.item?[data.item]:[]);
+            const items=apiItems.map(item=>({name:item.name,weight:faWeight(item.weightGram)}));
             const verified:Order={
               number:data.number,
-              name:data.item?.name ?? 'سفارش EVA',
-              weight:data.item ? faWeight(data.item.weightGram) : '',
+              name:items.length===1?items[0].name:`${new Intl.NumberFormat('fa-IR').format(items.length)} قطعه از ایوا`,
+              weight:items.length===1?items[0].weight:'',
+              items,
               price:data.totalToman,
               status:data.status==='PAID'?'پرداخت شد':data.status,
               referenceId:data.payment?.referenceId ?? null,
@@ -67,7 +73,14 @@ export default function SuccessPage(){
       <span>PAYMENT CONFIRMED</span>
       <h1>پرداخت آزمایشی تأیید شد.</h1>
       <p>جریان پرداخت با موفقیت تست شد. این تراکنش شبیه‌سازی‌شده است و هیچ مبلغ بانکی واقعی جابه‌جا نشده.</p>
-      {order&&<div className={styles.orderBox}><div><span>شماره سفارش</span><strong>{order.number}</strong></div><div><span>محصول</span><strong>{order.name} • {order.weight}</strong></div><div><span>مبلغ</span><strong>{toman(order.price)}</strong></div><div><span>وضعیت</span><strong>{order.status}</strong></div>{order.referenceId&&<div><span>کد مرجع آزمایشی</span><strong dir="ltr">{order.referenceId}</strong></div>}{order.invoiceNumber&&<div><span>شماره فاکتور</span><strong dir="ltr">{order.invoiceNumber}</strong></div>}</div>}
+      {order&&<div className={styles.orderBox}>
+        <div><span>شماره سفارش</span><strong>{order.number}</strong></div>
+        {(order.items?.length?order.items:[{name:order.name,weight:order.weight}]).map((item,index)=><div key={`${item.name}-${index}`}><span>{(order.items?.length??1)>1?`قطعه ${new Intl.NumberFormat('fa-IR').format(index+1)}`:'محصول'}</span><strong>{item.name}{item.weight?` • ${item.weight}`:''}</strong></div>)}
+        <div><span>مبلغ</span><strong>{toman(order.price)}</strong></div>
+        <div><span>وضعیت</span><strong>{order.status}</strong></div>
+        {order.referenceId&&<div><span>کد مرجع آزمایشی</span><strong dir="ltr">{order.referenceId}</strong></div>}
+        {order.invoiceNumber&&<div><span>شماره فاکتور</span><strong dir="ltr">{order.invoiceNumber}</strong></div>}
+      </div>}
       <div className={styles.actions}>{order?.invoiceNumber&&<a className={styles.primary} href={`/invoice/${encodeURIComponent(order.invoiceNumber)}`}>مشاهده فاکتور</a>}{order?.verificationCode&&<a className={styles.secondary} href={`/verify/${encodeURIComponent(order.verificationCode)}`}>تأیید فاکتور</a>}<a className={styles.secondary} href="/shop">ادامه خرید</a><a className={styles.secondary} href="/">بازگشت به خانه</a></div>
     </section>
   </main>;
