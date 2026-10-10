@@ -16,7 +16,7 @@ export class TrackingService {
     const order = await this.prisma.order.findFirst({
       where: { orderNumber, mobile },
       include: {
-        lines: true,
+        lines: { orderBy: { createdAt: 'asc' } },
         payments: { where: { status: 'SUCCEEDED' }, orderBy: { paidAt: 'desc' }, take: 1 },
       },
     });
@@ -27,8 +27,13 @@ export class TrackingService {
       throw new NotFoundException('اطلاعات سفارش با این مشخصات پیدا نشد');
     }
 
-    const item = order.lines[0] ?? null;
     const payment = order.payments[0] ?? null;
+    const items = order.lines.map((item) => ({
+      name: item.productNameFa,
+      unitSku: item.unitSku,
+      weightGram: String(item.exactWeightGram),
+      purity: item.purity,
+    }));
 
     return {
       number: order.orderNumber,
@@ -36,13 +41,8 @@ export class TrackingService {
       fulfillmentStatus: order.fulfillmentStatus,
       createdAt: order.createdAt,
       paidAt: payment?.paidAt ?? null,
-      item: item
-        ? {
-            name: item.productNameFa,
-            weightGram: String(item.exactWeightGram),
-            purity: item.purity,
-          }
-        : null,
+      items,
+      item: items[0] ?? null,
       shipping: {
         carrier: order.shippingCarrier,
         trackingCode: order.trackingCode,
