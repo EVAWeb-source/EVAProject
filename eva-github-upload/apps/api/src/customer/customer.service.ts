@@ -200,8 +200,15 @@ export class CustomerService {
   }
 
   private toCustomerOrder(order: any) {
-    const line = order.lines?.[0] ?? null;
     const payment = order.payments?.[0] ?? null;
+    const items = (order.lines ?? []).map((line: any) => ({
+      name: line.productNameFa,
+      masterSku: line.masterSku,
+      unitSku: line.unitSku,
+      weightGram: String(line.exactWeightGram),
+      purity: line.purity,
+      priceToman: Number(line.unitPriceToman),
+    }));
 
     return {
       number: order.orderNumber,
@@ -214,6 +221,9 @@ export class CustomerService {
       city: order.city,
       address: order.address,
       postalCode: order.postalCode,
+      isGift: order.isGift,
+      giftMessage: order.giftMessage,
+      hidePriceInPackage: order.hidePriceInPackage,
       shippingCarrier: order.shippingCarrier,
       trackingCode: order.trackingCode,
       shippedAt: order.shippedAt,
@@ -234,16 +244,8 @@ export class CustomerService {
             paidAt: payment.paidAt,
           }
         : null,
-      item: line
-        ? {
-            name: line.productNameFa,
-            masterSku: line.masterSku,
-            unitSku: line.unitSku,
-            weightGram: String(line.exactWeightGram),
-            purity: line.purity,
-            priceToman: Number(line.unitPriceToman),
-          }
-        : null,
+      items,
+      item: items[0] ?? null,
     };
   }
 
@@ -298,8 +300,6 @@ export class CustomerService {
     const dedicated = String(process.env.OTP_SECRET ?? '').trim();
     if (dedicated) return dedicated;
 
-    // Keep the current demo environment working, but do not allow production
-    // OTP/session hashing to silently reuse the admin credential.
     if (process.env.OTP_DEMO_MODE === 'true') {
       const demoFallback = String(process.env.ADMIN_API_KEY ?? '').trim();
       if (demoFallback) return demoFallback;
