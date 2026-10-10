@@ -22,28 +22,50 @@ type StoredReservation={token:string;unitId:string;expiresAt:string};
 
 const apiBase=process.env.NEXT_PUBLIC_API_URL ?? 'https://eva-api-production-c864.up.railway.app';
 const emptyGift:GiftState={enabled:false,message:'',hidePrice:true};
+const savedLaterKey='eva-saved-for-later';
 
 function toman(value:number){return new Intl.NumberFormat('fa-IR').format(value);}
+function normalizeItems(value:unknown):CartItem[]{
+  const items=Array.isArray(value)?value:[value];
+  return items.filter((item):item is CartItem=>Boolean(item&&typeof item==='object'&&(item as CartItem).unitId&&(item as CartItem).name));
+}
 function readCart():CartItem[]{
   try{
     const raw=window.localStorage.getItem('eva-cart');
     if(!raw)return [];
-    const value=JSON.parse(raw);
-    const items=Array.isArray(value)?value:[value];
-    return items.filter((item):item is CartItem=>Boolean(item&&typeof item==='object'&&item.unitId&&item.name));
+    return normalizeItems(JSON.parse(raw));
   }catch{return [];}
+}
+function readSavedLater():CartItem[]{
+  try{
+    const raw=window.localStorage.getItem(savedLaterKey);
+    if(!raw)return [];
+    return normalizeItems(JSON.parse(raw));
+  }catch{return [];}
+}
+function writeCart(items:CartItem[]){
+  if(items.length)window.localStorage.setItem('eva-cart',JSON.stringify(items));
+  else window.localStorage.removeItem('eva-cart');
+  window.dispatchEvent(new Event('eva-cart-change'));
+}
+function writeSavedLater(items:CartItem[]){
+  if(items.length)window.localStorage.setItem(savedLaterKey,JSON.stringify(items));
+  else window.localStorage.removeItem(savedLaterKey);
 }
 
 export default function CartPage(){
   const [items,setItems]=useState<CartItem[]>([]);
+  const [savedItems,setSavedItems]=useState<CartItem[]>([]);
   const [gift,setGift]=useState<GiftState>(emptyGift);
   const [ready,setReady]=useState(false);
 
   useEffect(()=>{
     const current=readCart();
+    const saved=readSavedLater();
     setItems(current);
-    if(current.length)window.localStorage.setItem('eva-cart',JSON.stringify(current));
-    else window.localStorage.removeItem('eva-cart');
+    setSavedItems(saved);
+    writeCart(current);
+    writeSavedLater(saved);
 
     try{
       const giftRaw=window.localStorage.getItem('eva-gift-order');
@@ -92,31 +114,48 @@ export default function CartPage(){
     await releaseReservationFor(unitId);
     setItems(current=>{
       const next=current.filter(item=>item.unitId!==unitId);
-      if(next.length)window.localStorage.setItem('eva-cart',JSON.stringify(next));
-      else{
-        window.localStorage.removeItem('eva-cart');
+      writeCart(next);
+      if(!next.length){
         window.localStorage.removeItem('eva-gift-order');
         setGift(emptyGift);
       }
-      window.dispatchEvent(new Event('eva-cart-change'));
       return next;
     });
   }
 
   async function saveForLater(item:CartItem){
-    try{
-      const current:string[]=JSON.parse(window.localStorage.getItem('eva-wishlist')??'[]');
-      if(item.slug&&!current.includes(item.slug)){
-        window.localStorage.setItem('eva-wishlist',JSON.stringify([...current,item.slug]));
-        window.dispatchEvent(new Event('eva-wishlist-change'));
-      }
-    }catch{}
+    setSavedItems(current=>{
+      const next=current.some(saved=>saved.unitId===item.unitId)?current:[...current,item];
+      writeSavedLater(next);
+      return next;
+    });
     await removeItem(item.unitId);
+  }
+
+  function restoreSavedItem(item:CartItem){
+    setItems(current=>{
+      const next=current.some(cartItem=>cartItem.unitId===item.unitId)?current:[...current,item];
+      writeCart(next);
+      return next;
+    });
+    setSavedItems(current=>{
+      const next=current.filter(saved=>saved.unitId!==item.unitId);
+      writeSavedLater(next);
+      return next;
+    });
+  }
+
+  function removeSavedItem(unitId:string){
+    setSavedItems(current=>{
+      const next=current.filter(item=>item.unitId!==unitId);
+      writeSavedLater(next);
+      return next;
+    });
   }
 
   if(!ready)return <main className={styles.page}><div className={styles.loading}>در حال آماده‌کردن سبد خرید...</div></main>;
 
-  if(items.length===0){
+  if(items.length===0&&savedItems.length===0){
     return <main className={styles.page}>
       <section className={styles.empty}>
         <span>YOUR CART</span>
@@ -139,7 +178,7 @@ export default function CartPage(){
       <div className={styles.cartMain}>
         <div className={styles.listHead}><span>قطعه‌های انتخاب‌شده</span><b>{new Intl.NumberFormat('fa-IR').format(items.length)} قطعه</b></div>
 
-        <div className={styles.itemsList}>{items.map(item=><article className={styles.itemCard} key={item.unitId}>
+        {items.length>0?<div className={styles.itemsList}>{items.map(item=><article className={styles.itemCard} key={item.unitId}>
           <Link href={item.slug?`/products/${item.slug}`:'/shop'} className={styles.media} aria-label={item.name}>
             {item.imageUrl?<img src={item.imageUrl} alt={item.name} decoding="async"/>:<div className={styles.visual} aria-hidden="true"><span className={styles.chain}/><span className={styles.jewel}/></div>}
           </Link>
@@ -151,15 +190,29 @@ export default function CartPage(){
             </div>
             <div className={styles.sku}><span>کد قطعه</span><b dir="ltr">{item.unitSku??item.unitId}</b></div>
             <div className={styles.itemActions}>
-              {item.slug&&<button type="button" className={styles.saveAction} onClick={()=>saveForLater(item)}><span aria-hidden="true">♡</span> ذخیره برای بعد</button>}
+              <button type="button" className={styles.saveAction} onClick={()=>saveForLater(item)}><span aria-hidden="true">♡</span> ذخیره برای بعد</button>
               <button type="button" className={styles.removeAction} onClick={()=>removeItem(item.unitId)}><span aria-hidden="true">×</span> حذف از سبد</button>
             </div>
           </div>
-        </article>)}</div>
+        </article>)}</div>:<div className={styles.cartEmptyInline}>فعلاً قطعه‌ای در سبد خرید نیست.</div>}
 
-        <div className={styles.priceNote}><span aria-hidden="true">◎</span><div><strong>هر وزن یک قطعه فیزیکی مستقل است.</strong><p>می‌توانی چند وزن متفاوت از یک مدل را همزمان سفارش بدهی. در Checkout همه Unitهای این سبد با هم برای ۱۰ دقیقه رزرو و قیمت هرکدام جداگانه قفل می‌شود.</p></div></div>
+        {items.length>0&&<div className={styles.priceNote}><span aria-hidden="true">◎</span><div><strong>هر وزن یک قطعه فیزیکی مستقل است.</strong><p>می‌توانی چند وزن متفاوت از یک مدل را همزمان سفارش بدهی. در Checkout همه Unitهای این سبد با هم برای ۱۰ دقیقه رزرو و قیمت هرکدام جداگانه قفل می‌شود.</p></div></div>}
 
-        <section className={styles.giftBlock}>
+        {savedItems.length>0&&<section className={styles.savedSection}>
+          <div className={styles.savedHead}><div><span>SAVED FOR LATER</span><h2>ذخیره‌شده برای بعد</h2></div><b>{new Intl.NumberFormat('fa-IR').format(savedItems.length)} قطعه</b></div>
+          <div className={styles.savedList}>{savedItems.map(item=><article className={styles.savedCard} key={item.unitId}>
+            <Link href={item.slug?`/products/${item.slug}`:'/shop'} className={styles.savedMedia} aria-label={item.name}>
+              {item.imageUrl?<img src={item.imageUrl} alt={item.name} decoding="async"/>:<div className={styles.visual} aria-hidden="true"><span className={styles.chain}/><span className={styles.jewel}/></div>}
+            </Link>
+            <div className={styles.savedInfo}>
+              <span>{item.collection}</span><h3>{item.name}</h3><p>{item.weight} · {item.purity}</p>
+              <div className={styles.savedPrice}>{toman(item.price)} <small>تومان</small></div>
+              <div className={styles.savedActions}><button type="button" onClick={()=>restoreSavedItem(item)}>بازگرداندن به سبد</button><button type="button" onClick={()=>removeSavedItem(item.unitId)}>حذف</button></div>
+            </div>
+          </article>)}</div>
+        </section>}
+
+        {items.length>0&&<section className={styles.giftBlock}>
           <label className={styles.giftOption}>
             <input type="checkbox" checked={gift.enabled} onChange={event=>setGift(current=>({...current,enabled:event.target.checked}))}/>
             <span className={styles.checkmark} aria-hidden="true"/>
@@ -169,10 +222,10 @@ export default function CartPage(){
             <label><span>پیام هدیه</span><textarea value={gift.message} maxLength={220} onChange={event=>setGift(current=>({...current,message:event.target.value}))} placeholder="یک پیام کوتاه برای گیرنده..."/><small>{new Intl.NumberFormat('fa-IR').format(gift.message.length)} / ۲۲۰</small></label>
             <label className={styles.hidePrice}><input type="checkbox" checked={gift.hidePrice} onChange={event=>setGift(current=>({...current,hidePrice:event.target.checked}))}/><span>قیمت داخل بسته نمایش داده نشود</span></label>
           </div>}
-        </section>
+        </section>}
       </div>
 
-      <aside className={styles.summary}>
+      {items.length>0?<aside className={styles.summary}>
         <div className={styles.summaryHead}><span>ORDER SUMMARY</span><h2>خلاصه سفارش</h2></div>
         <div className={styles.summaryRows}>
           <div><span>تعداد قطعات</span><strong>{new Intl.NumberFormat('fa-IR').format(items.length)}</strong></div>
@@ -184,7 +237,7 @@ export default function CartPage(){
         <Link href="/checkout" className={styles.checkoutButton}>ادامه و ثبت اطلاعات ارسال <span>←</span></Link>
         <div className={styles.trust}><span>وزن دقیق</span><span>فاکتور معتبر</span><span>پرداخت امن</span></div>
         <p>رزرو همه قطعات از زمان ورود به Checkout شروع می‌شود.</p>
-      </aside>
+      </aside>:<aside className={styles.savedOnlyAside}><span>SAVED ITEMS</span><h2>انتخابت محفوظ است.</h2><p>هر زمان خواستی یکی از قطعه‌های ذخیره‌شده را به سبد برگردان.</p><Link href="/shop">ادامه خرید</Link></aside>}
     </section>
   </main>;
 }
