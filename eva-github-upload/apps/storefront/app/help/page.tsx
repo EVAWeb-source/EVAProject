@@ -6,12 +6,12 @@ export default function HelpPage(){
     <section className={styles.section}>
       <div className={styles.sectionTitle}><span>QUICK HELP</span><h2>دنبال چه چیزی هستی؟</h2></div>
       <div className={styles.linkGrid}>
-        <a className={styles.linkCard} href="/track-order"><span>01</span><h3>رهگیری سفارش</h3><p>شماره سفارش و موبایل را وارد کن و وضعیت آماده‌سازی تا تحویل را ببین.</p><b>رهگیری ←</b></a>
-        <a className={styles.linkCard} href="/account"><span>02</span><h3>حساب و سفارش‌های من</h3><p>سفارش‌ها، فاکتور، وضعیت ارسال و اطلاعات سفارش‌های قبلی.</p><b>حساب کاربری ←</b></a>
+        <a className={styles.linkCard} href="/track-order"><span>01</span><h3>رهگیری سفارش</h3><p>شماره سفارش و موبایل را وارد کن و وضعیت سفارش را تا تحویل ببین.</p><b>رهگیری ←</b></a>
+        <a className={styles.linkCard} href="/account"><span>02</span><h3>حساب و سفارش‌های من</h3><p>سفارش‌ها، فاکتورها، آمار خرید و وضعیت ارسال را در داشبورد حساب ببین.</p><b>حساب کاربری ←</b></a>
         <a className={styles.linkCard} href="/faq"><span>03</span><h3>سوالات متداول</h3><p>جواب سوال‌های رایج درباره قیمت، موجودی، خرید، ارسال و هدیه.</p><b>مشاهده سوال‌ها ←</b></a>
-        <a className={styles.linkCard} href="/shipping-returns"><span>04</span><h3>ارسال و مرجوعی</h3><p>روند آماده‌سازی، ارسال، تحویل و چارچوب فعلی درخواست لغو یا مرجوعی.</p><b>مطالعه راهنما ←</b></a>
-        <a className={styles.linkCard} href="/trust"><span>05</span><h3>اعتماد و شفافیت</h3><p>وزن دقیق، قیمت، فاکتور و اینکه EVA چطور هر قطعه را مدیریت می‌کند.</p><b>Trust Center ←</b></a>
-        <a className={styles.linkCard} href="/contact"><span>06</span><h3>تماس با EVA</h3><p>برای سوالی که در راهنما جوابش را پیدا نکردی، مسیر تماس را ببین.</p><b>تماس ←</b></a>
+        <a className={styles.linkCard} href="/shipping-returns"><span>04</span><h3>ارسال و مرجوعی</h3><p>روند آماده‌سازی، ارسال، تحویل و چارچوب درخواست‌های پس از خرید.</p><b>مطالعه راهنما ←</b></a>
+        <a className={styles.linkCard} href="/trust"><span>05</span><h3>اعتماد و شفافیت</h3><p>وزن، قیمت، فاکتور و نحوه رهگیری هر سفارش را دقیق‌تر ببین.</p><b>مرکز اعتماد ←</b></a>
+        <a className={styles.linkCard} href="/contact"><span>06</span><h3>تماس با ایوا</h3><p>برای سوالی که در راهنما جوابش را پیدا نکردی، مسیر تماس را ببین.</p><b>تماس ←</b></a>
       </div>
     </section>
 
