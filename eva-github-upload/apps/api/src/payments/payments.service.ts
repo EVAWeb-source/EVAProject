@@ -18,7 +18,7 @@ export class PaymentsService {
     const order = await this.prisma.order.findUnique({
       where: { orderNumber },
       include: {
-        reservation: true,
+        reservations: true,
         invoice: true,
         lines: true,
         payments: { orderBy: { createdAt: 'desc' } },
@@ -28,7 +28,9 @@ export class PaymentsService {
     if (!order) throw new NotFoundException('Order not found');
 
     if (order.status === 'PAID') {
-      const succeeded = order.payments.find((payment) => payment.status === 'SUCCEEDED');
+      const succeeded = order.payments.find(
+        (payment) => payment.status === 'SUCCEEDED',
+      );
       if (!succeeded) throw new ConflictException('Order is already paid');
       return this.getDemo(succeeded.token);
     }
@@ -37,16 +39,25 @@ export class PaymentsService {
       throw new ConflictException('Order is cancelled');
     }
 
-    if (!order.reservation || order.reservation.status !== 'ACTIVE') {
-      throw new ConflictException('Order reservation is not active');
+    if (
+      order.reservations.length === 0 ||
+      order.reservations.some((reservation) => reservation.status !== 'ACTIVE')
+    ) {
+      throw new ConflictException('Order reservations are not active');
     }
 
-    if (order.reservation.expiresAt.getTime() <= Date.now()) {
+    if (
+      order.reservations.some(
+        (reservation) => reservation.expiresAt.getTime() <= Date.now(),
+      )
+    ) {
       await this.reservations.releaseExpired();
       throw new ConflictException('Order reservation has expired');
     }
 
-    const existing = order.payments.find((payment) => payment.status === 'INITIATED');
+    const existing = order.payments.find(
+      (payment) => payment.status === 'INITIATED',
+    );
     if (existing) return this.getDemo(existing.token);
 
     const payment = await this.prisma.paymentAttempt.create({
@@ -69,7 +80,7 @@ export class PaymentsService {
       include: {
         order: {
           include: {
-            reservation: true,
+            reservations: true,
             invoice: true,
             lines: true,
           },
@@ -89,7 +100,7 @@ export class PaymentsService {
       include: {
         order: {
           include: {
-            reservation: true,
+            reservations: true,
             invoice: true,
             lines: true,
           },
@@ -104,24 +115,36 @@ export class PaymentsService {
     }
 
     const order = payment.order;
-    const reservation = order.reservation;
-    const line = order.lines[0];
+    const reservations = order.reservations;
+    const lines = order.lines;
 
     if (order.status !== 'PENDING_PAYMENT') {
       throw new ConflictException('Order is not pending payment');
     }
-    if (!reservation || reservation.status !== 'ACTIVE') {
-      throw new ConflictException('Reservation is not active');
+    if (
+      reservations.length === 0 ||
+      reservations.some((reservation) => reservation.status !== 'ACTIVE')
+    ) {
+      throw new ConflictException('Reservations are not active');
     }
-    if (reservation.expiresAt.getTime() <= Date.now()) {
+    if (
+      reservations.some(
+        (reservation) => reservation.expiresAt.getTime() <= Date.now(),
+      )
+    ) {
       await this.reservations.releaseExpired();
       throw new ConflictException('Reservation has expired');
     }
-    if (!line) throw new ConflictException('Order item is missing');
+    if (lines.length === 0) throw new ConflictException('Order items are missing');
+    if (lines.length !== reservations.length) {
+      throw new ConflictException('Order reservation count does not match items');
+    }
 
     const referenceId = `DEMO-${randomUUID()}`;
     const invoiceNumber = order.orderNumber.replace(/^EVA-/, 'EVA-INV-');
     const verificationCode = randomUUID();
+    const unitIds = lines.map((line) => line.unitId);
+    const reservationIds = reservations.map((reservation) => reservation.id);
 
     await this.prisma.$transaction(async (tx) => {
       const paymentResult = await tx.paymentAttempt.updateMany({
@@ -133,19 +156,19 @@ export class PaymentsService {
         data: { status: 'PAID' },
       });
       const unitResult = await tx.physicalUnit.updateMany({
-        where: { id: line.unitId, status: 'RESERVED' },
+        where: { id: { in: unitIds }, status: 'RESERVED' },
         data: { status: 'SOLD', reservedUntil: null },
       });
       const reservationResult = await tx.reservation.updateMany({
-        where: { id: reservation.id, status: 'ACTIVE' },
+        where: { id: { in: reservationIds }, status: 'ACTIVE' },
         data: { status: 'COMPLETED' },
       });
 
       if (
         paymentResult.count !== 1 ||
         orderResult.count !== 1 ||
-        unitResult.count !== 1 ||
-        reservationResult.count !== 1
+        unitResult.count !== lines.length ||
+        reservationResult.count !== reservations.length
       ) {
         throw new ConflictException('Payment finalization conflict');
       }
@@ -206,7 +229,7 @@ export class PaymentsService {
       include: {
         order: {
           include: {
-            reservation: true,
+            reservations: true,
             invoice: true,
             lines: true,
           },
@@ -224,8 +247,10 @@ export class PaymentsService {
     }
 
     const order = payment.order;
-    const reservation = order.reservation;
-    const line = order.lines[0];
+    const reservationIds = order.reservations.map(
+      (reservation) => reservation.id,
+    );
+    const unitIds = order.lines.map((line) => line.unitId);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.paymentAttempt.updateMany({
@@ -238,16 +263,16 @@ export class PaymentsService {
         data: { status: 'CANCELLED' },
       });
 
-      if (reservation) {
+      if (reservationIds.length) {
         await tx.reservation.updateMany({
-          where: { id: reservation.id, status: 'ACTIVE' },
+          where: { id: { in: reservationIds }, status: 'ACTIVE' },
           data: { status: 'RELEASED' },
         });
       }
 
-      if (line) {
+      if (unitIds.length) {
         await tx.physicalUnit.updateMany({
-          where: { id: line.unitId, status: 'RESERVED' },
+          where: { id: { in: unitIds }, status: 'RESERVED' },
           data: { status: 'AVAILABLE', reservedUntil: null },
         });
       }
@@ -258,12 +283,40 @@ export class PaymentsService {
 
   private toPublicPayment(payment: any) {
     const order = payment.order;
-    const line = order.lines?.[0] ?? null;
-    const reservation = order.reservation ?? null;
+    const reservations = order.reservations ?? [];
     const invoice = order.invoice ?? null;
-    const remainingSeconds = reservation
-      ? Math.max(0, Math.floor((new Date(reservation.expiresAt).getTime() - Date.now()) / 1000))
+    const items = (order.lines ?? []).map((line: any) => ({
+      name: line.productNameFa,
+      unitSku: line.unitSku,
+      weightGram: String(line.exactWeightGram),
+      purity: line.purity,
+      priceToman: Number(line.unitPriceToman),
+    }));
+    const activeReservations = reservations.filter(
+      (reservation: any) => reservation.status === 'ACTIVE',
+    );
+    const expiresAt = activeReservations.length
+      ? new Date(
+          Math.min(
+            ...activeReservations.map((reservation: any) =>
+              new Date(reservation.expiresAt).getTime(),
+            ),
+          ),
+        )
+      : reservations[0]?.expiresAt ?? null;
+    const remainingSeconds = expiresAt
+      ? Math.max(
+          0,
+          Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000),
+        )
       : 0;
+    const reservationStatus =
+      activeReservations.length === reservations.length && reservations.length > 0
+        ? 'ACTIVE'
+        : reservations.length > 0 &&
+            reservations.every((reservation: any) => reservation.status === 'COMPLETED')
+          ? 'COMPLETED'
+          : reservations[0]?.status ?? null;
 
     return {
       token: payment.token,
@@ -284,21 +337,15 @@ export class PaymentsService {
         status: order.status,
         totalToman: Number(order.totalToman),
         customerName: order.customerName,
-        item: line
-          ? {
-              name: line.productNameFa,
-              unitSku: line.unitSku,
-              weightGram: String(line.exactWeightGram),
-              purity: line.purity,
-              priceToman: Number(line.unitPriceToman),
-            }
-          : null,
+        item: items[0] ?? null,
+        items,
       },
-      reservation: reservation
+      reservation: reservations.length
         ? {
-            status: reservation.status,
-            expiresAt: reservation.expiresAt,
+            status: reservationStatus,
+            expiresAt,
             remainingSeconds,
+            count: reservations.length,
           }
         : null,
     };
