@@ -37,6 +37,11 @@ export class AdminAfterSalesService {
     if (!line) throw new ConflictException('Order item is missing');
 
     if (order.status === 'PENDING_PAYMENT') {
+      const unitIds = [...new Set(order.lines.map((item) => item.unitId))];
+      const activeReservationIds = order.reservations
+        .filter((reservation) => reservation.status === 'ACTIVE')
+        .map((reservation) => reservation.id);
+
       await this.prisma.$transaction(async (tx) => {
         await tx.afterSalesCase.create({
           data: {
@@ -50,11 +55,14 @@ export class AdminAfterSalesService {
           },
         });
         await tx.order.update({ where: { id: order.id }, data: { status: 'CANCELLED' } });
-        if (order.reservation?.status === 'ACTIVE') {
-          await tx.reservation.update({ where: { id: order.reservation.id }, data: { status: 'RELEASED' } });
+        if (activeReservationIds.length) {
+          await tx.reservation.updateMany({
+            where: { id: { in: activeReservationIds }, status: 'ACTIVE' },
+            data: { status: 'RELEASED' },
+          });
         }
         await tx.physicalUnit.updateMany({
-          where: { id: line.unitId, status: 'RESERVED' },
+          where: { id: { in: unitIds }, status: 'RESERVED' },
           data: { status: 'AVAILABLE', reservedUntil: null },
         });
         await tx.paymentAttempt.updateMany({
@@ -270,7 +278,7 @@ export class AdminAfterSalesService {
       where: { id: orderId },
       include: {
         lines: true,
-        reservation: true,
+        reservations: true,
         payments: { orderBy: { createdAt: 'desc' } },
         invoice: true,
       },
