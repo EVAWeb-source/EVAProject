@@ -60,7 +60,13 @@ const orderStatusLabels: Record<string, string> = {
 };
 
 function toman(value: number) {
-  return `${new Intl.NumberFormat('fa-IR').format(value)} تومان`;
+  return `${new Intl.NumberFormat('fa-IR').format(Math.round(value))} تومان`;
+}
+
+function compactToman(value: number) {
+  if (value >= 1_000_000_000) return `${new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 1 }).format(value / 1_000_000_000)} میلیارد`;
+  if (value >= 1_000_000) return `${new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 1 }).format(value / 1_000_000)} میلیون`;
+  return new Intl.NumberFormat('fa-IR').format(Math.round(value));
 }
 
 function date(value: string | null) {
@@ -68,13 +74,47 @@ function date(value: string | null) {
   return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
 
+function shortDate(value: string | null) {
+  if (!value) return '—';
+  return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium' }).format(new Date(value));
+}
+
 function weight(value: string) {
   return `${new Intl.NumberFormat('fa-IR', { minimumFractionDigits: 2, maximumFractionDigits: 3 }).format(Number(value))} گرم`;
+}
+
+function gram(value: number) {
+  return `${new Intl.NumberFormat('fa-IR', { minimumFractionDigits: 2, maximumFractionDigits: 3 }).format(value)} گرم`;
 }
 
 function maskMobile(value: string) {
   if (value.length < 8) return value;
   return `${value.slice(0, 4)}***${value.slice(-4)}`;
+}
+
+function orderItems(order: Order) {
+  return order.items?.length ? order.items : order.item ? [order.item] : [];
+}
+
+function sixMonthTrend(orders: Order[]) {
+  const now = new Date();
+  const buckets = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - index), 1));
+    return {
+      year: date.getUTCFullYear(),
+      month: date.getUTCMonth(),
+      label: new Intl.DateTimeFormat('fa-IR-u-ca-gregory', { month: 'short' }).format(date),
+      value: 0,
+    };
+  });
+
+  for (const order of orders) {
+    const created = new Date(order.createdAt);
+    const bucket = buckets.find((item) => item.year === created.getUTCFullYear() && item.month === created.getUTCMonth());
+    if (bucket) bucket.value += Number(order.totalToman || 0);
+  }
+
+  return buckets;
 }
 
 export default async function AccountPage() {
@@ -121,9 +161,19 @@ export default async function AccountPage() {
     );
   }
 
-  const paidCount = orders.filter((order) => order.status === 'PAID').length;
-  const activeCount = orders.filter((order) => order.status === 'PAID' && order.fulfillmentStatus !== 'DELIVERED').length;
-  const deliveredCount = orders.filter((order) => order.fulfillmentStatus === 'DELIVERED').length;
+  const successfulOrders = orders.filter((order) => order.status === 'PAID' || order.status === 'DEMO_CONFIRMED');
+  const totalSpend = successfulOrders.reduce((sum, order) => sum + Number(order.totalToman || 0), 0);
+  const averageOrder = successfulOrders.length ? totalSpend / successfulOrders.length : 0;
+  const allPurchasedItems = successfulOrders.flatMap(orderItems);
+  const purchasedPieces = allPurchasedItems.length;
+  const totalGoldWeight = allPurchasedItems.reduce((sum, item) => sum + Number(item.weightGram || 0), 0);
+  const averagePieceWeight = purchasedPieces ? totalGoldWeight / purchasedPieces : 0;
+  const activeCount = successfulOrders.filter((order) => order.fulfillmentStatus !== 'DELIVERED').length;
+  const deliveredCount = successfulOrders.filter((order) => order.fulfillmentStatus === 'DELIVERED').length;
+  const invoiceCount = successfulOrders.filter((order) => Boolean(order.invoice)).length;
+  const latestOrder = successfulOrders[0] ?? orders[0] ?? null;
+  const trend = sixMonthTrend(successfulOrders);
+  const trendMax = Math.max(...trend.map((item) => item.value), 1);
 
   return (
     <main className={styles.page}>
@@ -136,11 +186,68 @@ export default async function AccountPage() {
         <LogoutButton />
       </section>
 
-      <section className={styles.overview} aria-label="خلاصه حساب">
-        <div><span>کل سفارش‌ها</span><strong>{new Intl.NumberFormat('fa-IR').format(orders.length)}</strong></div>
-        <div><span>پرداخت‌شده</span><strong>{new Intl.NumberFormat('fa-IR').format(paidCount)}</strong></div>
-        <div><span>در مسیر</span><strong>{new Intl.NumberFormat('fa-IR').format(activeCount)}</strong></div>
-        <div><span>تحویل‌شده</span><strong>{new Intl.NumberFormat('fa-IR').format(deliveredCount)}</strong></div>
+      <section className={styles.dashboardHero} aria-label="خلاصه خرید">
+        <div className={styles.spendCard}>
+          <span className={styles.dashboardLabel}>TOTAL PURCHASES</span>
+          <p>مجموع خرید ثبت‌شده</p>
+          <strong>{toman(totalSpend)}</strong>
+          <small>{new Intl.NumberFormat('fa-IR').format(successfulOrders.length)} سفارش موفق</small>
+        </div>
+        <div className={styles.heroMetrics}>
+          <div><span>میانگین هر سفارش</span><strong>{toman(averageOrder)}</strong></div>
+          <div><span>طلای خریداری‌شده</span><strong>{gram(totalGoldWeight)}</strong></div>
+          <div><span>تعداد قطعات</span><strong>{new Intl.NumberFormat('fa-IR').format(purchasedPieces)} قطعه</strong></div>
+        </div>
+      </section>
+
+      <section className={styles.metricGrid} aria-label="آمار حساب">
+        <article><span>سفارش فعال</span><strong>{new Intl.NumberFormat('fa-IR').format(activeCount)}</strong><small>در حال آماده‌سازی یا ارسال</small></article>
+        <article><span>تحویل‌شده</span><strong>{new Intl.NumberFormat('fa-IR').format(deliveredCount)}</strong><small>سفارش تکمیل‌شده</small></article>
+        <article><span>میانگین وزن قطعه</span><strong>{gram(averagePieceWeight)}</strong><small>بر اساس خریدهای موفق</small></article>
+        <article><span>فاکتورهای صادرشده</span><strong>{new Intl.NumberFormat('fa-IR').format(invoiceCount)}</strong><small>قابل مشاهده در سفارش‌ها</small></article>
+      </section>
+
+      <section className={styles.analyticsGrid}>
+        <article className={styles.trendCard}>
+          <header>
+            <div><span className={styles.eyebrow}>6 MONTHS</span><h2>روند خرید</h2></div>
+            <small>مبلغ خرید موفق در ۶ ماه اخیر</small>
+          </header>
+          <div className={styles.chart} aria-label="روند شش ماهه خرید">
+            {trend.map((item) => {
+              const height = item.value > 0 ? Math.max(9, Math.round((item.value / trendMax) * 100)) : 3;
+              return (
+                <div className={styles.chartColumn} key={`${item.year}-${item.month}`}>
+                  <span>{item.value ? compactToman(item.value) : '—'}</span>
+                  <div className={styles.chartTrack}><i style={{ height: `${height}%` }} /></div>
+                  <b>{item.label}</b>
+                </div>
+              );
+            })}
+          </div>
+        </article>
+
+        <aside className={styles.activityCard}>
+          <span className={styles.eyebrow}>RECENT ACTIVITY</span>
+          <h2>آخرین فعالیت</h2>
+          {latestOrder ? (
+            <>
+              <div className={styles.latestOrder}>
+                <span>آخرین سفارش</span>
+                <strong dir="ltr">{latestOrder.number}</strong>
+                <small>{shortDate(latestOrder.createdAt)}</small>
+              </div>
+              <div className={styles.activityRows}>
+                <div><span>مبلغ</span><strong>{toman(latestOrder.totalToman)}</strong></div>
+                <div><span>قطعات</span><strong>{new Intl.NumberFormat('fa-IR').format(orderItems(latestOrder).length)}</strong></div>
+                <div><span>وضعیت</span><strong>{orderStatusLabels[latestOrder.status] ?? latestOrder.status}</strong></div>
+                <div><span>ارسال</span><strong>{labels[latestOrder.fulfillmentStatus]}</strong></div>
+              </div>
+            </>
+          ) : (
+            <p className={styles.noActivity}>بعد از اولین سفارش، آخرین فعالیت اینجا نمایش داده می‌شود.</p>
+          )}
+        </aside>
       </section>
 
       <nav className={styles.quickActions} aria-label="دسترسی سریع حساب">
@@ -159,7 +266,7 @@ export default async function AccountPage() {
         <div className={styles.orders}>
           {orders.map((order) => {
             const current = flow.indexOf(order.fulfillmentStatus);
-            const items = order.items?.length ? order.items : order.item ? [order.item] : [];
+            const items = orderItems(order);
             const showProgress = order.status === 'PAID' || order.status === 'DEMO_CONFIRMED';
             const statusClass = order.status === 'PAID' ? styles.statusPaid : order.status === 'PENDING_PAYMENT' ? styles.statusPending : styles.statusMuted;
 
@@ -234,7 +341,7 @@ export default async function AccountPage() {
             <div className={styles.empty}>
               <span>NO ORDERS YET</span>
               <h3>هنوز سفارشی ثبت نکرده‌ای.</h3>
-              <p>بعد از اولین خرید، وضعیت سفارش و فاکتور از همین بخش در دسترس خواهد بود.</p>
+              <p>بعد از اولین خرید، آمار خرید، وضعیت سفارش و فاکتور از همین داشبورد در دسترس خواهد بود.</p>
               <Link href="/shop">رفتن به فروشگاه</Link>
             </div>
           )}
