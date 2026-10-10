@@ -119,9 +119,9 @@ export default function TrackOrderPage(){
     </article>}
 
     <nav className={styles.quickLinks} aria-label="راهنمای سفارش">
-      <Link href="/shipping-returns"><span>SHIPPING</span><strong>ارسال و مرجوعی</strong></Link>
-      <Link href="/faq"><span>FAQ</span><strong>سوالات متداول</strong></Link>
-      <Link href="/contact"><span>SUPPORT</span><strong>تماس با ایوا</strong></Link>
+      <Link href="/shipping-returns"><span>SHIPPING</span><strong>ارسال و مرجوعی</strong><i className={styles.quickArrow} aria-hidden="true">←</i></Link>
+      <Link href="/faq"><span>FAQ</span><strong>سوالات متداول</strong><i className={styles.quickArrow} aria-hidden="true">←</i></Link>
+      <Link href="/contact"><span>SUPPORT</span><strong>تماس با ایوا</strong><i className={styles.quickArrow} aria-hidden="true">←</i></Link>
     </nav>
   </main>;
 }
