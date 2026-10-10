@@ -36,9 +36,23 @@ type ProductInfo = {
 };
 
 type ProductPurchaseProps = { product:ProductInfo; units:PurchaseUnit[] };
+type CartItem={
+  productId:string;unitId:string;unitSku:string;name:string;collection:string;
+  weight:string;purity:string;price:number;imageUrl?:string;slug:string;
+};
 
 function toman(value:number){
   return new Intl.NumberFormat('fa-IR').format(value);
+}
+
+function readCart():CartItem[]{
+  try{
+    const raw=window.localStorage.getItem('eva-cart');
+    if(!raw)return [];
+    const value=JSON.parse(raw);
+    const items=Array.isArray(value)?value:[value];
+    return items.filter((item):item is CartItem=>Boolean(item&&typeof item==='object'&&item.unitId));
+  }catch{return [];}
 }
 
 export default function ProductPurchase({ product, units }: ProductPurchaseProps) {
@@ -46,6 +60,7 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
   const [added,setAdded]=useState(false);
   const [liked,setLiked]=useState(false);
   const [shareState,setShareState]=useState('');
+  const [cartStatus,setCartStatus]=useState('');
   const subtitle=product.shortDescription||`${product.category} طلای ${product.purity} عیار، با وزن و قیمت شفاف.`;
 
   useEffect(()=>{
@@ -69,7 +84,19 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
 
   function addToCart(){
     if(!selected)return;
-    const cartItem={
+    const current=readCart();
+    if(current.some(item=>item.unitId===selected.id)){
+      setAdded(true);
+      setCartStatus('این قطعه از قبل داخل سبد خرید است.');
+      return;
+    }
+    if(current.length>=10){
+      setAdded(false);
+      setCartStatus('برای هر سفارش حداکثر ۱۰ قطعه می‌توانی انتخاب کنی.');
+      return;
+    }
+
+    const cartItem:CartItem={
       productId:product.masterSku,
       unitId:selected.id,
       unitSku:selected.unitSku,
@@ -81,9 +108,11 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
       imageUrl:product.imageUrl,
       slug:product.slug,
     };
-    window.localStorage.setItem('eva-cart',JSON.stringify(cartItem));
+    const next=[...current,cartItem];
+    window.localStorage.setItem('eva-cart',JSON.stringify(next));
     window.dispatchEvent(new Event('eva-cart-change'));
     setAdded(true);
+    setCartStatus(next.length>1?`${new Intl.NumberFormat('fa-IR').format(next.length)} قطعه در سبد خرید داری.`:'قطعه انتخاب‌شده به سبد خرید اضافه شد.');
   }
 
   async function shareProduct(){
@@ -131,15 +160,15 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
 
     <div className={styles.selectorBlock}>
       <div className={styles.labelRow}><strong>انتخاب وزن</strong><span>هر گزینه یک قطعه واقعی با قیمت خودش است.</span></div>
-      <div className={styles.units}>{units.map(unit=><button type="button" key={unit.id} className={selected.id===unit.id?styles.unitActive:''} onClick={()=>{setSelected(unit);setAdded(false);}} aria-pressed={selected.id===unit.id}><span>{unit.weight}</span><small>{toman(unit.price)} تومان</small></button>)}</div>
+      <div className={styles.units}>{units.map(unit=><button type="button" key={unit.id} className={selected.id===unit.id?styles.unitActive:''} onClick={()=>{setSelected(unit);setAdded(false);setCartStatus('');}} aria-pressed={selected.id===unit.id}><span>{unit.weight}</span><small>{toman(unit.price)} تومان</small></button>)}</div>
     </div>
 
     <div className={styles.selectedSku}><span>کد قطعه انتخاب‌شده</span><b dir="ltr">{selected.unitSku}</b></div>
     <div className={styles.availability}><span aria-hidden="true"/> موجود و قابل سفارش</div>
 
-    <button type="button" className={added?styles.addToCart+' '+styles.addedToCart:styles.addToCart} onClick={addToCart}>{added?'✓ به سبد اضافه شد':'افزودن به سبد خرید'}</button>
+    <button type="button" className={added?styles.addToCart+' '+styles.addedToCart:styles.addToCart} onClick={addToCart}>{added?'✓ داخل سبد خرید':'افزودن به سبد خرید'}</button>
     {added&&<div className={styles.afterAdd}><Link href="/cart" className={styles.cartLink}><span>مشاهده سبد خرید</span><b aria-hidden="true">←</b></Link></div>}
-    <div className={styles.actionStatus} aria-live="polite">{added?'قطعه انتخاب‌شده به سبد خرید اضافه شد.':shareState}</div>
+    <div className={styles.actionStatus} aria-live="polite">{cartStatus||shareState}</div>
 
     <div className={styles.secondaryActions}>
       <button type="button" onClick={toggleWishlist}>{liked?'♥ ذخیره شده':'♡ ذخیره برای بعد'}</button>
