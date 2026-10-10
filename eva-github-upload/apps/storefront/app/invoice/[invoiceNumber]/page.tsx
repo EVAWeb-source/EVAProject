@@ -35,7 +35,6 @@ async function getInvoice(invoiceNumber:string):Promise<Invoice>{
 export default async function InvoicePage({params}:{params:Promise<{invoiceNumber:string}>}){
   const {invoiceNumber}=await params;
   const invoice=await getInvoice(invoiceNumber);
-  const item=invoice.items[0];
   const verifyUrl=`${siteBase}/verify/${invoice.verificationCode}`;
   const qrDataUrl=await QRCode.toDataURL(verifyUrl,{width:220,margin:1,errorCorrectionLevel:'M'});
 
@@ -48,11 +47,18 @@ export default async function InvoicePage({params}:{params:Promise<{invoiceNumbe
 
       <section className={styles.section}><h2>خریدار و ارسال</h2><div className={styles.grid}><div className={styles.row}><span>نام خریدار</span><strong>{invoice.customer.name}</strong></div><div className={styles.row}><span>موبایل</span><strong dir="ltr">{invoice.customer.mobile}</strong></div><div className={styles.row}><span>گیرنده</span><strong>{invoice.customer.recipientName}</strong></div><div className={styles.row}><span>کدپستی</span><strong dir="ltr">{invoice.customer.postalCode}</strong></div></div><div className={styles.row}><span>آدرس</span><strong>{invoice.customer.province}، {invoice.customer.city}، {invoice.customer.address}</strong></div></section>
 
-      {item&&<section className={styles.section}><h2>مشخصات قطعه</h2><div className={styles.grid}><div className={styles.row}><span>محصول</span><strong>{item.productNameFa}</strong></div><div className={styles.row}><span>وزن دقیق</span><strong>{weight(item.exactWeightGram)}</strong></div><div className={styles.row}><span>عیار</span><strong>{item.purity} عیار</strong></div><div className={styles.row}><span>Unit SKU</span><strong dir="ltr">{item.unitSku}</strong></div><div className={styles.row}><span>Master SKU</span><strong dir="ltr">{item.masterSku}</strong></div></div></section>}
+      {invoice.items.map((item,index)=><section className={styles.section} key={item.unitSku}>
+        <h2>{invoice.items.length>1?`قطعه ${new Intl.NumberFormat('fa-IR').format(index+1)} — ${item.productNameFa}`:'مشخصات قطعه'}</h2>
+        <div className={styles.grid}><div className={styles.row}><span>محصول</span><strong>{item.productNameFa}</strong></div><div className={styles.row}><span>وزن دقیق</span><strong>{weight(item.exactWeightGram)}</strong></div><div className={styles.row}><span>عیار</span><strong>{item.purity} عیار</strong></div><div className={styles.row}><span>Unit SKU</span><strong dir="ltr">{item.unitSku}</strong></div><div className={styles.row}><span>Master SKU</span><strong dir="ltr">{item.masterSku}</strong></div></div>
+        <div className={styles.row}><span>مبلغ این قطعه</span><strong>{toman(item.finalPriceToman)}</strong></div>
+        {item.goldRateTomanPerGram!==null&&<div className={styles.row}><span>نرخ طلا / گرم</span><strong>{toman(item.goldRateTomanPerGram)}</strong></div>}
+        {item.goldValueToman!==null&&<div className={styles.row}><span>ارزش طلا</span><strong>{toman(item.goldValueToman)}</strong></div>}
+        {item.makingToman!==null&&<div className={styles.row}><span>اجرت</span><strong>{toman(item.makingToman)}</strong></div>}
+        {item.profitToman!==null&&<div className={styles.row}><span>سود</span><strong>{toman(item.profitToman)}</strong></div>}
+        {item.taxToman!==null&&<div className={styles.row}><span>مالیات</span><strong>{toman(item.taxToman)}</strong></div>}
+      </section>)}
 
-      {item&&<section className={styles.section}><h2>جزئیات قیمت ثبت‌شده</h2>{item.goldRateTomanPerGram!==null&&<div className={styles.row}><span>نرخ طلا / گرم</span><strong>{toman(item.goldRateTomanPerGram)}</strong></div>}{item.goldValueToman!==null&&<div className={styles.row}><span>ارزش طلا</span><strong>{toman(item.goldValueToman)}</strong></div>}{item.makingToman!==null&&<div className={styles.row}><span>اجرت</span><strong>{toman(item.makingToman)}</strong></div>}{item.profitToman!==null&&<div className={styles.row}><span>سود</span><strong>{toman(item.profitToman)}</strong></div>}{item.taxToman!==null&&<div className={styles.row}><span>مالیات</span><strong>{toman(item.taxToman)}</strong></div>}<div className={`${styles.row} ${styles.total}`}><span>مبلغ نهایی</span><strong>{toman(item.finalPriceToman)}</strong></div></section>}
-
-      <section className={styles.section}><h2>پرداخت</h2><div className={styles.grid}><div className={styles.row}><span>درگاه</span><strong>{invoice.payment.provider}</strong></div><div className={styles.row}><span>کد مرجع</span><strong dir="ltr">{invoice.payment.reference}</strong></div></div></section>
+      <section className={styles.section}><h2>جمع سفارش و پرداخت</h2><div className={styles.grid}><div className={styles.row}><span>تعداد قطعات</span><strong>{new Intl.NumberFormat('fa-IR').format(invoice.items.length)}</strong></div><div className={styles.row}><span>درگاه</span><strong>{invoice.payment.provider}</strong></div><div className={styles.row}><span>کد مرجع</span><strong dir="ltr">{invoice.payment.reference}</strong></div></div><div className={`${styles.row} ${styles.total}`}><span>مبلغ نهایی سفارش</span><strong>{toman(invoice.totalToman)}</strong></div></section>
 
       <section className={styles.verify}>
         <div className={styles.verifyText}><strong>تأیید اصالت فاکتور</strong><p>QR را اسکن کن تا صفحه عمومی تأیید همین فاکتور باز شود. اطلاعات شخصی خریدار در صفحه عمومی نمایش داده نمی‌شود.</p><code>{invoice.verificationCode}</code><a href={verifyUrl}>{verifyUrl}</a></div>
