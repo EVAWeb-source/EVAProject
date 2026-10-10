@@ -200,32 +200,35 @@ model Customer {
 }
 
 model Order {
-  id                String            @id @default(cuid())
-  orderNumber       String            @unique
-  status            OrderStatus       @default(PENDING_PAYMENT)
-  fulfillmentStatus FulfillmentStatus @default(REGISTERED)
-  isDemo            Boolean           @default(true)
-  customerId        String?
-  customer          Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  customerName      String
-  mobile            String
-  province          String
-  city              String
+  id                 String            @id @default(cuid())
+  orderNumber        String            @unique
+  status             OrderStatus       @default(PENDING_PAYMENT)
+  fulfillmentStatus  FulfillmentStatus @default(REGISTERED)
+  isDemo             Boolean           @default(true)
+  customerId         String?
+  customer           Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerName       String
+  mobile             String
+  province           String
+  city               String
   address            String
-  postalCode        String
-  recipientName     String
-  shippingCarrier   String?
-  trackingCode      String?
-  shippedAt         DateTime?
-  deliveredAt       DateTime?
-  totalToman        BigInt
-  lines             OrderLine[]
-  reservation       Reservation?
-  payments          PaymentAttempt[]
-  invoice           Invoice?
-  afterSalesCases   AfterSalesCase[]
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  postalCode         String
+  recipientName      String
+  isGift             Boolean           @default(false)
+  giftMessage        String?
+  hidePriceInPackage Boolean           @default(false)
+  shippingCarrier    String?
+  trackingCode       String?
+  shippedAt          DateTime?
+  deliveredAt        DateTime?
+  totalToman         BigInt
+  lines              OrderLine[]
+  reservations       Reservation[]
+  payments           PaymentAttempt[]
+  invoice            Invoice?
+  afterSalesCases    AfterSalesCase[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   @@index([customerId, createdAt])
   @@index([mobile, createdAt])
@@ -275,13 +278,14 @@ model Reservation {
   rateVersion           String?
   pricingFormulaVersion String?
   pricingRuleId         String?
-  orderId               String?           @unique
+  orderId               String?
   order                 Order?            @relation(fields: [orderId], references: [id], onDelete: Restrict)
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
 
   @@index([unitId, status, expiresAt])
   @@index([status, expiresAt])
+  @@index([orderId])
 }
 
 model PaymentAttempt {
@@ -315,8 +319,8 @@ model Invoice {
   recipientName    String
   province         String
   city             String
-  address          String
-  postalCode       String
+  address            String
+  postalCode        String
   paymentProvider  String
   paymentReference String
   totalToman       BigInt
