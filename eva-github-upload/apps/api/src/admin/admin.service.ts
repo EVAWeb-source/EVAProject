@@ -16,6 +16,8 @@ const PRODUCT_STATUSES = [
   'ARCHIVED',
 ] as const;
 
+const PRODUCT_CATEGORY_CODES = ['NEC', 'PEN', 'BRA', 'RIN', 'EAR', 'SET', 'ANK', 'CHM'] as const;
+
 const ADMIN_UNIT_STATUSES = [
   'QC_PENDING',
   'AVAILABLE',
@@ -157,6 +159,7 @@ export class AdminService {
         nameFa: product.nameFa,
         slug: product.slug,
         masterSku: product.masterSku,
+        categoryCode: this.categoryCodeFromSku(product.masterSku),
         purity: product.purity,
         status: product.status,
         collectionId: product.collectionId,
@@ -317,9 +320,7 @@ export class AdminService {
       throw new ConflictException('Fulfillment status must move forward one step at a time');
     }
 
-    const data: Record<string, unknown> = {
-      fulfillmentStatus: target,
-    };
+    const data: Record<string, unknown> = { fulfillmentStatus: target };
 
     if (target === 'SHIPPED') {
       const shippingCarrier = this.requiredString(input.shippingCarrier, 'Shipping carrier');
@@ -328,15 +329,9 @@ export class AdminService {
       data.trackingCode = trackingCode;
       data.shippedAt = new Date();
     }
+    if (target === 'DELIVERED') data.deliveredAt = new Date();
 
-    if (target === 'DELIVERED') {
-      data.deliveredAt = new Date();
-    }
-
-    const updated = await this.prisma.order.update({
-      where: { id },
-      data: data as any,
-    });
+    const updated = await this.prisma.order.update({ where: { id }, data: data as any });
 
     await this.notifications.fulfillmentChanged({
       id: updated.id,
@@ -352,10 +347,7 @@ export class AdminService {
 
   async smsOutbox() {
     const [items, pending, sent, failed] = await Promise.all([
-      this.prisma.smsNotification.findMany({
-        take: 100,
-        orderBy: { createdAt: 'desc' },
-      }),
+      this.prisma.smsNotification.findMany({ take: 100, orderBy: { createdAt: 'desc' } }),
       this.prisma.smsNotification.count({ where: { status: 'PENDING_PROVIDER' } }),
       this.prisma.smsNotification.count({ where: { status: 'SENT' } }),
       this.prisma.smsNotification.count({ where: { status: 'FAILED' } }),
@@ -387,9 +379,7 @@ export class AdminService {
     if (orderNumber) {
       const order = await this.prisma.order.findUnique({ where: { orderNumber } });
       if (!order) throw new NotFoundException('Order not found');
-      if (order.mobile !== mobile) {
-        throw new ConflictException('Mobile does not match this order');
-      }
+      if (order.mobile !== mobile) throw new ConflictException('Mobile does not match this order');
     }
 
     return this.prisma.smsNotification.create({
@@ -410,12 +400,14 @@ export class AdminService {
     const nameFa = this.requiredString(input.nameFa, 'نام محصول');
     const slug = this.requiredString(input.slug, 'slug').toLowerCase();
     const masterSku = this.requiredString(input.masterSku, 'Master SKU').toUpperCase();
+    const categoryCode = this.validateCategoryCode(input.categoryCode);
     const purity = Number(input.purity ?? 18);
     const status = String(input.status ?? 'DRAFT').toUpperCase();
     const collectionId = input.collectionId ? String(input.collectionId) : null;
 
     this.validateSlug(slug);
     this.validateMasterSku(masterSku);
+    this.validateMasterSkuCategory(masterSku, categoryCode);
     this.validatePurity(purity);
     if (!PRODUCT_STATUSES.includes(status as (typeof PRODUCT_STATUSES)[number])) {
       throw new BadRequestException('Invalid product status');
@@ -428,20 +420,11 @@ export class AdminService {
 
     try {
       return await this.prisma.masterProduct.create({
-        data: {
-          nameFa,
-          slug,
-          masterSku,
-          purity,
-          status: status as any,
-          collectionId,
-        },
+        data: { nameFa, slug, masterSku, purity, status: status as any, collectionId },
         include: { collection: true },
       });
     } catch (error: any) {
-      if (error?.code === 'P2002') {
-        throw new ConflictException('Slug or Master SKU already exists');
-      }
+      if (error?.code === 'P2002') throw new ConflictException('Slug or Master SKU already exists');
       throw error;
     }
   }
@@ -454,6 +437,8 @@ export class AdminService {
     if (!product) throw new NotFoundException('Product not found');
 
     const data: Record<string, unknown> = {};
+    const suppliedCategoryCode = input.categoryCode !== undefined ? this.validateCategoryCode(input.categoryCode) : null;
+
     if (input.nameFa !== undefined) data.nameFa = this.requiredString(input.nameFa, 'نام محصول');
     if (input.slug !== undefined) {
       const slug = this.requiredString(input.slug, 'slug').toLowerCase();
@@ -463,10 +448,13 @@ export class AdminService {
     if (input.masterSku !== undefined) {
       const masterSku = this.requiredString(input.masterSku, 'Master SKU').toUpperCase();
       this.validateMasterSku(masterSku);
+      if (suppliedCategoryCode) this.validateMasterSkuCategory(masterSku, suppliedCategoryCode);
       if (masterSku !== product.masterSku && product.units.length > 0) {
         throw new ConflictException('Master SKU cannot change after Units have been created');
       }
       data.masterSku = masterSku;
+    } else if (suppliedCategoryCode) {
+      this.validateMasterSkuCategory(product.masterSku, suppliedCategoryCode);
     }
     if (input.purity !== undefined) {
       const purity = Number(input.purity);
@@ -492,9 +480,7 @@ export class AdminService {
       data.collectionId = collectionId;
     }
 
-    if (Object.keys(data).length === 0) {
-      throw new BadRequestException('No editable fields supplied');
-    }
+    if (Object.keys(data).length === 0) throw new BadRequestException('No editable fields supplied');
 
     try {
       return await this.prisma.masterProduct.update({
@@ -550,8 +536,10 @@ export class AdminService {
 
     const product = await this.prisma.masterProduct.findUnique({ where: { id: productId } });
     if (!product) throw new NotFoundException('Product not found');
-    if (!/^EVA-[A-Z0-9-]+-U[0-9]+$/.test(unitSku)) {
-      throw new BadRequestException('Unit SKU must follow the EVA-...-U01 pattern');
+
+    const expectedUnitPattern = new RegExp(`^${product.masterSku}-U\\d{2,}$`);
+    if (!expectedUnitPattern.test(unitSku)) {
+      throw new BadRequestException(`Unit SKU must match ${product.masterSku}-U01 and cannot use another product/category code`);
     }
     if (!Number.isFinite(exactWeightGram) || exactWeightGram <= 0 || exactWeightGram >= 1000) {
       throw new BadRequestException('Exact weight must be a positive number');
@@ -579,12 +567,8 @@ export class AdminService {
   async updateUnit(id: string, input: Record<string, unknown>) {
     const unit = await this.prisma.physicalUnit.findUnique({ where: { id } });
     if (!unit) throw new NotFoundException('Unit not found');
-    if (unit.status === 'SOLD') {
-      throw new ConflictException('Sold Unit is immutable');
-    }
-    if (unit.status === 'RESERVED') {
-      throw new ConflictException('Reserved Unit cannot be edited manually');
-    }
+    if (unit.status === 'SOLD') throw new ConflictException('Sold Unit is immutable');
+    if (unit.status === 'RESERVED') throw new ConflictException('Reserved Unit cannot be edited manually');
     if (unit.status === 'RETURNED') {
       throw new ConflictException('Returned Unit must be changed by the after-sales QC workflow');
     }
@@ -607,9 +591,7 @@ export class AdminService {
       data.currentPriceToman = null;
     }
 
-    if (Object.keys(data).length === 0) {
-      throw new BadRequestException('No editable fields supplied');
-    }
+    if (Object.keys(data).length === 0) throw new BadRequestException('No editable fields supplied');
 
     return this.prisma.physicalUnit.update({
       where: { id },
@@ -662,6 +644,29 @@ export class AdminService {
     if (!/^EVA-[A-Z0-9-]+$/.test(masterSku)) {
       throw new BadRequestException('Master SKU must start with EVA- and use uppercase letters/numbers');
     }
+    const categoryCode = this.categoryCodeFromSku(masterSku);
+    if (!PRODUCT_CATEGORY_CODES.includes(categoryCode as (typeof PRODUCT_CATEGORY_CODES)[number])) {
+      throw new BadRequestException(`Master SKU category code must be one of: ${PRODUCT_CATEGORY_CODES.join(', ')}`);
+    }
+  }
+
+  private categoryCodeFromSku(masterSku: string) {
+    return String(masterSku ?? '').trim().toUpperCase().split('-')[2] ?? '';
+  }
+
+  private validateCategoryCode(value: unknown) {
+    const categoryCode = this.requiredString(value, 'دسته‌بندی').toUpperCase();
+    if (!PRODUCT_CATEGORY_CODES.includes(categoryCode as (typeof PRODUCT_CATEGORY_CODES)[number])) {
+      throw new BadRequestException('Invalid product category');
+    }
+    return categoryCode;
+  }
+
+  private validateMasterSkuCategory(masterSku: string, categoryCode: string) {
+    const skuCategory = this.categoryCodeFromSku(masterSku);
+    if (skuCategory !== categoryCode) {
+      throw new BadRequestException(`Master SKU category code (${skuCategory || 'missing'}) does not match selected category (${categoryCode})`);
+    }
   }
 
   private validatePurity(purity: number) {
@@ -674,9 +679,7 @@ export class AdminService {
     let mobile = String(value ?? '').replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit))).replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit))).replace(/\D/g, '');
     if (mobile.startsWith('0098')) mobile = '0' + mobile.slice(4);
     else if (mobile.startsWith('98')) mobile = '0' + mobile.slice(2);
-    if (!/^09\d{9}$/.test(mobile)) {
-      throw new BadRequestException('Invalid Iranian mobile number');
-    }
+    if (!/^09\d{9}$/.test(mobile)) throw new BadRequestException('Invalid Iranian mobile number');
     return mobile;
   }
 
