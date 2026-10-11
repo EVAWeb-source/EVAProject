@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import styles from './AdminShell.module.css';
 
 const navGroups = [
@@ -45,15 +45,60 @@ const navGroups = [
 ] as const;
 
 type NavItem=(typeof navGroups)[number]['items'][number];
+type GroupLabel=(typeof navGroups)[number]['label'];
+
+function isItemActive(pathname:string,item:NavItem){
+  if('exact' in item&&item.exact)return pathname===item.href;
+  if(item.href==='/catalog')return pathname==='/catalog'||pathname.startsWith('/catalog/products/');
+  return pathname===item.href||pathname.startsWith(item.href+'/');
+}
+
+function activeGroupForPath(pathname:string):GroupLabel{
+  return navGroups.find(group=>group.items.some(item=>isItemActive(pathname,item)))?.label??'فروش';
+}
 
 export default function AdminShell({children, connected=true}:{children:ReactNode; connected?:boolean}){
   const pathname=usePathname();
   const [open,setOpen]=useState(false);
-  const active=(item:NavItem)=>{
-    if('exact' in item&&item.exact)return pathname===item.href;
-    if(item.href==='/catalog')return pathname==='/catalog'||pathname.startsWith('/catalog/products/');
-    return pathname===item.href||pathname.startsWith(item.href+'/');
-  };
+  const [expandedGroups,setExpandedGroups]=useState<Record<GroupLabel,boolean>>(()=>{
+    const activeGroup=activeGroupForPath(pathname);
+    return Object.fromEntries(navGroups.map(group=>[group.label,group.label===activeGroup])) as Record<GroupLabel,boolean>;
+  });
+  const active=(item:NavItem)=>isItemActive(pathname,item);
+
+  useEffect(()=>{
+    const saved=sessionStorage.getItem('eva-admin-nav-groups');
+    if(saved){
+      try{
+        const parsed=JSON.parse(saved) as Partial<Record<GroupLabel,boolean>>;
+        setExpandedGroups(current=>{
+          const next={...current,...parsed};
+          next[activeGroupForPath(pathname)]=true;
+          return next;
+        });
+        return;
+      }catch{}
+    }
+    setExpandedGroups(current=>({...current,[activeGroupForPath(pathname)]:true}));
+  },[]);
+
+  useEffect(()=>{
+    const activeGroup=activeGroupForPath(pathname);
+    setExpandedGroups(current=>{
+      if(current[activeGroup])return current;
+      const next={...current,[activeGroup]:true};
+      sessionStorage.setItem('eva-admin-nav-groups',JSON.stringify(next));
+      return next;
+    });
+  },[pathname]);
+
+  function toggleGroup(label:GroupLabel){
+    setExpandedGroups(current=>{
+      const next={...current,[label]:!current[label]};
+      sessionStorage.setItem('eva-admin-nav-groups',JSON.stringify(next));
+      return next;
+    });
+  }
 
   return <div className={styles.shell}>
     <aside className={`${styles.sidebar} ${open?styles.sidebarOpen:''}`}>
@@ -63,10 +108,22 @@ export default function AdminShell({children, connected=true}:{children:ReactNod
       </div>
 
       <nav className={styles.nav} aria-label="منوی مدیریت">
-        {navGroups.map(group=><div className={styles.navGroup} key={group.label}>
-          <span className={styles.groupLabel}>{group.label}</span>
-          <div className={styles.groupItems}>{group.items.map(item=><a key={item.href} className={active(item)?styles.active:''} href={item.href} onClick={()=>setOpen(false)}><i>{item.icon}</i><span>{item.label}</span></a>)}</div>
-        </div>)}
+        {navGroups.map(group=>{
+          const expanded=expandedGroups[group.label];
+          const groupHasActive=group.items.some(item=>active(item));
+          return <div className={`${styles.navGroup} ${groupHasActive?styles.activeGroup:''}`} key={group.label}>
+            <button
+              type="button"
+              className={styles.groupToggle}
+              onClick={()=>toggleGroup(group.label)}
+              aria-expanded={expanded}
+            >
+              <span>{group.label}</span>
+              <i className={expanded?styles.chevronOpen:''}>⌄</i>
+            </button>
+            {expanded&&<div className={styles.groupItems}>{group.items.map(item=><a key={item.href} className={active(item)?styles.active:''} href={item.href} onClick={()=>setOpen(false)}><i>{item.icon}</i><span>{item.label}</span></a>)}</div>}
+          </div>;
+        })}
       </nav>
 
       <div className={styles.sideBottom}>
