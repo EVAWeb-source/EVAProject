@@ -1,109 +1,100 @@
 'use client';
 
-import { FormEvent, ReactNode, useState } from 'react';
+import { FormEvent, ReactNode, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './ProductCreateForm.module.css';
 
 type Collection={id:string;nameFa:string;slug:string;code:string};
 type CreatedProduct={id:string;nameFa:string;masterSku:string};
+type ExistingProduct={masterSku:string};
 
 const categories=[
-  ['NEC','گردنبند'],
-  ['PEN','آویز'],
-  ['BRA','دستبند'],
-  ['RIN','انگشتر'],
-  ['EAR','گوشواره'],
-  ['SET','ست'],
-  ['ANK','پابند'],
-  ['CHM','چارم'],
+  ['NEC','گردنبند'],['PEN','آویز'],['BRA','دستبند'],['RIN','انگشتر'],['EAR','گوشواره'],['SET','ست'],['ANK','پابند'],['CHM','چارم'],
 ] as const;
 
 function RequiredLabel({children}:{children:ReactNode}){
   return <span className={styles.requiredLabel}>{children}<b aria-hidden="true">*</b></span>;
 }
 
-function withCategoryCode(masterSku:string,categoryCode:string){
-  const normalized=masterSku.trim().toUpperCase();
-  const parts=normalized.split('-').filter(Boolean);
-  if(parts.length>=3){parts[2]=categoryCode;return parts.join('-');}
-  return normalized;
+function categoryFromSku(masterSku:string){return masterSku.trim().toUpperCase().split('-')[2]??'';}
+function slugToken(slug:string){
+  const clean=slug.replace(/[^a-z0-9]/gi,'').toUpperCase();
+  return (clean.slice(0,3)||'PRD').padEnd(3,'X');
+}
+function nextSequence(products:ExistingProduct[]){
+  const max=products.reduce((current,product)=>{
+    const match=product.masterSku.match(/-(\d{3,})$/);
+    return match?Math.max(current,Number(match[1])):current;
+  },0);
+  return String(max+1).padStart(3,'0');
+}
+function buildSuggestedSku(collectionCode:string,categoryCode:string,slug:string,sequence:string){
+  return `EVA-${(collectionCode||'GEN').toUpperCase()}-${categoryCode||'CAT'}-${slugToken(slug)}-${sequence}`;
 }
 
 async function createProduct(payload:Record<string,unknown>){
   const response=await fetch('/api/admin/products',{
-    method:'POST',
-    headers:{'content-type':'application/json'},
-    body:JSON.stringify(payload),
+    method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload),
   });
   const raw=await response.text();
   if(!response.ok){
-    try{
-      const parsed=JSON.parse(raw);
-      throw new Error(Array.isArray(parsed.message)?parsed.message.join('، '):(parsed.message||parsed.error||raw));
-    }catch(error){
-      if(error instanceof Error&&error.message!=='Unexpected end of JSON input')throw error;
-      throw new Error(raw||`HTTP ${response.status}`);
-    }
+    try{const parsed=JSON.parse(raw);throw new Error(Array.isArray(parsed.message)?parsed.message.join('، '):(parsed.message||parsed.error||raw));}
+    catch(error){if(error instanceof Error&&error.message!=='Unexpected end of JSON input')throw error;throw new Error(raw||`HTTP ${response.status}`);}
   }
   return JSON.parse(raw) as CreatedProduct;
 }
 
-export default function ProductCreateForm({collections}:{collections:Collection[]}){
+export default function ProductCreateForm({collections,existingProducts}:{collections:Collection[];existingProducts:ExistingProduct[]}){
   const router=useRouter();
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [categoryCode,setCategoryCode]=useState('');
-  const [masterSku,setMasterSku]=useState('');
-
-  function changeCategory(next:string){
-    setCategoryCode(next);
-    if(next&&masterSku)setMasterSku(current=>withCategoryCode(current,next));
-  }
+  const [slug,setSlug]=useState('');
+  const [collectionId,setCollectionId]=useState('');
+  const [manualSku,setManualSku]=useState('');
+  const [manualMode,setManualMode]=useState(false);
+  const sequence=useMemo(()=>nextSequence(existingProducts),[existingProducts]);
+  const collectionCode=collections.find(collection=>collection.id===collectionId)?.code??'GEN';
+  const suggestedSku=buildSuggestedSku(collectionCode,categoryCode,slug,sequence);
+  const masterSku=manualMode?manualSku:suggestedSku;
+  const skuCategoryValid=!categoryCode||categoryFromSku(masterSku)===categoryCode;
 
   async function submit(event:FormEvent<HTMLFormElement>){
     event.preventDefault();
     if(busy)return;
     if(!categoryCode){setError('دسته‌بندی محصول را انتخاب کن.');return;}
+    if(!skuCategoryValid){setError(`کد دسته‌بندی داخل Master SKU باید ${categoryCode} باشد.`);return;}
     setBusy(true);setError('');
     const data=new FormData(event.currentTarget);
-    const normalizedSku=withCategoryCode(String(data.get('masterSku')??''),categoryCode);
     try{
       const product=await createProduct({
-        nameFa:data.get('nameFa'),
-        slug:String(data.get('slug')??'').trim().toLowerCase(),
-        masterSku:normalizedSku,
-        purity:Number(data.get('purity')??18),
-        collectionId:data.get('collectionId')||null,
-        status:'DRAFT',
+        nameFa:data.get('nameFa'),slug:slug.trim().toLowerCase(),masterSku:masterSku.trim().toUpperCase(),categoryCode,
+        purity:Number(data.get('purity')??18),collectionId:collectionId||null,status:'DRAFT',
       });
       window.dispatchEvent(new Event('eva-admin-catalog-change'));
-      router.push(`/catalog/products/${product.id}`);
-      router.refresh();
-    }catch(cause){
-      setError(cause instanceof Error?cause.message:'ساخت محصول انجام نشد.');
-      setBusy(false);
-    }
+      router.push(`/catalog/products/${product.id}`);router.refresh();
+    }catch(cause){setError(cause instanceof Error?cause.message:'ساخت محصول انجام نشد.');setBusy(false);}
   }
 
   return <section className={styles.wrap}>
-    <div className={styles.intro}>
-      <span>NEW MASTER PRODUCT</span>
-      <h2>محصول را ابتدا به‌صورت Draft بساز</h2>
-      <p>بعد از ساخت، محتوا و تصاویر، Unitهای واقعی و در نهایت Publish را از صفحه همان محصول تکمیل می‌کنی.</p>
-    </div>
+    <div className={styles.intro}><span>NEW MASTER PRODUCT</span><h2>محصول را ابتدا به‌صورت Draft بساز</h2><p>سیستم SKU را بر اساس کالکشن، دسته‌بندی و Slug پیشنهاد می‌دهد؛ اگر لازم بود می‌توانی پیشنهاد را دستی ویرایش کنی.</p></div>
     {error&&<div className={styles.error}>{error}</div>}
     <form className={styles.form} onSubmit={submit}>
       <div className={styles.requiredNote}><b>*</b><span>فیلد الزامی؛ کالکشن برای Publish الزامی است حتی اگر Draft بدون آن ذخیره شود.</span></div>
       <div className={styles.grid2}>
         <label><RequiredLabel>نام فارسی محصول</RequiredLabel><input name="nameFa" required autoFocus placeholder="مثلاً طلوع"/></label>
-        <label><RequiredLabel>Slug انگلیسی</RequiredLabel><input name="slug" dir="ltr" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="tolou"/><small>فقط حروف کوچک انگلیسی، عدد و خط تیره</small></label>
+        <label><RequiredLabel>Slug انگلیسی</RequiredLabel><input name="slug" dir="ltr" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={slug} onChange={event=>setSlug(event.target.value.toLowerCase())} placeholder="tolou"/><small>برای ساخت پیشنهاد SKU هم استفاده می‌شود.</small></label>
       </div>
       <div className={styles.grid2}>
-        <label><RequiredLabel>دسته‌بندی</RequiredLabel><select name="categoryCode" value={categoryCode} onChange={event=>changeCategory(event.target.value)} required><option value="">انتخاب دسته‌بندی</option>{categories.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select><small>کد دسته‌بندی به‌صورت خودکار با Master SKU هماهنگ می‌شود.</small></label>
+        <label><RequiredLabel>دسته‌بندی</RequiredLabel><select name="categoryCode" value={categoryCode} onChange={event=>setCategoryCode(event.target.value)} required><option value="">انتخاب دسته‌بندی</option>{categories.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select><small>مثلاً انگشتر = RIN؛ این کد باید با SKU یکی باشد.</small></label>
         <label><RequiredLabel>عیار</RequiredLabel><input name="purity" type="number" min="1" max="24" step="1" defaultValue="18" required/></label>
       </div>
-      <label><RequiredLabel>Master SKU</RequiredLabel><input name="masterSku" dir="ltr" required pattern="EVA-[A-Z0-9-]+" value={masterSku} onChange={event=>setMasterSku(event.target.value.toUpperCase())} placeholder="EVA-AGH-RIN-TOL-001"/><small>بخش سوم SKU نشان‌دهنده دسته است؛ انتخاب بالا آن را خودکار تنظیم می‌کند.</small></label>
-      <label><RequiredLabel>کالکشن</RequiredLabel><select name="collectionId" defaultValue=""><option value="">بدون کالکشن</option>{collections.map(collection=><option key={collection.id} value={collection.id}>{collection.nameFa}</option>)}</select><small>می‌توانی Draft را بدون کالکشن بسازی، اما برای Publish باید کالکشن انتخاب شود.</small></label>
+      <label><RequiredLabel>کالکشن</RequiredLabel><select name="collectionId" value={collectionId} onChange={event=>setCollectionId(event.target.value)}><option value="">بدون کالکشن</option>{collections.map(collection=><option key={collection.id} value={collection.id}>{collection.nameFa}</option>)}</select><small>کد کالکشن در پیشنهاد خودکار SKU استفاده می‌شود.</small></label>
+      <label><RequiredLabel>Master SKU</RequiredLabel>
+        <div className={styles.skuLine}><input name="masterSku" dir="ltr" required pattern="EVA-[A-Z0-9-]+" value={masterSku} aria-invalid={!skuCategoryValid} onChange={event=>{setManualMode(true);setManualSku(event.target.value.toUpperCase());}}/><button type="button" className={styles.autoButton} onClick={()=>{setManualMode(false);setManualSku('');}}>پیشنهاد خودکار</button></div>
+        <small>{manualMode?'حالت دستی فعال است؛ فقط ساختار SKU و کد دسته‌بندی همچنان اعتبارسنجی می‌شوند.':'پیشنهاد سیستم به‌صورت خودکار با اطلاعات بالا به‌روز می‌شود.'}</small>
+        {!skuCategoryValid&&<span className={styles.inlineError}>کد دسته داخل SKU با دسته‌بندی انتخاب‌شده یکسان نیست؛ باید {categoryCode} باشد.</span>}
+      </label>
       <div className={styles.note}><strong>وضعیت اولیه: پیش‌نویس</strong><span>محصول تا وقتی محتوا، تصویر و Unit موجود نداشته باشد وارد فروشگاه نمی‌شود.</span></div>
       <div className={styles.actions}><a href="/catalog">انصراف</a><button disabled={busy}>{busy?'در حال ساخت…':'ساخت محصول و ادامه'}</button></div>
     </form>
