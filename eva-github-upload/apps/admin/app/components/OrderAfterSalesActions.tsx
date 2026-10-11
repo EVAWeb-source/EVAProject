@@ -18,7 +18,7 @@ async function post(path:string,payload:Record<string,unknown>){
   return raw?JSON.parse(raw):null;
 }
 
-export default function OrderAfterSalesActions({orderId,orderStatus,fulfillmentStatus}:{orderId:string;orderStatus:string;fulfillmentStatus:string}){
+export default function OrderAfterSalesActions({orderId,orderStatus,fulfillmentStatus,itemCount}:{orderId:string;orderStatus:string;fulfillmentStatus:string;itemCount:number}){
   const router=useRouter();
   const [current,setCurrent]=useState<CaseItem|null>(null);
   const [busy,setBusy]=useState(false);
@@ -51,17 +51,20 @@ export default function OrderAfterSalesActions({orderId,orderStatus,fulfillmentS
     finally{setBusy(false);}
   }
 
-  const canCancel=orderStatus==='PENDING_PAYMENT'||(orderStatus==='PAID'&&!['SHIPPED','DELIVERED'].includes(fulfillmentStatus));
-  const canReturn=orderStatus==='PAID'&&fulfillmentStatus==='DELIVERED';
+  const isMultiItem=itemCount>1;
+  const canCancel=orderStatus==='PENDING_PAYMENT'||(orderStatus==='PAID'&&!['SHIPPED','DELIVERED'].includes(fulfillmentStatus)&&!isMultiItem);
+  const canReturn=orderStatus==='PAID'&&fulfillmentStatus==='DELIVERED'&&!isMultiItem;
+  const blockedMultiItem=isMultiItem&&orderStatus==='PAID'&&(fulfillmentStatus==='DELIVERED'||!['SHIPPED','DELIVERED'].includes(fulfillmentStatus));
 
   return <section className={styles.card}>
     <div className={styles.head}><div><span>AFTER SALES</span><h2>لغو و مرجوعی</h2></div><a href="/after-sales">مرکز After Sales</a></div>
     {message&&<div className={styles.success}>{message}</div>}{error&&<div className={styles.error}>{error}</div>}
     {current?<div className={styles.current}><div><span>{labels[current.type]??current.type}</span><strong>{labels[current.status]??current.status}</strong></div><p>{current.reason}</p><a href="/after-sales">مدیریت این پرونده ←</a></div>:
+      blockedMultiItem?<div className={styles.empty}>این سفارش {new Intl.NumberFormat('fa-IR').format(itemCount)} قطعه دارد. برای جلوگیری از Refund اشتباه، لغو/مرجوعی سفارش چندقطعه‌ای فعلاً از Admin بسته شده تا انتخاب Unit و مبلغ بازپرداخت جزئی به‌صورت امن اضافه شود.</div>:
       canCancel?<form onSubmit={event=>submit(event,'cancellation')} className={styles.form}>
-        <p>{orderStatus==='PENDING_PAYMENT'?'لغو این سفارش Reservation را آزاد می‌کند و Unit دوباره موجود می‌شود.':'لغو سفارش پرداخت‌شده ابتدا وارد مسیر تأیید و بازپرداخت می‌شود؛ هیچ Refund واقعی خودکار انجام نمی‌شود.'}</p>
+        <p>{orderStatus==='PENDING_PAYMENT'?'لغو این سفارش همه Reservationها را آزاد می‌کند و Unitها دوباره موجود می‌شوند.':'لغو سفارش پرداخت‌شده ابتدا وارد مسیر تأیید و بازپرداخت می‌شود؛ هیچ Refund واقعی خودکار انجام نمی‌شود.'}</p>
         <label>دلیل لغو<input name="reason" required placeholder="مثلاً درخواست مشتری"/></label><label>یادداشت داخلی<textarea name="note" rows={2} placeholder="اختیاری"/></label>
-        <button disabled={busy}>{busy?'در حال ثبت...':orderStatus==='PENDING_PAYMENT'?'لغو سفارش و آزادسازی Unit':'ثبت درخواست لغو'}</button>
+        <button disabled={busy}>{busy?'در حال ثبت...':orderStatus==='PENDING_PAYMENT'?'لغو سفارش و آزادسازی Unitها':'ثبت درخواست لغو'}</button>
       </form>:canReturn?<form onSubmit={event=>submit(event,'return')} className={styles.form}>
         <p>مرجوعی بعد از تحویل مستقیم به موجودی برنمی‌گردد؛ ابتدا دریافت می‌شود، سپس QC و بعد بازپرداخت انجام می‌شود.</p>
         <label>دلیل مرجوعی<input name="reason" required placeholder="دلیل درخواست مرجوعی"/></label><label>یادداشت داخلی<textarea name="note" rows={2} placeholder="اختیاری"/></label>
