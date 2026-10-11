@@ -1,14 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import AdminFilterMenu, { type AdminFilterOption } from './AdminFilterMenu';
 
 type Item={id:string;actor:string;action:string;entityType:string;entityId:string|null;summary:string;metadata:unknown;createdAt:string};
 
-const labels:Record<string,string>={
-  PRODUCT_CREATED:'ساخت محصول',PRODUCT_UPDATED:'ویرایش محصول',PRODUCT_PUBLISHED:'انتشار محصول',PRODUCT_CONTENT_UPDATED:'ویرایش محتوا',BULK_DRAFTS_CREATED:'ساخت گروهی Draft',
-  UNIT_CREATED:'ساخت Unit',UNIT_UPDATED:'ویرایش Unit',FULFILLMENT_UPDATED:'تغییر Fulfillment',PRICING_UPDATED:'تغییر قیمت‌گذاری',CUSTOMER_UPDATED:'ویرایش مشتری',
-  CANCELLATION_CREATED:'ثبت لغو',RETURN_CREATED:'ثبت مرجوعی',AFTER_SALES_APPROVED:'تأیید After Sales',AFTER_SALES_REJECTED:'رد After Sales',RETURN_RECEIVED:'دریافت مرجوعی',RETURN_QC_COMPLETED:'QC مرجوعی',REFUND_RECORDED:'ثبت بازپرداخت',
-};
+const labels:Record<string,string>={PRODUCT_CREATED:'ساخت محصول',PRODUCT_UPDATED:'ویرایش محصول',PRODUCT_PUBLISHED:'انتشار محصول',PRODUCT_CONTENT_UPDATED:'ویرایش محتوا',BULK_DRAFTS_CREATED:'ساخت گروهی Draft',UNIT_CREATED:'ساخت Unit',UNIT_UPDATED:'ویرایش Unit',FULFILLMENT_UPDATED:'تغییر Fulfillment',PRICING_UPDATED:'تغییر قیمت‌گذاری',CUSTOMER_UPDATED:'ویرایش مشتری',CANCELLATION_CREATED:'ثبت لغو',RETURN_CREATED:'ثبت مرجوعی',AFTER_SALES_APPROVED:'تأیید After Sales',AFTER_SALES_REJECTED:'رد After Sales',RETURN_RECEIVED:'دریافت مرجوعی',RETURN_QC_COMPLETED:'QC مرجوعی',REFUND_RECORDED:'ثبت بازپرداخت'};
 const typeLabels:Record<string,string>={PRODUCT:'محصول',UNIT:'Unit',ORDER:'سفارش',CUSTOMER:'مشتری',PRICING:'قیمت‌گذاری',AFTER_SALES:'After Sales',CATALOG:'کاتالوگ'};
 const date=(value:string)=>new Intl.DateTimeFormat('fa-IR',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));
 
@@ -18,6 +15,8 @@ export default function AuditTable({items}:{items:Item[]}){
   const [action,setAction]=useState('ALL');
   const types=useMemo(()=>[...new Set(items.map(item=>item.entityType))].sort(),[items]);
   const actions=useMemo(()=>[...new Set(items.map(item=>item.action))].sort(),[items]);
+  const typeOptions=useMemo<AdminFilterOption[]>(()=>[{value:'ALL',label:'همه بخش‌ها'},...types.map(value=>({value,label:typeLabels[value]??value}))],[types]);
+  const actionOptions=useMemo<AdminFilterOption[]>(()=>[{value:'ALL',label:'همه عملیات‌ها'},...actions.map(value=>({value,label:labels[value]??value}))],[actions]);
   const result=useMemo(()=>items.filter(item=>{
     const q=query.trim().toLowerCase();
     const text=[item.summary,item.action,item.entityType,item.entityId].filter(Boolean).join(' ').toLowerCase();
@@ -27,14 +26,11 @@ export default function AuditTable({items}:{items:Item[]}){
 
   return <section>
     <div className="v2FilterBar">
-      <div className="v2FilterTop">
-        <div className="v2FilterTitle"><strong>فیلتر فعالیت‌ها</strong><small>رویدادهای ادمین را بر اساس بخش یا نوع عملیات پیدا کن.</small></div>
-        <div className="v2FilterMeta"><span className="v2FilterCount">{new Intl.NumberFormat('fa-IR').format(result.length)} رویداد</span>{filtersActive&&<button className="v2FilterReset" type="button" onClick={()=>{setQuery('');setType('ALL');setAction('ALL');}}>پاک کردن فیلترها</button>}</div>
-      </div>
+      <div className="v2FilterTop"><div className="v2FilterTitle"><strong>فیلتر فعالیت‌ها</strong><small>رویدادهای ادمین را بر اساس بخش یا نوع عملیات پیدا کن.</small></div><div className="v2FilterMeta"><span className="v2FilterCount">{new Intl.NumberFormat('fa-IR').format(result.length)} رویداد</span>{filtersActive&&<button className="v2FilterReset" type="button" onClick={()=>{setQuery('');setType('ALL');setAction('ALL');}}>پاک کردن فیلترها</button>}</div></div>
       <div className="v2FilterGrid compact">
         <label className="v2FilterField v2FilterSearch"><span>جستجو</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="شرح، شناسه یا نوع عملیات"/></label>
-        <label className="v2FilterField"><span>بخش</span><select value={type} onChange={e=>setType(e.target.value)}><option value="ALL">همه بخش‌ها</option>{types.map(value=><option key={value} value={value}>{typeLabels[value]??value}</option>)}</select></label>
-        <label className="v2FilterField"><span>عملیات</span><select value={action} onChange={e=>setAction(e.target.value)}><option value="ALL">همه عملیات‌ها</option>{actions.map(value=><option key={value} value={value}>{labels[value]??value}</option>)}</select></label>
+        <div className="v2FilterField"><AdminFilterMenu label="بخش" value={type} options={typeOptions} onChange={setType}/></div>
+        <div className="v2FilterField"><AdminFilterMenu label="عملیات" value={action} options={actionOptions} onChange={setAction}/></div>
       </div>
     </div>
     <div className="panel">
