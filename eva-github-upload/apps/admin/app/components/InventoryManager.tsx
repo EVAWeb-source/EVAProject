@@ -8,7 +8,10 @@ type Unit={id:string;productId:string;unitSku:string;productNameFa:string;master
 
 const statuses=[['QC_PENDING','در انتظار QC'],['AVAILABLE','موجود'],['QUALITY_HOLD','توقف QC'],['DAMAGED','آسیب‌دیده'],['UNAVAILABLE','غیرقابل فروش']];
 const labels:Record<string,string>={QC_PENDING:'در انتظار QC',AVAILABLE:'موجود',RESERVED:'رزرو',SOLD:'فروخته‌شده',RETURNED:'مرجوعی',QUALITY_HOLD:'توقف QC',DAMAGED:'آسیب‌دیده',UNAVAILABLE:'غیرقابل فروش'};
+const categories=[['NEC','گردنبند'],['PEN','آویز'],['BRA','دستبند'],['RIN','انگشتر'],['EAR','گوشواره'],['SET','ست'],['ANK','پابند'],['CHM','چارم']] as const;
+const categoryLabels=Object.fromEntries(categories) as Record<string,string>;
 const attentionStatuses=new Set(['QC_PENDING','QUALITY_HOLD','RETURNED','DAMAGED']);
+const categoryFromSku=(sku:string)=>sku.split('-')[2]??'';
 
 async function request(path:string,method:'POST'|'PATCH',payload:Record<string,unknown>){
   const response=await fetch('/api/admin/'+path,{method,headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
@@ -22,6 +25,7 @@ export default function InventoryManager({products,units,initialProductId}:{prod
   const [query,setQuery]=useState('');
   const [status,setStatus]=useState('ALL');
   const [product,setProduct]=useState(initialProductId??'ALL');
+  const [category,setCategory]=useState('ALL');
   const [view,setView]=useState('ALL');
   const [sort,setSort]=useState('SKU');
   const [busy,setBusy]=useState('');
@@ -30,17 +34,24 @@ export default function InventoryManager({products,units,initialProductId}:{prod
 
   const result=useMemo(()=>units.filter(unit=>{
     const q=query.trim().toLowerCase();
-    const text=[unit.unitSku,unit.productNameFa,unit.masterSku].join(' ').toLowerCase();
+    const text=[unit.unitSku,unit.productNameFa,unit.masterSku,categoryLabels[categoryFromSku(unit.masterSku)]].filter(Boolean).join(' ').toLowerCase();
     const attention=view!=='ATTENTION'||attentionStatuses.has(unit.status);
-    return (!q||text.includes(q))&&(status==='ALL'||unit.status===status)&&(product==='ALL'||unit.productId===product)&&attention;
+    const categoryMatch=category==='ALL'||categoryFromSku(unit.masterSku)===category;
+    return (!q||text.includes(q))&&(status==='ALL'||unit.status===status)&&(product==='ALL'||unit.productId===product)&&categoryMatch&&attention;
   }).sort((a,b)=>{
     if(sort==='WEIGHT_ASC')return Number(a.exactWeightGram)-Number(b.exactWeightGram);
     if(sort==='WEIGHT_DESC')return Number(b.exactWeightGram)-Number(a.exactWeightGram);
     if(sort==='STATUS')return a.status.localeCompare(b.status);
+    if(sort==='CATEGORY')return categoryFromSku(a.masterSku).localeCompare(categoryFromSku(b.masterSku));
     return a.unitSku.localeCompare(b.unitSku);
-  }),[units,query,status,product,view,sort]);
+  }),[units,query,status,product,category,view,sort]);
 
   const attentionCount=useMemo(()=>units.filter(unit=>attentionStatuses.has(unit.status)).length,[units]);
+  const filtersActive=Boolean(query)||status!=='ALL'||product!=='ALL'||category!=='ALL'||view!=='ALL'||sort!=='SKU';
+
+  function clearFilters(){
+    setQuery('');setStatus('ALL');setProduct('ALL');setCategory('ALL');setView('ALL');setSort('SKU');
+  }
 
   async function createUnit(event:FormEvent<HTMLFormElement>){
     event.preventDefault();setBusy('create');setMessage('');setError('');
@@ -71,25 +82,35 @@ export default function InventoryManager({products,units,initialProductId}:{prod
       </form>
     </section>
 
-    <section className="panel">
-      <div className="v2Toolbar">
-        <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="جستجو در Unit SKU یا محصول"/>
-        <select value={product} onChange={e=>setProduct(e.target.value)}><option value="ALL">همه محصولات</option>{products.map(p=><option key={p.id} value={p.id}>{p.nameFa}</option>)}</select>
-        <select value={status} onChange={e=>setStatus(e.target.value)}><option value="ALL">همه وضعیت‌ها</option>{Object.entries(labels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select>
-        <select value={view} onChange={e=>setView(e.target.value)}><option value="ALL">همه Unitها</option><option value="ATTENTION">نیازمند توجه ({new Intl.NumberFormat('fa-IR').format(attentionCount)})</option></select>
-        <select value={sort} onChange={e=>setSort(e.target.value)}><option value="SKU">مرتب‌سازی SKU</option><option value="WEIGHT_ASC">وزن کم به زیاد</option><option value="WEIGHT_DESC">وزن زیاد به کم</option><option value="STATUS">وضعیت</option></select>
-        <span>{new Intl.NumberFormat('fa-IR').format(result.length)} Unit</span>
+    <section>
+      <div className="v2FilterBar">
+        <div className="v2FilterTop">
+          <div className="v2FilterTitle"><strong>فیلتر موجودی</strong><small>Unitها را بر اساس دسته‌بندی، محصول، وضعیت و وزن پیدا کن.</small></div>
+          <div className="v2FilterMeta"><span className="v2FilterCount">{new Intl.NumberFormat('fa-IR').format(result.length)} Unit</span>{filtersActive&&<button className="v2FilterReset" type="button" onClick={clearFilters}>پاک کردن فیلترها</button>}</div>
+        </div>
+        <div className="v2FilterGrid">
+          <label className="v2FilterField v2FilterSearch"><span>جستجو</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Unit SKU، نام محصول یا Master SKU"/></label>
+          <label className="v2FilterField"><span>دسته‌بندی</span><select value={category} onChange={e=>setCategory(e.target.value)}><option value="ALL">همه دسته‌بندی‌ها</option>{categories.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+          <label className="v2FilterField"><span>محصول</span><select value={product} onChange={e=>setProduct(e.target.value)}><option value="ALL">همه محصولات</option>{products.map(p=><option key={p.id} value={p.id}>{p.nameFa}</option>)}</select></label>
+          <label className="v2FilterField"><span>وضعیت</span><select value={status} onChange={e=>setStatus(e.target.value)}><option value="ALL">همه وضعیت‌ها</option>{Object.entries(labels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+          <label className="v2FilterField"><span>توجه</span><select value={view} onChange={e=>setView(e.target.value)}><option value="ALL">همه Unitها</option><option value="ATTENTION">نیازمند توجه ({new Intl.NumberFormat('fa-IR').format(attentionCount)})</option></select></label>
+          <label className="v2FilterField"><span>مرتب‌سازی</span><select value={sort} onChange={e=>setSort(e.target.value)}><option value="SKU">بر اساس SKU</option><option value="CATEGORY">دسته‌بندی</option><option value="WEIGHT_ASC">وزن کم به زیاد</option><option value="WEIGHT_DESC">وزن زیاد به کم</option><option value="STATUS">وضعیت</option></select></label>
+        </div>
       </div>
-      <div className="v2EditorList">{result.map(unit=>{
-        const locked=unit.status==='SOLD'||unit.status==='RESERVED';
-        return <form key={unit.id} className="v2UnitRow" onSubmit={event=>updateUnit(event,unit)}>
-          <div><strong dir="ltr">{unit.unitSku}</strong><small>{unit.productNameFa}</small></div>
-          <label>وزن<input name="exactWeightGram" type="number" step="0.001" min="0.001" defaultValue={unit.exactWeightGram} disabled={locked}/></label>
-          <label>وضعیت<select name="status" defaultValue={unit.status} disabled={locked}>{locked?<option value={unit.status}>{labels[unit.status]??unit.status}</option>:statuses.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
-          <div><span className={`badge ${unit.status.toLowerCase()}`}>{labels[unit.status]??unit.status}</span><small>{unit.currentPriceToman===null?'قیمت بعد از محاسبه':'قیمت: '+new Intl.NumberFormat('fa-IR').format(unit.currentPriceToman)}</small></div>
-          <button disabled={locked||busy===unit.id}>{locked?'قفل':'ذخیره'}</button>
-        </form>;
-      })}{result.length===0&&<div className="v2Empty">Unitی با این فیلتر پیدا نشد.</div>}</div>
+
+      <div className="panel">
+        <div className="v2EditorList">{result.map(unit=>{
+          const locked=unit.status==='SOLD'||unit.status==='RESERVED';
+          const categoryCode=categoryFromSku(unit.masterSku);
+          return <form key={unit.id} className="v2UnitRow" onSubmit={event=>updateUnit(event,unit)}>
+            <div><strong dir="ltr">{unit.unitSku}</strong><small>{unit.productNameFa} • {categoryLabels[categoryCode]??categoryCode}</small></div>
+            <label>وزن<input name="exactWeightGram" type="number" step="0.001" min="0.001" defaultValue={unit.exactWeightGram} disabled={locked}/></label>
+            <label>وضعیت<select name="status" defaultValue={unit.status} disabled={locked}>{locked?<option value={unit.status}>{labels[unit.status]??unit.status}</option>:statuses.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+            <div><span className={`badge ${unit.status.toLowerCase()}`}>{labels[unit.status]??unit.status}</span><small>{unit.currentPriceToman===null?'قیمت بعد از محاسبه':'قیمت: '+new Intl.NumberFormat('fa-IR').format(unit.currentPriceToman)}</small></div>
+            <button disabled={locked||busy===unit.id}>{locked?'قفل':'ذخیره'}</button>
+          </form>;
+        })}{result.length===0&&<div className="v2Empty">Unitی با این فیلتر پیدا نشد.</div>}</div>
+      </div>
     </section>
   </>;
 }
