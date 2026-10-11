@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import './order-details.css';
 import './admin-v2.css';
+import './admin-v3.css';
 
 export const metadata: Metadata = { title: 'EVA Admin' };
 
