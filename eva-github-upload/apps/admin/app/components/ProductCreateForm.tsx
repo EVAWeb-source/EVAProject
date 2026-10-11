@@ -1,11 +1,15 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, ReactNode, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './ProductCreateForm.module.css';
 
 type Collection={id:string;nameFa:string;slug:string;code:string};
 type CreatedProduct={id:string;nameFa:string;masterSku:string};
+
+function RequiredLabel({children}:{children:ReactNode}){
+  return <span className={styles.requiredLabel}>{children}<b aria-hidden="true">*</b></span>;
+}
 
 async function createProduct(payload:Record<string,unknown>){
   const response=await fetch('/api/admin/products',{
@@ -62,15 +66,16 @@ export default function ProductCreateForm({collections}:{collections:Collection[
     </div>
     {error&&<div className={styles.error}>{error}</div>}
     <form className={styles.form} onSubmit={submit}>
+      <div className={styles.requiredNote}><b>*</b><span>فیلد الزامی؛ کالکشن برای Publish الزامی است حتی اگر Draft بدون آن ذخیره شود.</span></div>
       <div className={styles.grid2}>
-        <label>نام فارسی محصول<input name="nameFa" required autoFocus placeholder="مثلاً طلوع"/></label>
-        <label>Slug انگلیسی<input name="slug" dir="ltr" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="tolou"/><small>فقط حروف کوچک انگلیسی، عدد و خط تیره</small></label>
+        <label><RequiredLabel>نام فارسی محصول</RequiredLabel><input name="nameFa" required autoFocus placeholder="مثلاً طلوع"/></label>
+        <label><RequiredLabel>Slug انگلیسی</RequiredLabel><input name="slug" dir="ltr" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="tolou"/><small>فقط حروف کوچک انگلیسی، عدد و خط تیره</small></label>
       </div>
       <div className={styles.grid2}>
-        <label>Master SKU<input name="masterSku" dir="ltr" required pattern="EVA-[A-Z0-9-]+" placeholder="EVA-AGH-NEC-TOL-001"/><small>با EVA- شروع شود و یکتا باشد</small></label>
-        <label>عیار<input name="purity" type="number" min="1" max="24" step="1" defaultValue="18" required/></label>
+        <label><RequiredLabel>Master SKU</RequiredLabel><input name="masterSku" dir="ltr" required pattern="EVA-[A-Z0-9-]+" placeholder="EVA-AGH-NEC-TOL-001"/><small>با EVA- شروع شود و یکتا باشد</small></label>
+        <label><RequiredLabel>عیار</RequiredLabel><input name="purity" type="number" min="1" max="24" step="1" defaultValue="18" required/></label>
       </div>
-      <label>کالکشن<select name="collectionId" defaultValue=""><option value="">بدون کالکشن</option>{collections.map(collection=><option key={collection.id} value={collection.id}>{collection.nameFa}</option>)}</select></label>
+      <label><RequiredLabel>کالکشن</RequiredLabel><select name="collectionId" defaultValue=""><option value="">بدون کالکشن</option>{collections.map(collection=><option key={collection.id} value={collection.id}>{collection.nameFa}</option>)}</select><small>می‌توانی Draft را بدون کالکشن بسازی، اما برای Publish باید کالکشن انتخاب شود.</small></label>
       <div className={styles.note}><strong>وضعیت اولیه: پیش‌نویس</strong><span>محصول تا وقتی محتوا، تصویر و Unit موجود نداشته باشد وارد فروشگاه نمی‌شود.</span></div>
       <div className={styles.actions}><a href="/catalog">انصراف</a><button disabled={busy}>{busy?'در حال ساخت…':'ساخت محصول و ادامه'}</button></div>
     </form>
