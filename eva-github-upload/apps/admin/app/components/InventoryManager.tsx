@@ -103,11 +103,11 @@ export default function InventoryManager({products,units,initialProductId}:{prod
         </div>
         <div className="v2FilterGrid">
           <label className="v2FilterField v2FilterSearch"><span>جستجو</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Unit SKU، نام محصول یا Master SKU"/></label>
-          <div className="v2FilterField"><AdminFilterMenu label="دسته‌بندی" value={category} options={categoryOptions} onChange={setCategory}/></div>
-          <div className="v2FilterField"><AdminFilterMenu label="محصول" value={product} options={productOptions} onChange={setProduct}/></div>
-          <div className="v2FilterField"><AdminFilterMenu label="وضعیت" value={status} options={statusOptions} onChange={setStatus}/></div>
-          <div className="v2FilterField"><AdminFilterMenu label="توجه" value={view} options={viewOptions(attentionCount)} onChange={setView}/></div>
-          <div className="v2FilterField"><AdminFilterMenu label="مرتب‌سازی" value={sort} options={sortOptions} onChange={setSort}/></div>
+          <div className="v2FilterField v2FilterWide"><AdminFilterMenu label="دسته‌بندی" value={category} options={categoryOptions} onChange={setCategory}/></div>
+          <div className="v2FilterField v2FilterProduct"><AdminFilterMenu label="محصول" value={product} options={productOptions} onChange={setProduct}/></div>
+          <div className="v2FilterField v2FilterWide"><AdminFilterMenu label="وضعیت" value={status} options={statusOptions} onChange={setStatus}/></div>
+          <div className="v2FilterField v2FilterWide"><AdminFilterMenu label="توجه" value={view} options={viewOptions(attentionCount)} onChange={setView}/></div>
+          <div className="v2FilterField v2FilterWide"><AdminFilterMenu label="مرتب‌سازی" value={sort} options={sortOptions} onChange={setSort}/></div>
         </div>
       </div>
 
