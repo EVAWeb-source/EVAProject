@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './AfterSalesPanel.module.css';
 
+type CaseOrderItem={unitId:string;productNameFa:string;unitSku:string;exactWeightGram:string;unitPriceToman:number};
 type CaseItem={
   id:string;
   type:'CANCELLATION'|'RETURN';
@@ -18,8 +19,9 @@ type CaseItem={
   qcCompletedAt:string|null;
   refundedAt:string|null;
   rejectedAt:string|null;
-  order:{id:string;orderNumber:string;status:string;fulfillmentStatus:string;customerName:string;mobile:string;totalToman:number;invoiceNumber:string|null;invoiceStatus:string|null;paymentStatus:string|null};
+  order:{id:string;orderNumber:string;status:string;fulfillmentStatus:string;customerName:string;mobile:string;totalToman:number;itemCount:number;invoiceNumber:string|null;invoiceStatus:string|null;paymentStatus:string|null};
   unit:{id:string;unitSku:string;status:string;productNameFa:string;exactWeightGram:string};
+  items:CaseOrderItem[];
 };
 type Data={generatedAt:string;summary:{total:number;requested:number;refundPending:number;qcPending:number};items:CaseItem[]};
 
@@ -108,8 +110,9 @@ export default function AfterSalesPanel(){
 
     {!loading&&items.length===0&&<div className={styles.empty}>در این بخش پرونده‌ای وجود ندارد.</div>}
     <div className={styles.list}>{items.map(item=><article className={styles.card} key={item.id}>
-      <div className={styles.head}><div><span>{labels[item.type]??item.type}</span><h2>{item.order.orderNumber}</h2><small>{item.unit.productNameFa} • <b dir="ltr">{item.unit.unitSku}</b></small></div><div className={`${styles.status} ${styles['s_'+item.status.toLowerCase()]??''}`}>{labels[item.status]??item.status}</div></div>
-      <div className={styles.meta}><div><span>مشتری</span><strong>{item.order.customerName}</strong><small dir="ltr">{item.order.mobile}</small></div><div><span>مبلغ</span><strong>{toman(item.refundAmountToman)}</strong></div><div><span>وضعیت سفارش</span><strong>{labels[item.order.status]??item.order.status}</strong></div><div><span>وضعیت Unit</span><strong>{labels[item.unit.status]??item.unit.status}</strong></div></div>
+      <div className={styles.head}><div><span>{labels[item.type]??item.type}</span><h2>{item.order.orderNumber}</h2><small>{fa(item.order.itemCount||item.items?.length||1)} قطعه در سفارش • Unit پرونده: <b dir="ltr">{item.unit.unitSku}</b></small></div><div className={`${styles.status} ${styles['s_'+item.status.toLowerCase()]??''}`}>{labels[item.status]??item.status}</div></div>
+      {item.items?.length>0&&<div className={styles.reason}><span>قطعات سفارش</span><p>{item.items.map(orderItem=>`${orderItem.productNameFa} (${orderItem.unitSku})`).join(' • ')}</p></div>}
+      <div className={styles.meta}><div><span>مشتری</span><strong>{item.order.customerName}</strong><small dir="ltr">{item.order.mobile}</small></div><div><span>مبلغ بازپرداخت</span><strong>{toman(item.refundAmountToman)}</strong></div><div><span>وضعیت سفارش</span><strong>{labels[item.order.status]??item.order.status}</strong></div><div><span>وضعیت Unit پرونده</span><strong>{labels[item.unit.status]??item.unit.status}</strong></div></div>
       <div className={styles.reason}><span>دلیل</span><p>{item.reason}</p>{item.note&&<small>{item.note}</small>}</div>
       <div className={styles.dates}><span>ثبت: {date(item.requestedAt)}</span>{item.approvedAt&&<span>تأیید: {date(item.approvedAt)}</span>}{item.receivedAt&&<span>دریافت: {date(item.receivedAt)}</span>}{item.refundedAt&&<span>بازپرداخت: {date(item.refundedAt)}</span>}</div>
 
