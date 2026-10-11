@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import styles from './fulfillment.module.css';
 
 type FulfillmentStatus = 'REGISTERED' | 'PREPARING' | 'READY_TO_SHIP' | 'SHIPPED' | 'DELIVERED';
+type OrderItem = { productNameFa: string; unitSku: string; exactWeightGram: string; unitPriceToman?: number };
 
 type Order = {
   id: string;
@@ -24,7 +25,9 @@ type Order = {
   deliveredAt: string | null;
   totalToman: number;
   createdAt: string;
-  item: null | { productNameFa: string; unitSku: string; exactWeightGram: string };
+  itemCount: number;
+  items: OrderItem[];
+  item: OrderItem | null;
   payment: null | { referenceId: string | null; paidAt: string | null };
   invoiceNumber: string | null;
 };
@@ -133,6 +136,7 @@ export default function FulfillmentClient({ orders, storefrontBase }: { orders: 
         {orders.map((order) => {
           const target = nextStatus[order.fulfillmentStatus];
           const shipInput = shipping[order.id] ?? { carrier: order.shippingCarrier ?? '', tracking: order.trackingCode ?? '' };
+          const items = order.items?.length ? order.items : order.item ? [order.item] : [];
           return (
             <article className={styles.orderCard} key={order.id}>
               <div className={styles.orderHead}>
@@ -153,7 +157,11 @@ export default function FulfillmentClient({ orders, storefrontBase }: { orders: 
               <div className={styles.infoGrid}>
                 <div><span>مشتری</span><strong>{order.customerName}</strong><small dir="ltr">{order.mobile}</small></div>
                 <div><span>گیرنده</span><strong>{order.recipientName}</strong><small>{order.city}، {order.province}</small></div>
-                <div><span>محصول</span><strong>{order.item?.productNameFa ?? '—'}</strong><small>{order.item ? `${order.item.exactWeightGram} گرم · ${order.item.unitSku}` : '—'}</small></div>
+                <div>
+                  <span>قطعات سفارش</span>
+                  <strong>{new Intl.NumberFormat('fa-IR').format(items.length)} قطعه</strong>
+                  {items.map((item) => <small key={item.unitSku}>{item.productNameFa} · {item.exactWeightGram} گرم · <b dir="ltr">{item.unitSku}</b></small>)}
+                </div>
                 <div><span>مبلغ</span><strong>{toman(order.totalToman)}</strong><small>پرداخت: {date(order.payment?.paidAt ?? null)}</small></div>
               </div>
 
