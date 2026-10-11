@@ -10,6 +10,6 @@ export default async function NewProductPage(){
   const {data,error}=await loadDashboard();
   return <AdminShell connected={!error}>
     <AdminPageHeader eyebrow="NEW PRODUCT" title="محصول جدید" description="ساخت Master Product جدید؛ ابتدا Draft و سپس تکمیل محتوا، تصویر، موجودی و انتشار." actions={<><a href="/catalog">← محصولات</a><a href="/catalog/onboarding">Onboarding</a></>}/>
-    {error||!data?<section className="setupCard"><h1>اطلاعات کاتالوگ قابل دریافت نیست.</h1><p>{error}</p></section>:<ProductCreateForm collections={data.collections}/>} 
+    {error||!data?<section className="setupCard"><h1>اطلاعات کاتالوگ قابل دریافت نیست.</h1><p>{error}</p></section>:<ProductCreateForm collections={data.collections} existingProducts={data.products.map((product:any)=>({masterSku:product.masterSku}))}/>} 
   </AdminShell>;
 }
