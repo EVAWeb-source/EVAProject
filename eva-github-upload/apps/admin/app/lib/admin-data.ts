@@ -5,6 +5,13 @@ import { ADMIN_SESSION_COOKIE, sessionValue } from './admin-auth';
 export const API_BASE = process.env.API_URL ?? 'https://eva-api-production-c864.up.railway.app';
 export const STOREFRONT_BASE = process.env.STOREFRONT_URL ?? 'https://evaproject-production.up.railway.app';
 
+export type AdminOrderItem = {
+  productNameFa: string;
+  unitSku: string;
+  exactWeightGram: string;
+  unitPriceToman?: number;
+};
+
 export type Dashboard = {
   generatedAt: string;
   summary: {
@@ -61,7 +68,9 @@ export type Dashboard = {
     city: string;
     totalToman: number;
     createdAt: string;
-    item: null | { productNameFa: string; unitSku: string; exactWeightGram: string };
+    itemCount: number;
+    items: AdminOrderItem[];
+    item: AdminOrderItem | null;
     payment: null | { provider: string; status: string; referenceId: string | null; paidAt: string | null };
     invoiceNumber: string | null;
   }>;
@@ -75,7 +84,9 @@ export type Dashboard = {
     totalToman: number;
     verificationCode: string;
     issuedAt: string;
-    item: null | { productNameFa: string; unitSku: string };
+    itemCount: number;
+    items: AdminOrderItem[];
+    item: AdminOrderItem | null;
   }>;
 };
 
@@ -101,7 +112,9 @@ export type FulfillmentData = {
     deliveredAt: string | null;
     totalToman: number;
     createdAt: string;
-    item: null | { productNameFa: string; unitSku: string; exactWeightGram: string };
+    itemCount: number;
+    items: AdminOrderItem[];
+    item: AdminOrderItem | null;
     payment: null | { referenceId: string | null; paidAt: string | null };
     invoiceNumber: string | null;
   }>;
@@ -155,7 +168,9 @@ export type CustomerDetailData = {
     paymentStatus:string|null;
     invoiceNumber:string|null;
     invoiceStatus:string|null;
-    item:null|{productNameFa:string;unitSku:string;exactWeightGram:string};
+    itemCount:number;
+    items:AdminOrderItem[];
+    item:AdminOrderItem|null;
     afterSales:null|{type:string;status:string;reason:string};
   }>;
 };
