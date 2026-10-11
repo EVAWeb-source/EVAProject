@@ -43,17 +43,21 @@ export default function OrdersTable({orders,initialStatus,initialFulfillment}:{o
     });
   },[orders,query,status,fulfillment,period,sort]);
 
+  const filtersActive=Boolean(query)||status!=='ALL'||fulfillment!=='ALL'||period!=='ALL'||sort!=='NEWEST';
+  const clearFilters=()=>{setQuery('');setStatus('ALL');setFulfillment('ALL');setPeriod('ALL');setSort('NEWEST');};
+
   return <div className={styles.wrap}>
     <section className={styles.filters}>
-      <div className={styles.searchRow}>
-        <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="شماره سفارش، مشتری، موبایل، محصول یا Unit" />
-        <span>{faNumber(result.length)} سفارش</span>
+      <div className={styles.filterHead}>
+        <div><strong>فیلتر سفارش‌ها</strong><small>جستجو و مرتب‌سازی سفارش‌های ثبت‌شده</small></div>
+        <div className={styles.filterMeta}><span>{faNumber(result.length)} سفارش</span>{filtersActive&&<button type="button" onClick={clearFilters}>پاک کردن فیلترها</button>}</div>
       </div>
-      <div className={styles.filterRow}>
-        <select value={status} onChange={e=>setStatus(e.target.value)}><option value="ALL">همه وضعیت سفارش</option><option value="PAID">پرداخت‌شده</option><option value="PENDING_PAYMENT">در انتظار پرداخت</option><option value="REFUND_PENDING">در انتظار بازپرداخت</option><option value="REFUNDED">بازپرداخت‌شده</option><option value="CANCELLED">لغوشده</option></select>
-        <select value={fulfillment} onChange={e=>setFulfillment(e.target.value)}><option value="ALL">همه وضعیت ارسال</option><option value="REGISTERED">ثبت‌شده</option><option value="PREPARING">در آماده‌سازی</option><option value="READY_TO_SHIP">آماده ارسال</option><option value="SHIPPED">ارسال‌شده</option><option value="DELIVERED">تحویل‌شده</option></select>
-        <select value={period} onChange={e=>setPeriod(e.target.value)}><option value="ALL">همه تاریخ‌ها</option><option value="7D">۷ روز اخیر</option><option value="30D">۳۰ روز اخیر</option></select>
-        <select value={sort} onChange={e=>setSort(e.target.value)}><option value="NEWEST">جدیدترین</option><option value="OLDEST">قدیمی‌ترین</option><option value="VALUE_DESC">بیشترین مبلغ</option><option value="VALUE_ASC">کمترین مبلغ</option></select>
+      <div className={styles.filterGrid}>
+        <label className={styles.searchField}><span>جستجو</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="شماره سفارش، مشتری، موبایل، محصول یا Unit" /></label>
+        <label><span>وضعیت سفارش</span><select value={status} onChange={e=>setStatus(e.target.value)}><option value="ALL">همه وضعیت‌ها</option><option value="PAID">پرداخت‌شده</option><option value="PENDING_PAYMENT">در انتظار پرداخت</option><option value="REFUND_PENDING">در انتظار بازپرداخت</option><option value="REFUNDED">بازپرداخت‌شده</option><option value="CANCELLED">لغوشده</option></select></label>
+        <label><span>وضعیت ارسال</span><select value={fulfillment} onChange={e=>setFulfillment(e.target.value)}><option value="ALL">همه وضعیت‌ها</option><option value="REGISTERED">ثبت‌شده</option><option value="PREPARING">در آماده‌سازی</option><option value="READY_TO_SHIP">آماده ارسال</option><option value="SHIPPED">ارسال‌شده</option><option value="DELIVERED">تحویل‌شده</option></select></label>
+        <label><span>بازه زمانی</span><select value={period} onChange={e=>setPeriod(e.target.value)}><option value="ALL">همه تاریخ‌ها</option><option value="7D">۷ روز اخیر</option><option value="30D">۳۰ روز اخیر</option></select></label>
+        <label><span>مرتب‌سازی</span><select value={sort} onChange={e=>setSort(e.target.value)}><option value="NEWEST">جدیدترین</option><option value="OLDEST">قدیمی‌ترین</option><option value="VALUE_DESC">بیشترین مبلغ</option><option value="VALUE_ASC">کمترین مبلغ</option></select></label>
       </div>
     </section>
 
