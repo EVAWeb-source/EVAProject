@@ -1,12 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import AdminFilterMenu, { type AdminFilterOption } from './AdminFilterMenu';
 
 type Product={id:string;nameFa:string;slug:string;masterSku:string;purity:number;status:string;collection:string|null;unitCount:number;availableCount:number};
 
 const statusLabels:Record<string,string>={ACTIVE:'فعال',DRAFT:'پیش‌نویس',OUT_OF_STOCK:'ناموجود',HIDDEN:'مخفی',DISCONTINUED:'توقف عرضه',ARCHIVED:'آرشیو'};
 const categories=[['NEC','گردنبند'],['PEN','آویز'],['BRA','دستبند'],['RIN','انگشتر'],['EAR','گوشواره'],['SET','ست'],['ANK','پابند'],['CHM','چارم']] as const;
 const categoryFromSku=(sku:string)=>sku.split('-')[2]??'';
+const categoryOptions:AdminFilterOption[]=[{value:'ALL',label:'همه دسته‌بندی‌ها'},...categories.map(([value,label])=>({value,label}))];
+const statusOptions:AdminFilterOption[]=[{value:'ALL',label:'همه وضعیت‌ها'},...Object.entries(statusLabels).map(([value,label])=>({value,label}))];
 
 export default function CatalogTable({products}:{products:Product[]}){
   const [query,setQuery]=useState('');
@@ -14,6 +17,7 @@ export default function CatalogTable({products}:{products:Product[]}){
   const [collection,setCollection]=useState('ALL');
   const [category,setCategory]=useState('ALL');
   const collections=useMemo(()=>Array.from(new Set(products.map(p=>p.collection).filter(Boolean) as string[])),[products]);
+  const collectionOptions=useMemo<AdminFilterOption[]>(()=>[{value:'ALL',label:'همه کالکشن‌ها'},...collections.map(name=>({value:name,label:name}))],[collections]);
   const result=useMemo(()=>products.filter(product=>{
     const q=query.trim().toLowerCase();
     const text=[product.nameFa,product.slug,product.masterSku,product.collection].filter(Boolean).join(' ').toLowerCase();
@@ -30,9 +34,9 @@ export default function CatalogTable({products}:{products:Product[]}){
       </div>
       <div className="v2FilterGrid compact">
         <label className="v2FilterField v2FilterSearch"><span>جستجو</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="نام، SKU یا Slug" /></label>
-        <label className="v2FilterField"><span>دسته‌بندی</span><select value={category} onChange={e=>setCategory(e.target.value)}><option value="ALL">همه دسته‌بندی‌ها</option>{categories.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
-        <label className="v2FilterField"><span>وضعیت</span><select value={status} onChange={e=>setStatus(e.target.value)}><option value="ALL">همه وضعیت‌ها</option>{Object.entries(statusLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
-        <label className="v2FilterField"><span>کالکشن</span><select value={collection} onChange={e=>setCollection(e.target.value)}><option value="ALL">همه کالکشن‌ها</option>{collections.map(name=><option key={name} value={name}>{name}</option>)}</select></label>
+        <div className="v2FilterField"><AdminFilterMenu label="دسته‌بندی" value={category} options={categoryOptions} onChange={setCategory}/></div>
+        <div className="v2FilterField"><AdminFilterMenu label="وضعیت" value={status} options={statusOptions} onChange={setStatus}/></div>
+        <div className="v2FilterField"><AdminFilterMenu label="کالکشن" value={collection} options={collectionOptions} onChange={setCollection}/></div>
       </div>
     </div>
     <div className="panel">
