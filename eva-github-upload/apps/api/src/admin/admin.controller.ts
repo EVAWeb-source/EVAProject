@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   Param,
@@ -107,6 +108,20 @@ export class AdminController {
     return product;
   }
 
+  @Delete('products/:id')
+  async deleteProduct(
+    @Headers('x-admin-key') key: string | undefined,
+    @Param('id') id: string,
+  ) {
+    this.authorize(key);
+    const deleted = await this.admin.deleteProduct(id);
+    await this.audit.record({
+      action: 'PRODUCT_DELETED', entityType: 'PRODUCT', entityId: deleted.id,
+      summary: `${deleted.nameFa} حذف شد`, metadata: { masterSku: deleted.masterSku },
+    });
+    return deleted;
+  }
+
   @Post('units')
   async createUnit(
     @Headers('x-admin-key') key: string | undefined,
@@ -134,6 +149,20 @@ export class AdminController {
       summary: `${unit.unitSku} بروزرسانی شد`, metadata: { fields: Object.keys(body), status: unit.status, weight: String(unit.exactWeightGram) },
     });
     return unit;
+  }
+
+  @Delete('units/:id')
+  async deleteUnit(
+    @Headers('x-admin-key') key: string | undefined,
+    @Param('id') id: string,
+  ) {
+    this.authorize(key);
+    const deleted = await this.admin.deleteUnit(id);
+    await this.audit.record({
+      action: 'UNIT_DELETED', entityType: 'UNIT', entityId: deleted.id,
+      summary: `${deleted.unitSku} حذف شد`, metadata: { unitSku: deleted.unitSku },
+    });
+    return deleted;
   }
 
   private authorize(key?: string) {
