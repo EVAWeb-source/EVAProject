@@ -86,9 +86,14 @@ export class AdminCustomersService {
         totalPaidToman: paid.reduce((sum, order) => sum + Number(order.totalToman), 0),
       },
       orders: customer.orders.map((order) => {
-        const line = order.lines[0] ?? null;
         const payment = order.payments[0] ?? null;
         const afterSales = order.afterSalesCases[0] ?? null;
+        const items = order.lines.map((line) => ({
+          productNameFa: line.productNameFa,
+          unitSku: line.unitSku,
+          exactWeightGram: line.exactWeightGram.toString(),
+          unitPriceToman: Number(line.unitPriceToman),
+        }));
         return {
           id: order.id,
           orderNumber: order.orderNumber,
@@ -103,13 +108,9 @@ export class AdminCustomersService {
           paymentStatus: payment?.status ?? null,
           invoiceNumber: order.invoice?.invoiceNumber ?? null,
           invoiceStatus: order.invoice?.status ?? null,
-          item: line
-            ? {
-                productNameFa: line.productNameFa,
-                unitSku: line.unitSku,
-                exactWeightGram: line.exactWeightGram.toString(),
-              }
-            : null,
+          itemCount: items.length,
+          items,
+          item: items[0] ?? null,
           afterSales: afterSales
             ? { type: afterSales.type, status: afterSales.status, reason: afterSales.reason }
             : null,
