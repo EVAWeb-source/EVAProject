@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import AdminFilterMenu, { type AdminFilterOption } from './AdminFilterMenu';
 import styles from './AfterSalesPanel.module.css';
 
 type CaseOrderItem={unitId:string;productNameFa:string;unitSku:string;exactWeightGram:string;unitPriceToman:number};
@@ -24,11 +25,17 @@ type CaseItem={
   items:CaseOrderItem[];
 };
 type Data={generatedAt:string;summary:{total:number;requested:number;refundPending:number;qcPending:number};items:CaseItem[]};
+type CaseFilter='OPEN'|'ALL'|'COMPLETED';
 
 const labels:Record<string,string>={
   CANCELLATION:'لغو سفارش',RETURN:'مرجوعی',REQUESTED:'درخواست ثبت‌شده',RETURN_IN_TRANSIT:'در مسیر بازگشت',QC_PENDING:'در انتظار QC',REFUND_PENDING:'در انتظار بازپرداخت',COMPLETED:'تکمیل‌شده',REJECTED:'ردشده',
   PAID:'پرداخت‌شده',PENDING_PAYMENT:'در انتظار پرداخت',CANCELLED:'لغوشده',REFUNDED:'بازپرداخت‌شده',AVAILABLE:'موجود',SOLD:'فروخته‌شده',RETURNED:'مرجوع‌شده',QUALITY_HOLD:'توقف QC',DAMAGED:'آسیب‌دیده',UNAVAILABLE:'غیرقابل فروش',
 };
+const filterOptions:AdminFilterOption[]=[
+  {value:'OPEN',label:'پرونده‌های باز',note:'نیازمند اقدام یا پیگیری'},
+  {value:'ALL',label:'همه پرونده‌ها'},
+  {value:'COMPLETED',label:'بسته‌شده',note:'تکمیل‌شده یا ردشده'},
+];
 const toman=(v:number|null)=>v===null?'—':new Intl.NumberFormat('fa-IR').format(v)+' تومان';
 const fa=(v:number)=>new Intl.NumberFormat('fa-IR').format(v);
 const date=(v:string|null)=>v?new Intl.DateTimeFormat('fa-IR',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v)):'—';
@@ -49,7 +56,7 @@ export default function AfterSalesPanel(){
   const [busy,setBusy]=useState('');
   const [error,setError]=useState('');
   const [message,setMessage]=useState('');
-  const [filter,setFilter]=useState<'OPEN'|'ALL'|'COMPLETED'>('OPEN');
+  const [filter,setFilter]=useState<CaseFilter>('OPEN');
 
   const load=useCallback(async()=>{
     setLoading(true);
@@ -105,7 +112,14 @@ export default function AfterSalesPanel(){
       <article><span>در انتظار QC</span><strong>{fa(data.summary.qcPending)}</strong></article>
     </div>}
 
-    <div className={styles.toolbar}><div><button className={filter==='OPEN'?styles.active:''} onClick={()=>setFilter('OPEN')}>باز</button><button className={filter==='ALL'?styles.active:''} onClick={()=>setFilter('ALL')}>همه</button><button className={filter==='COMPLETED'?styles.active:''} onClick={()=>setFilter('COMPLETED')}>بسته‌شده</button></div><button onClick={()=>void load()}>↻ بروزرسانی</button></div>
+    <div className={styles.filterBar}>
+      <div className={styles.filterHead}>
+        <div><strong>فیلتر خدمات پس از فروش</strong><small>پرونده‌های باز، بسته یا تمام درخواست‌ها را ببین.</small></div>
+        <div className={styles.filterMeta}><span>{fa(items.length)} پرونده</span><button type="button" onClick={()=>void load()}>↻ بروزرسانی</button></div>
+      </div>
+      <div className={styles.filterGrid}><div className={styles.filterMenu}><AdminFilterMenu label="وضعیت پرونده" value={filter} options={filterOptions} onChange={(value)=>setFilter(value as CaseFilter)}/></div></div>
+    </div>
+
     {message&&<div className={styles.success}>{message}</div>}{error&&<div className={styles.error}>{error}</div>}{loading&&<div className={styles.notice}>در حال دریافت پرونده‌های لغو و مرجوعی...</div>}
 
     {!loading&&items.length===0&&<div className={styles.empty}>در این بخش پرونده‌ای وجود ندارد.</div>}
