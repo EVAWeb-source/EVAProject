@@ -17,7 +17,7 @@ const categoryOptions:AdminFilterOption[]=[{value:'ALL',label:'همه دسته�
 const statusOptions:AdminFilterOption[]=[{value:'ALL',label:'همه وضعیت‌ها'},...Object.entries(labels).map(([value,label])=>({value,label}))];
 const viewOptions=(attentionCount:number):AdminFilterOption[]=>[
   {value:'ALL',label:'همه Unitها'},
-  {value:'ATTENTION',label:`نیازمند توجه (${new Intl.NumberFormat('fa-IR').format(attentionCount)})`},note:'QC، مرجوعی یا آسیب‌دیده'},
+  {value:'ATTENTION',label:`نیازمند توجه (${new Intl.NumberFormat('fa-IR').format(attentionCount)})`,note:'QC، مرجوعی یا آسیب‌دیده'},
 ];
 const sortOptions:AdminFilterOption[]=[
   {value:'SKU',label:'بر اساس SKU'},
