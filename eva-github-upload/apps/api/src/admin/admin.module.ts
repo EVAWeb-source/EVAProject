@@ -18,6 +18,8 @@ import { AdminOperationsController } from './admin-operations.controller.js';
 import { AdminOperationsService } from './admin-operations.service.js';
 import { AdminBackupController } from './admin-backup.controller.js';
 import { AdminBackupService } from './admin-backup.service.js';
+import { AdminCollectionsController } from './admin-collections.controller.js';
+import { AdminCollectionsService } from './admin-collections.service.js';
 
 @Module({
   imports: [PricingModule],
@@ -31,6 +33,7 @@ import { AdminBackupService } from './admin-backup.service.js';
     AdminAuditController,
     AdminOperationsController,
     AdminBackupController,
+    AdminCollectionsController,
   ],
   providers: [
     AdminService,
@@ -42,6 +45,7 @@ import { AdminBackupService } from './admin-backup.service.js';
     AdminAuditService,
     AdminOperationsService,
     AdminBackupService,
+    AdminCollectionsService,
   ],
 })
 export class AdminModule {}
