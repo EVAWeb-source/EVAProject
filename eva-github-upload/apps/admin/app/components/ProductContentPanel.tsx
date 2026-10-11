@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './ProductContentPanel.module.css';
 
@@ -25,6 +25,10 @@ type ProductContent = {
 };
 
 const blankImage=(sortOrder:number):ImageItem=>({url:'',altText:'',role:sortOrder===0?'MAIN':'GALLERY',sortOrder});
+
+function RequiredLabel({children}:{children:ReactNode}){
+  return <span className={styles.requiredLabel}>{children}<b aria-hidden="true">*</b></span>;
+}
 
 export default function ProductContentPanel({products,initialProductId,hideSelector=false}:{products:Product[];initialProductId?:string;hideSelector?:boolean}){
   const router=useRouter();
@@ -111,25 +115,29 @@ export default function ProductContentPanel({products,initialProductId,hideSelec
 
     {data&&!loading&&<form onSubmit={submit} className={styles.form}>
       <div className={styles.identity}><strong>{data.nameFa}</strong><span dir="ltr">{data.masterSku}</span></div>
-      <div className={styles.grid2}><label>رنگ طلا<input name="goldColor" defaultValue={data.goldColor??''} placeholder="مثلاً زرد" /></label><label>استایل<input name="styleLabel" defaultValue={data.styleLabel??''} placeholder="مثلاً مینیمال / روزمره" /></label></div>
-      <label>توضیح کوتاه<textarea name="shortDescription" defaultValue={data.shortDescription??''} rows={2} placeholder="یک توضیح کوتاه کنار عنوان محصول" /></label>
-      <label>داستان محصول<textarea name="story" defaultValue={data.story??''} rows={5} placeholder="داستان و کانسپت طراحی محصول" /></label>
+      <div className={styles.requiredNote}><b>*</b><span>فیلد الزامی برای انتشار محصول</span></div>
+      <div className={styles.grid2}><label><RequiredLabel>رنگ طلا</RequiredLabel><input name="goldColor" defaultValue={data.goldColor??''} placeholder="مثلاً زرد" /></label><label><RequiredLabel>استایل</RequiredLabel><input name="styleLabel" defaultValue={data.styleLabel??''} placeholder="مثلاً مینیمال / روزمره" /></label></div>
+      <label><RequiredLabel>توضیح کوتاه</RequiredLabel><textarea name="shortDescription" defaultValue={data.shortDescription??''} rows={2} placeholder="یک توضیح کوتاه کنار عنوان محصول" /></label>
+      <label><RequiredLabel>داستان محصول</RequiredLabel><textarea name="story" defaultValue={data.story??''} rows={5} placeholder="داستان و کانسپت طراحی محصول" /></label>
       <label>جزئیات محصول<textarea name="details" defaultValue={data.details??''} rows={4} placeholder="جزئیات ساخت، فرم، قفل، زنجیر یا هر نکته مهم" /></label>
       <div className={styles.grid2}><label>ابعاد / طول<textarea name="dimensions" defaultValue={data.dimensions??''} rows={3} placeholder="مثلاً طول زنجیر ۴۲ سانتی‌متر" /></label><label>راهنمای سایز<textarea name="sizeGuide" defaultValue={data.sizeGuide??''} rows={3} placeholder="راهنمای انتخاب سایز یا طول" /></label></div>
       <div className={styles.grid2}><label>مراقبت<textarea name="careInstructions" defaultValue={data.careInstructions??''} rows={3} placeholder="روش نگهداری و مراقبت" /></label><label>بسته‌بندی<textarea name="packagingNote" defaultValue={data.packagingNote??''} rows={3} placeholder="توضیح بسته‌بندی این محصول" /></label></div>
 
       <div className={styles.mediaBlock}>
-        <div className={styles.mediaHead}><div><strong>تصاویر محصول</strong><span>فعلاً URL؛ Upload فایل در مرحله Storage اضافه می‌شود.</span></div><button type="button" onClick={addImage} disabled={images.length>=12}>+ تصویر</button></div>
-        <div className={styles.imageList}>{images.map((image,index)=><div className={styles.imageRow} key={index}>
-          <div className={styles.preview}>{image.url?<img src={image.url} alt="پیش‌نمایش" />:<span>{index+1}</span>}</div>
-          <label>URL<input value={image.url} onChange={event=>updateImage(index,'url',event.target.value)} dir="ltr" placeholder="https://..." /></label>
-          <label>Alt Text<input value={image.altText} onChange={event=>updateImage(index,'altText',event.target.value)} placeholder="توضیح دقیق تصویر" /></label>
-          <label>نقش<select value={image.role} onChange={event=>updateImage(index,'role',event.target.value)}><option value="MAIN">تصویر اصلی</option><option value="GALLERY">گالری</option><option value="ON_BODY">روی بدن</option><option value="DETAIL">جزئیات</option></select></label>
-          <button type="button" className={styles.remove} onClick={()=>removeImage(index)}>حذف</button>
-        </div>)}</div>
+        <div className={styles.mediaHead}><div><strong>تصاویر محصول</strong><span>برای انتشار، حداقل یک تصویر با نقش «تصویر اصلی» و Alt Text لازم است. فعلاً URL؛ Upload فایل در مرحله Storage اضافه می‌شود.</span></div><button type="button" onClick={addImage} disabled={images.length>=12}>+ تصویر</button></div>
+        <div className={styles.imageList}>{images.map((image,index)=>{
+          const isMain=image.role==='MAIN';
+          return <div className={`${styles.imageRow} ${isMain?styles.mainImageRow:''}`} key={index}>
+            <div className={styles.preview}>{image.url?<img src={image.url} alt="پیش‌نمایش" />:<span>{index+1}</span>}</div>
+            <label>{isMain?<RequiredLabel>URL تصویر اصلی</RequiredLabel>:'URL'}<input value={image.url} onChange={event=>updateImage(index,'url',event.target.value)} dir="ltr" placeholder="https://..." /></label>
+            <label>{isMain?<RequiredLabel>Alt Text تصویر اصلی</RequiredLabel>:'Alt Text'}<input value={image.altText} onChange={event=>updateImage(index,'altText',event.target.value)} placeholder="توضیح دقیق تصویر" /></label>
+            <label>نقش<select value={image.role} onChange={event=>updateImage(index,'role',event.target.value)}><option value="MAIN">تصویر اصلی</option><option value="GALLERY">گالری</option><option value="ON_BODY">روی بدن</option><option value="DETAIL">جزئیات</option></select></label>
+            <button type="button" className={styles.remove} onClick={()=>removeImage(index)}>حذف</button>
+          </div>;
+        })}</div>
       </div>
 
-      <div className={styles.seo}><strong>SEO</strong><label>SEO Title<input name="seoTitle" defaultValue={data.seoTitle??''} maxLength={120} /></label><label>SEO Description<textarea name="seoDescription" defaultValue={data.seoDescription??''} rows={2} maxLength={320} /></label></div>
+      <div className={styles.seo}><strong>SEO</strong><label><RequiredLabel>SEO Title</RequiredLabel><input name="seoTitle" defaultValue={data.seoTitle??''} maxLength={120} /></label><label><RequiredLabel>SEO Description</RequiredLabel><textarea name="seoDescription" defaultValue={data.seoDescription??''} rows={2} maxLength={320} /></label></div>
       <button className={styles.save} disabled={saving}>{saving?'در حال ذخیره...':'ذخیره محتوا و تصاویر'}</button>
     </form>}
   </section>;
