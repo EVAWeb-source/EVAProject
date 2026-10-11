@@ -19,17 +19,17 @@ export default async function OrderDetailPage({params}:{params:Promise<{id:strin
   const customer=customers?.items.find(item=>item.mobile===order.mobile)??null;
   const fulfillmentStatus=full?.fulfillmentStatus??order.fulfillmentStatus??'REGISTERED';
   const current=flow.indexOf(fulfillmentStatus);
+  const items=order.items?.length?order.items:order.item?[order.item]:[];
 
   return <AdminShell connected={!error}>
-    <AdminPageHeader eyebrow="ORDER DETAIL" title={order.orderNumber} description={`${order.customerName} • ${statusFa(order.status)}`} actions={<><a href="/orders">← سفارش‌ها</a>{customer&&<a href={`/customers/${customer.id}`}>پروفایل مشتری</a>}{order.status==='PAID'&&<a href="/fulfillment">Fulfillment</a>}<a href="/after-sales">لغو و مرجوعی</a></>}/>
+    <AdminPageHeader eyebrow="ORDER DETAIL" title={order.orderNumber} description={`${order.customerName} • ${statusFa(order.status)} • ${new Intl.NumberFormat('fa-IR').format(items.length)} قطعه`} actions={<><a href="/orders">← سفارش‌ها</a>{customer&&<a href={`/customers/${customer.id}`}>پروفایل مشتری</a>}{order.status==='PAID'&&<a href="/fulfillment">Fulfillment</a>}<a href="/after-sales">لغو و مرجوعی</a></>}/>
     <div className={styles.grid}>
       <section className={styles.card}><div className={styles.head}><span>ORDER</span><h2>اطلاعات سفارش</h2></div><div className={styles.rows}>
         <div className={styles.row}><span>وضعیت سفارش</span><strong>{statusFa(order.status)}</strong></div>
         <div className={styles.row}><span>مبلغ</span><strong>{toman(order.totalToman)}</strong></div>
         <div className={styles.row}><span>تاریخ ثبت</span><strong>{faDate(order.createdAt)}</strong></div>
-        <div className={styles.row}><span>محصول</span><strong>{order.item?.productNameFa??'—'}</strong></div>
-        <div className={styles.row}><span>Unit</span><strong dir="ltr">{order.item?.unitSku??'—'}</strong></div>
-        <div className={styles.row}><span>وزن</span><strong>{order.item?`${order.item.exactWeightGram} گرم`:'—'}</strong></div>
+        <div className={styles.row}><span>تعداد قطعات</span><strong>{new Intl.NumberFormat('fa-IR').format(items.length)}</strong></div>
+        {items.map((item,index)=><div className={styles.row} key={item.unitSku}><span>قطعه {new Intl.NumberFormat('fa-IR').format(index+1)}</span><strong>{item.productNameFa} • {item.exactWeightGram} گرم • <b dir="ltr">{item.unitSku}</b>{item.unitPriceToman!==undefined?` • ${toman(item.unitPriceToman)}`:''}</strong></div>)}
       </div></section>
 
       <section className={styles.card}><div className={styles.head}><span>CUSTOMER</span><h2>مشتری و ارسال</h2></div><div className={styles.rows}>
@@ -51,7 +51,7 @@ export default async function OrderDetailPage({params}:{params:Promise<{id:strin
 
       <section className={styles.card}><div className={styles.head}><span>INVOICE</span><h2>فاکتور</h2></div><div className={styles.rows}><div className={styles.row}><span>شماره فاکتور</span><strong dir="ltr">{order.invoiceNumber??'—'}</strong></div></div>{order.invoiceNumber&&<div className={styles.actions}><a href={`${STOREFRONT_BASE}/invoice/${encodeURIComponent(order.invoiceNumber)}`} target="_blank" rel="noreferrer">باز کردن فاکتور ↗</a></div>}</section>
 
-      <div className={styles.full}><OrderAfterSalesActions orderId={order.id} orderStatus={order.status} fulfillmentStatus={fulfillmentStatus}/></div>
+      <div className={styles.full}><OrderAfterSalesActions orderId={order.id} orderStatus={order.status} fulfillmentStatus={fulfillmentStatus} itemCount={items.length}/></div>
     </div>
   </AdminShell>;
 }
