@@ -79,6 +79,11 @@ export class AdminAfterSalesService {
     if (order.fulfillmentStatus === 'SHIPPED' || order.fulfillmentStatus === 'DELIVERED') {
       throw new ConflictException('Shipped orders cannot use cancellation; use the return workflow after delivery');
     }
+    if (order.lines.length > 1) {
+      throw new ConflictException(
+        'Paid multi-item cancellation is temporarily blocked to prevent an incorrect full-order refund. Complete the multi-item refund workflow before enabling this action.',
+      );
+    }
 
     const created = await this.prisma.afterSalesCase.create({
       data: {
@@ -105,6 +110,11 @@ export class AdminAfterSalesService {
     if (!line) throw new ConflictException('Order item is missing');
     if (order.status !== 'PAID') throw new ConflictException('Only paid orders can enter the return workflow');
     if (order.fulfillmentStatus !== 'DELIVERED') throw new ConflictException('Return can only start after delivery');
+    if (order.lines.length > 1) {
+      throw new ConflictException(
+        'Multi-item returns are temporarily blocked until a specific Unit and partial refund amount can be selected safely.',
+      );
+    }
 
     const created = await this.prisma.afterSalesCase.create({
       data: {
@@ -220,6 +230,9 @@ export class AdminAfterSalesService {
   async markRefunded(id: string, input: Record<string, unknown>) {
     const item = await this.getCase(id);
     if (item.status !== 'REFUND_PENDING') throw new ConflictException('Case is not waiting for refund');
+    if ((item.order.lines?.length ?? 0) > 1) {
+      throw new ConflictException('Multi-item refund is blocked until partial/full refund accounting is implemented safely');
+    }
     const refundReference = this.requiredText(input.refundReference, 'Refund reference');
 
     await this.prisma.$transaction(async (tx) => {
@@ -325,7 +338,15 @@ export class AdminAfterSalesService {
 
   private serialize(item: any) {
     const payment = item.order.payments?.[0] ?? null;
-    const line = item.order.lines?.[0] ?? null;
+    const lines = item.order.lines ?? [];
+    const selectedLine = lines.find((line: any) => line.unitId === item.unitId) ?? lines[0] ?? null;
+    const items = lines.map((line: any) => ({
+      unitId: line.unitId,
+      productNameFa: line.productNameFa,
+      unitSku: line.unitSku,
+      exactWeightGram: line.exactWeightGram.toString(),
+      unitPriceToman: Number(line.unitPriceToman),
+    }));
     return {
       id: item.id,
       type: item.type,
@@ -349,6 +370,7 @@ export class AdminAfterSalesService {
         customerName: item.order.customerName,
         mobile: item.order.mobile,
         totalToman: Number(item.order.totalToman),
+        itemCount: items.length,
         invoiceNumber: item.order.invoice?.invoiceNumber ?? null,
         invoiceStatus: item.order.invoice?.status ?? null,
         paymentStatus: payment?.status ?? null,
@@ -360,8 +382,9 @@ export class AdminAfterSalesService {
         productNameFa: item.unit.product.nameFa,
         exactWeightGram: item.unit.exactWeightGram.toString(),
       },
-      item: line
-        ? { productNameFa: line.productNameFa, unitSku: line.unitSku, exactWeightGram: line.exactWeightGram.toString() }
+      items,
+      item: selectedLine
+        ? { productNameFa: selectedLine.productNameFa, unitSku: selectedLine.unitSku, exactWeightGram: selectedLine.exactWeightGram.toString() }
         : null,
     };
   }
