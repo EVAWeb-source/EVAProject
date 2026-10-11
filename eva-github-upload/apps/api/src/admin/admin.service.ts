@@ -221,7 +221,7 @@ export class AdminService {
           productNameFa: line.productNameFa,
           unitSku: line.unitSku,
           exactWeightGram: line.exactWeightGram.toString(),
-          unitPriceToman: Number(line.unitPriceToman),
+          unitPriceToman: Number(line.finalPriceToman),
         }));
         return {
           id: invoice.id,
