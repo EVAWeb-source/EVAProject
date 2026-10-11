@@ -30,6 +30,7 @@ export default function ProductEditor({product,collections,readiness}:{product:P
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState('');
   const [error,setError]=useState('');
+  const identityLocked=product.unitCount>0;
 
   function begin(){setBusy(true);setMessage('');setError('');}
   function fail(cause:unknown,fallback:string){setError(cause instanceof Error?cause.message:fallback);}
@@ -41,15 +42,18 @@ export default function ProductEditor({product,collections,readiness}:{product:P
     if(nextStatus==='ACTIVE'&&product.status!=='ACTIVE'){
       setBusy(false);setError('فعال‌سازی محصول فقط از تب «انتشار» و پس از تکمیل Readiness انجام می‌شود.');return;
     }
+    const payload:Record<string,unknown>={
+      nameFa:data.get('nameFa'),
+      slug:data.get('slug'),
+      status:nextStatus,
+      collectionId:data.get('collectionId')||null,
+    };
+    if(!identityLocked){
+      payload.masterSku=data.get('masterSku');
+      payload.purity=Number(data.get('purity')??product.purity);
+    }
     try{
-      await request(`products/${product.id}`,'PATCH',{
-        nameFa:data.get('nameFa'),
-        slug:data.get('slug'),
-        masterSku:data.get('masterSku'),
-        purity:Number(data.get('purity')??product.purity),
-        status:nextStatus,
-        collectionId:data.get('collectionId')||null,
-      });
+      await request(`products/${product.id}`,'PATCH',payload);
       setMessage('اطلاعات اصلی محصول ذخیره شد.');router.refresh();
     }catch(cause){fail(cause,'ذخیره انجام نشد.');}
     finally{setBusy(false);}
@@ -105,8 +109,6 @@ export default function ProductEditor({product,collections,readiness}:{product:P
     catch(cause){fail(cause,'انتشار انجام نشد.');}
     finally{setBusy(false);}
   }
-
-  const identityLocked=product.unitCount>0;
 
   return <div className={styles.editor}>
     <nav className={styles.tabs}>
