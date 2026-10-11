@@ -185,7 +185,12 @@ export class AdminService {
         updatedAt: unit.updatedAt,
       })),
       orders: orders.map((order) => {
-        const line = order.lines[0] ?? null;
+        const items = order.lines.map((line) => ({
+          productNameFa: line.productNameFa,
+          unitSku: line.unitSku,
+          exactWeightGram: line.exactWeightGram.toString(),
+          unitPriceToman: Number(line.unitPriceToman),
+        }));
         const payment = order.payments[0] ?? null;
         return {
           id: order.id,
@@ -197,13 +202,9 @@ export class AdminService {
           city: order.city,
           totalToman: Number(order.totalToman),
           createdAt: order.createdAt,
-          item: line
-            ? {
-                productNameFa: line.productNameFa,
-                unitSku: line.unitSku,
-                exactWeightGram: line.exactWeightGram.toString(),
-              }
-            : null,
+          itemCount: items.length,
+          items,
+          item: items[0] ?? null,
           payment: payment
             ? {
                 provider: payment.provider,
@@ -215,23 +216,28 @@ export class AdminService {
           invoiceNumber: order.invoice?.invoiceNumber ?? null,
         };
       }),
-      invoices: invoices.map((invoice) => ({
-        id: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        orderId: invoice.orderId,
-        status: invoice.status,
-        customerName: invoice.customerName,
-        customerMobile: invoice.customerMobile,
-        totalToman: Number(invoice.totalToman),
-        verificationCode: invoice.verificationCode,
-        issuedAt: invoice.issuedAt,
-        item: invoice.lines[0]
-          ? {
-              productNameFa: invoice.lines[0].productNameFa,
-              unitSku: invoice.lines[0].unitSku,
-            }
-          : null,
-      })),
+      invoices: invoices.map((invoice) => {
+        const items = invoice.lines.map((line) => ({
+          productNameFa: line.productNameFa,
+          unitSku: line.unitSku,
+          exactWeightGram: line.exactWeightGram.toString(),
+          unitPriceToman: Number(line.unitPriceToman),
+        }));
+        return {
+          id: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          orderId: invoice.orderId,
+          status: invoice.status,
+          customerName: invoice.customerName,
+          customerMobile: invoice.customerMobile,
+          totalToman: Number(invoice.totalToman),
+          verificationCode: invoice.verificationCode,
+          issuedAt: invoice.issuedAt,
+          itemCount: items.length,
+          items,
+          item: items[0] ?? null,
+        };
+      }),
     };
   }
 
@@ -253,39 +259,43 @@ export class AdminService {
     return {
       generatedAt: new Date().toISOString(),
       summary: counts,
-      orders: orders.map((order) => ({
-        id: order.id,
-        orderNumber: order.orderNumber,
-        status: order.status,
-        fulfillmentStatus: order.fulfillmentStatus,
-        customerName: order.customerName,
-        mobile: order.mobile,
-        recipientName: order.recipientName,
-        province: order.province,
-        city: order.city,
-        address: order.address,
-        postalCode: order.postalCode,
-        shippingCarrier: order.shippingCarrier,
-        trackingCode: order.trackingCode,
-        shippedAt: order.shippedAt,
-        deliveredAt: order.deliveredAt,
-        totalToman: Number(order.totalToman),
-        createdAt: order.createdAt,
-        item: order.lines[0]
-          ? {
-              productNameFa: order.lines[0].productNameFa,
-              unitSku: order.lines[0].unitSku,
-              exactWeightGram: order.lines[0].exactWeightGram.toString(),
-            }
-          : null,
-        payment: order.payments[0]
-          ? {
-              referenceId: order.payments[0].referenceId,
-              paidAt: order.payments[0].paidAt,
-            }
-          : null,
-        invoiceNumber: order.invoice?.invoiceNumber ?? null,
-      })),
+      orders: orders.map((order) => {
+        const items = order.lines.map((line) => ({
+          productNameFa: line.productNameFa,
+          unitSku: line.unitSku,
+          exactWeightGram: line.exactWeightGram.toString(),
+          unitPriceToman: Number(line.unitPriceToman),
+        }));
+        return {
+          id: order.id,
+          orderNumber: order.orderNumber,
+          status: order.status,
+          fulfillmentStatus: order.fulfillmentStatus,
+          customerName: order.customerName,
+          mobile: order.mobile,
+          recipientName: order.recipientName,
+          province: order.province,
+          city: order.city,
+          address: order.address,
+          postalCode: order.postalCode,
+          shippingCarrier: order.shippingCarrier,
+          trackingCode: order.trackingCode,
+          shippedAt: order.shippedAt,
+          deliveredAt: order.deliveredAt,
+          totalToman: Number(order.totalToman),
+          createdAt: order.createdAt,
+          itemCount: items.length,
+          items,
+          item: items[0] ?? null,
+          payment: order.payments[0]
+            ? {
+                referenceId: order.payments[0].referenceId,
+                paidAt: order.payments[0].paidAt,
+              }
+            : null,
+          invoiceNumber: order.invoice?.invoiceNumber ?? null,
+        };
+      }),
     };
   }
 
