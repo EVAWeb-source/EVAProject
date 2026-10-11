@@ -23,17 +23,25 @@ export default function AuditTable({items}:{items:Item[]}){
     const text=[item.summary,item.action,item.entityType,item.entityId].filter(Boolean).join(' ').toLowerCase();
     return (!q||text.includes(q))&&(type==='ALL'||item.entityType===type)&&(action==='ALL'||item.action===action);
   }),[items,query,type,action]);
+  const filtersActive=Boolean(query)||type!=='ALL'||action!=='ALL';
 
-  return <section className="panel">
-    <div className="v2Toolbar">
-      <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="جستجو در فعالیت‌ها"/>
-      <select value={type} onChange={e=>setType(e.target.value)}><option value="ALL">همه بخش‌ها</option>{types.map(value=><option key={value} value={value}>{typeLabels[value]??value}</option>)}</select>
-      <select value={action} onChange={e=>setAction(e.target.value)}><option value="ALL">همه عملیات‌ها</option>{actions.map(value=><option key={value} value={value}>{labels[value]??value}</option>)}</select>
-      <span>{new Intl.NumberFormat('fa-IR').format(result.length)} رویداد</span>
+  return <section>
+    <div className="v2FilterBar">
+      <div className="v2FilterTop">
+        <div className="v2FilterTitle"><strong>فیلتر فعالیت‌ها</strong><small>رویدادهای ادمین را بر اساس بخش یا نوع عملیات پیدا کن.</small></div>
+        <div className="v2FilterMeta"><span className="v2FilterCount">{new Intl.NumberFormat('fa-IR').format(result.length)} رویداد</span>{filtersActive&&<button className="v2FilterReset" type="button" onClick={()=>{setQuery('');setType('ALL');setAction('ALL');}}>پاک کردن فیلترها</button>}</div>
+      </div>
+      <div className="v2FilterGrid compact">
+        <label className="v2FilterField v2FilterSearch"><span>جستجو</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="شرح، شناسه یا نوع عملیات"/></label>
+        <label className="v2FilterField"><span>بخش</span><select value={type} onChange={e=>setType(e.target.value)}><option value="ALL">همه بخش‌ها</option>{types.map(value=><option key={value} value={value}>{typeLabels[value]??value}</option>)}</select></label>
+        <label className="v2FilterField"><span>عملیات</span><select value={action} onChange={e=>setAction(e.target.value)}><option value="ALL">همه عملیات‌ها</option>{actions.map(value=><option key={value} value={value}>{labels[value]??value}</option>)}</select></label>
+      </div>
     </div>
-    <div className="tableWrap"><table><thead><tr><th>زمان</th><th>عملیات</th><th>بخش</th><th>شرح</th><th>شناسه</th></tr></thead><tbody>
-      {result.map(item=><tr key={item.id}><td>{date(item.createdAt)}</td><td><strong>{labels[item.action]??item.action}</strong></td><td>{typeLabels[item.entityType]??item.entityType}</td><td>{item.summary}</td><td><small dir="ltr">{item.entityId??'—'}</small></td></tr>)}
-      {result.length===0&&<tr><td colSpan={5}>رویدادی با این فیلتر پیدا نشد.</td></tr>}
-    </tbody></table></div>
+    <div className="panel">
+      <div className="tableWrap"><table><thead><tr><th>زمان</th><th>عملیات</th><th>بخش</th><th>شرح</th><th>شناسه</th></tr></thead><tbody>
+        {result.map(item=><tr key={item.id}><td>{date(item.createdAt)}</td><td><strong>{labels[item.action]??item.action}</strong></td><td>{typeLabels[item.entityType]??item.entityType}</td><td>{item.summary}</td><td><small dir="ltr">{item.entityId??'—'}</small></td></tr>)}
+        {result.length===0&&<tr><td colSpan={5}>رویدادی با این فیلتر پیدا نشد.</td></tr>}
+      </tbody></table></div>
+    </div>
   </section>;
 }
