@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, ReactNode, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ProductContentPanel from './ProductContentPanel';
 import styles from './ProductEditor.module.css';
@@ -13,6 +13,10 @@ type Readiness={completedSteps:number;totalSteps:number;readyToPublish:boolean;m
 const statuses=[['DRAFT','پیش‌نویس'],['ACTIVE','فعال'],['OUT_OF_STOCK','ناموجود'],['HIDDEN','مخفی'],['DISCONTINUED','توقف عرضه'],['ARCHIVED','آرشیو']];
 const unitStatuses=[['QC_PENDING','در انتظار QC'],['AVAILABLE','موجود'],['QUALITY_HOLD','توقف QC'],['DAMAGED','آسیب‌دیده'],['UNAVAILABLE','غیرقابل فروش']];
 const unitStatusLabel=Object.fromEntries(unitStatuses);
+
+function RequiredLabel({children}:{children:ReactNode}){
+  return <span className={styles.requiredLabel}>{children}<b aria-hidden="true">*</b></span>;
+}
 
 async function request(path:string,method:'POST'|'PATCH'|'DELETE',payload?:Record<string,unknown>){
   const response=await fetch('/api/admin/'+path,{method,headers:payload?{'content-type':'application/json'}:undefined,body:payload?JSON.stringify(payload):undefined});
@@ -124,9 +128,10 @@ export default function ProductEditor({product,collections,readiness}:{product:P
       <section className={styles.card}>
         <div className={styles.sectionHead}><div><span>MASTER PRODUCT</span><h2>اطلاعات اصلی</h2></div><small dir="ltr">{product.masterSku}</small></div>
         <form className={styles.form} onSubmit={saveBasics}>
-          <div className={styles.grid2}><label>نام فارسی<input name="nameFa" defaultValue={product.nameFa} required/></label><label>Slug<input name="slug" dir="ltr" defaultValue={product.slug} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*"/></label></div>
-          <div className={styles.grid2}><label>Master SKU<input name="masterSku" dir="ltr" defaultValue={product.masterSku} disabled={identityLocked}/><small>{identityLocked?'بعد از ساخت Unit قفل می‌شود.':'تا قبل از ساخت Unit قابل ویرایش است.'}</small></label><label>عیار<input name="purity" type="number" min="1" max="24" step="1" defaultValue={product.purity} disabled={identityLocked}/><small>{identityLocked?'بعد از ساخت Unit قفل می‌شود.':'عیار Master Product'}</small></label></div>
-          <div className={styles.grid2}><label>کالکشن<select name="collectionId" defaultValue={product.collectionId??''}><option value="">بدون کالکشن</option>{collections.map(c=><option key={c.id} value={c.id}>{c.nameFa}</option>)}</select></label><label>وضعیت<select name="status" defaultValue={product.status}>{statuses.filter(([value])=>value!=='ACTIVE'||product.status==='ACTIVE').map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label></div>
+          <div className={styles.requiredNote}><b>*</b><span>الزامی برای انتشار محصول</span></div>
+          <div className={styles.grid2}><label><RequiredLabel>نام فارسی</RequiredLabel><input name="nameFa" defaultValue={product.nameFa} required/></label><label><RequiredLabel>Slug</RequiredLabel><input name="slug" dir="ltr" defaultValue={product.slug} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*"/></label></div>
+          <div className={styles.grid2}><label><RequiredLabel>Master SKU</RequiredLabel><input name="masterSku" dir="ltr" defaultValue={product.masterSku} disabled={identityLocked}/><small>{identityLocked?'بعد از ساخت Unit قفل می‌شود.':'تا قبل از ساخت Unit قابل ویرایش است.'}</small></label><label><RequiredLabel>عیار</RequiredLabel><input name="purity" type="number" min="1" max="24" step="1" defaultValue={product.purity} disabled={identityLocked}/><small>{identityLocked?'بعد از ساخت Unit قفل می‌شود.':'عیار Master Product'}</small></label></div>
+          <div className={styles.grid2}><label><RequiredLabel>کالکشن</RequiredLabel><select name="collectionId" defaultValue={product.collectionId??''}><option value="">بدون کالکشن</option>{collections.map(c=><option key={c.id} value={c.id}>{c.nameFa}</option>)}</select><small>برای Publish باید کالکشن انتخاب شده باشد.</small></label><label>وضعیت<select name="status" defaultValue={product.status}>{statuses.filter(([value])=>value!=='ACTIVE'||product.status==='ACTIVE').map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label></div>
           <div className={styles.readonly}><div><span>Master SKU</span><strong dir="ltr">{product.masterSku}</strong></div><div><span>عیار</span><strong>{product.purity}</strong></div><div><span>Unit موجود</span><strong>{product.availableCount}</strong></div></div>
           <button className={styles.primary} disabled={busy}>{busy?'در حال ذخیره...':'ذخیره اطلاعات اصلی'}</button>
         </form>
@@ -141,10 +146,11 @@ export default function ProductEditor({product,collections,readiness}:{product:P
 
     {tab==='UNITS'&&<section className={styles.card}>
       <div className={styles.sectionHead}><div><span>PHYSICAL INVENTORY</span><h2>Unitهای این محصول</h2></div><a href="/inventory">همه موجودی‌ها</a></div>
+      <div className={styles.unitRequirement}><b>*</b><span>برای انتشار، حداقل یک Unit باید با وضعیت «موجود» ثبت شده باشد.</span></div>
       <form className={styles.unitForm} onSubmit={createUnit}>
-        <label>Unit SKU<input name="unitSku" dir="ltr" required placeholder={`${product.masterSku}-U01`}/></label>
-        <label>وزن دقیق (گرم)<input name="exactWeightGram" type="number" step="0.001" min="0.001" required placeholder="0.820"/></label>
-        <label>وضعیت<select name="status" defaultValue="QC_PENDING">{unitStatuses.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+        <label><RequiredLabel>Unit SKU</RequiredLabel><input name="unitSku" dir="ltr" required placeholder={`${product.masterSku}-U01`}/></label>
+        <label><RequiredLabel>وزن دقیق (گرم)</RequiredLabel><input name="exactWeightGram" type="number" step="0.001" min="0.001" required placeholder="0.820"/></label>
+        <label><RequiredLabel>وضعیت</RequiredLabel><select name="status" defaultValue="QC_PENDING">{unitStatuses.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
         <button disabled={busy}>+ ساخت Unit</button>
       </form>
       <div className={styles.unitList}>{(product.units??[]).map(unit=><form key={unit.id} className={styles.unitRow} onSubmit={event=>saveUnit(event,unit)}>
