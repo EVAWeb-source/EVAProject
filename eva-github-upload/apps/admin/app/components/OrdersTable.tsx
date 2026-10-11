@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from 'react';
 
-type Order={id:string;orderNumber:string;status:string;fulfillmentStatus?:string;customerName:string;mobile:string;city:string;totalToman:number;createdAt:string;item:null|{productNameFa:string;unitSku:string;exactWeightGram:string};payment:null|{provider:string;status:string;referenceId:string|null;paidAt:string|null};invoiceNumber:string|null};
+type OrderItem={productNameFa:string;unitSku:string;exactWeightGram:string;unitPriceToman?:number};
+type Order={id:string;orderNumber:string;status:string;fulfillmentStatus?:string;customerName:string;mobile:string;city:string;totalToman:number;createdAt:string;itemCount:number;items:OrderItem[];item:OrderItem|null;payment:null|{provider:string;status:string;referenceId:string|null;paidAt:string|null};invoiceNumber:string|null};
 const labels:Record<string,string>={PAID:'پرداخت‌شده',PENDING_PAYMENT:'در انتظار پرداخت',REFUND_PENDING:'در انتظار بازپرداخت',REFUNDED:'بازپرداخت‌شده',CANCELLED:'لغوشده',SUCCEEDED:'موفق',FAILED:'ناموفق',REGISTERED:'ثبت‌شده',PREPARING:'در آماده‌سازی',READY_TO_SHIP:'آماده ارسال',SHIPPED:'ارسال‌شده',DELIVERED:'تحویل‌شده'};
 const faDate=(value:string)=>new Intl.DateTimeFormat('fa-IR',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));
 const normalize=(value:string)=>value.replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).toLowerCase();
@@ -21,7 +22,9 @@ export default function OrdersTable({orders,initialStatus,initialFulfillment}:{o
     const days=period==='7D'?7:period==='30D'?30:null;
     return orders.filter(order=>{
       const q=normalize(query.trim());
-      const text=normalize([order.orderNumber,order.customerName,order.mobile,order.city,order.item?.productNameFa,order.item?.unitSku].filter(Boolean).join(' '));
+      const items=order.items?.length?order.items:order.item?[order.item]:[];
+      const itemText=items.flatMap(item=>[item.productNameFa,item.unitSku]).join(' ');
+      const text=normalize([order.orderNumber,order.customerName,order.mobile,order.city,itemText].filter(Boolean).join(' '));
       const inPeriod=days===null||new Date(order.createdAt).getTime()>=now-days*24*60*60*1000;
       return (!q||text.includes(q))&&(status==='ALL'||order.status===status)&&(fulfillment==='ALL'||order.fulfillmentStatus===fulfillment)&&inPeriod;
     }).sort((a,b)=>{
@@ -41,8 +44,8 @@ export default function OrdersTable({orders,initialStatus,initialFulfillment}:{o
       <select value={sort} onChange={e=>setSort(e.target.value)}><option value="NEWEST">جدیدترین</option><option value="OLDEST">قدیمی‌ترین</option><option value="VALUE_DESC">بیشترین مبلغ</option><option value="VALUE_ASC">کمترین مبلغ</option></select>
       <span>{new Intl.NumberFormat('fa-IR').format(result.length)} سفارش</span>
     </div>
-    <div className="tableWrap"><table><thead><tr><th>سفارش</th><th>مشتری</th><th>محصول</th><th>مبلغ</th><th>وضعیت</th><th>Fulfillment</th><th>تاریخ</th><th></th></tr></thead><tbody>
-      {result.map(order=><tr key={order.id}><td><strong dir="ltr">{order.orderNumber}</strong><small>{labels[order.status]??order.status}</small></td><td><strong>{order.customerName}</strong><small dir="ltr">{order.mobile}</small></td><td><strong>{order.item?.productNameFa??'—'}</strong><small dir="ltr">{order.item?.unitSku??''}</small></td><td>{new Intl.NumberFormat('fa-IR').format(order.totalToman)} تومان</td><td><span className={`badge ${order.status.toLowerCase()}`}>{labels[order.status]??order.status}</span></td><td><span className="badge">{labels[order.fulfillmentStatus??'']??order.fulfillmentStatus??'—'}</span></td><td>{faDate(order.createdAt)}</td><td><a className="v2RowLink" href={`/orders/${order.id}`}>جزئیات ←</a></td></tr>)}
+    <div className="tableWrap"><table><thead><tr><th>سفارش</th><th>مشتری</th><th>قطعات</th><th>مبلغ</th><th>وضعیت</th><th>Fulfillment</th><th>تاریخ</th><th></th></tr></thead><tbody>
+      {result.map(order=>{const items=order.items?.length?order.items:order.item?[order.item]:[];return <tr key={order.id}><td><strong dir="ltr">{order.orderNumber}</strong><small>{labels[order.status]??order.status}</small></td><td><strong>{order.customerName}</strong><small dir="ltr">{order.mobile}</small></td><td><strong>{new Intl.NumberFormat('fa-IR').format(items.length)} قطعه</strong>{items.slice(0,2).map(item=><small key={item.unitSku}>{item.productNameFa} • <b dir="ltr">{item.unitSku}</b></small>)}{items.length>2&&<small>+ {new Intl.NumberFormat('fa-IR').format(items.length-2)} قطعه دیگر</small>}</td><td>{new Intl.NumberFormat('fa-IR').format(order.totalToman)} تومان</td><td><span className={`badge ${order.status.toLowerCase()}`}>{labels[order.status]??order.status}</span></td><td><span className="badge">{labels[order.fulfillmentStatus??'']??order.fulfillmentStatus??'—'}</span></td><td>{faDate(order.createdAt)}</td><td><a className="v2RowLink" href={`/orders/${order.id}`}>جزئیات ←</a></td></tr>})}
       {result.length===0&&<tr><td colSpan={8}>سفارشی با این فیلتر پیدا نشد.</td></tr>}
     </tbody></table></div>
   </section>;
