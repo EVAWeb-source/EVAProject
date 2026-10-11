@@ -13,9 +13,19 @@ type Readiness={completedSteps:number;totalSteps:number;readyToPublish:boolean;m
 const statuses=[['DRAFT','پیش‌نویس'],['ACTIVE','فعال'],['OUT_OF_STOCK','ناموجود'],['HIDDEN','مخفی'],['DISCONTINUED','توقف عرضه'],['ARCHIVED','آرشیو']];
 const unitStatuses=[['QC_PENDING','در انتظار QC'],['AVAILABLE','موجود'],['QUALITY_HOLD','توقف QC'],['DAMAGED','آسیب‌دیده'],['UNAVAILABLE','غیرقابل فروش']];
 const unitStatusLabel=Object.fromEntries(unitStatuses);
+const categories=[
+  ['NEC','گردنبند'],['PEN','آویز'],['BRA','دستبند'],['RIN','انگشتر'],['EAR','گوشواره'],['SET','ست'],['ANK','پابند'],['CHM','چارم'],
+] as const;
 
 function RequiredLabel({children}:{children:ReactNode}){
   return <span className={styles.requiredLabel}>{children}<b aria-hidden="true">*</b></span>;
+}
+
+function categoryFromSku(masterSku:string){return masterSku.split('-')[2]??'';}
+function withCategoryCode(masterSku:string,categoryCode:string){
+  const parts=masterSku.trim().toUpperCase().split('-').filter(Boolean);
+  if(parts.length>=3){parts[2]=categoryCode;return parts.join('-');}
+  return masterSku.trim().toUpperCase();
 }
 
 async function request(path:string,method:'POST'|'PATCH'|'DELETE',payload?:Record<string,unknown>){
@@ -34,7 +44,9 @@ export default function ProductEditor({product,collections,readiness}:{product:P
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState('');
   const [error,setError]=useState('');
+  const [categoryCode,setCategoryCode]=useState(categoryFromSku(product.masterSku));
   const identityLocked=product.unitCount>0;
+  const knownCategory=categories.some(([value])=>value===categoryCode);
 
   function begin(){setBusy(true);setMessage('');setError('');}
   function fail(cause:unknown,fallback:string){setError(cause instanceof Error?cause.message:fallback);}
@@ -46,6 +58,7 @@ export default function ProductEditor({product,collections,readiness}:{product:P
     if(nextStatus==='ACTIVE'&&product.status!=='ACTIVE'){
       setBusy(false);setError('فعال‌سازی محصول فقط از تب «انتشار» و پس از تکمیل Readiness انجام می‌شود.');return;
     }
+    if(!categoryCode){setBusy(false);setError('دسته‌بندی محصول را انتخاب کن.');return;}
     const payload:Record<string,unknown>={
       nameFa:data.get('nameFa'),
       slug:data.get('slug'),
@@ -53,7 +66,7 @@ export default function ProductEditor({product,collections,readiness}:{product:P
       collectionId:data.get('collectionId')||null,
     };
     if(!identityLocked){
-      payload.masterSku=data.get('masterSku');
+      payload.masterSku=withCategoryCode(String(data.get('masterSku')??product.masterSku),categoryCode);
       payload.purity=Number(data.get('purity')??product.purity);
     }
     try{
@@ -130,9 +143,13 @@ export default function ProductEditor({product,collections,readiness}:{product:P
         <form className={styles.form} onSubmit={saveBasics}>
           <div className={styles.requiredNote}><b>*</b><span>الزامی برای انتشار محصول</span></div>
           <div className={styles.grid2}><label><RequiredLabel>نام فارسی</RequiredLabel><input name="nameFa" defaultValue={product.nameFa} required/></label><label><RequiredLabel>Slug</RequiredLabel><input name="slug" dir="ltr" defaultValue={product.slug} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*"/></label></div>
-          <div className={styles.grid2}><label><RequiredLabel>Master SKU</RequiredLabel><input name="masterSku" dir="ltr" defaultValue={product.masterSku} disabled={identityLocked}/><small>{identityLocked?'بعد از ساخت Unit قفل می‌شود.':'تا قبل از ساخت Unit قابل ویرایش است.'}</small></label><label><RequiredLabel>عیار</RequiredLabel><input name="purity" type="number" min="1" max="24" step="1" defaultValue={product.purity} disabled={identityLocked}/><small>{identityLocked?'بعد از ساخت Unit قفل می‌شود.':'عیار Master Product'}</small></label></div>
-          <div className={styles.grid2}><label><RequiredLabel>کالکشن</RequiredLabel><select name="collectionId" defaultValue={product.collectionId??''}><option value="">بدون کالکشن</option>{collections.map(c=><option key={c.id} value={c.id}>{c.nameFa}</option>)}</select><small>برای Publish باید کالکشن انتخاب شده باشد.</small></label><label>وضعیت<select name="status" defaultValue={product.status}>{statuses.filter(([value])=>value!=='ACTIVE'||product.status==='ACTIVE').map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label></div>
-          <div className={styles.readonly}><div><span>Master SKU</span><strong dir="ltr">{product.masterSku}</strong></div><div><span>عیار</span><strong>{product.purity}</strong></div><div><span>Unit موجود</span><strong>{product.availableCount}</strong></div></div>
+          <div className={styles.grid2}>
+            <label><RequiredLabel>دسته‌بندی</RequiredLabel><select name="categoryCode" value={categoryCode} onChange={event=>setCategoryCode(event.target.value)} disabled={identityLocked} required>{!knownCategory&&categoryCode&&<option value={categoryCode}>نامشخص ({categoryCode})</option>}<option value="">انتخاب دسته‌بندی</option>{categories.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select><small>{identityLocked?'بعد از ساخت Unit همراه با هویت محصول قفل می‌شود.':'انتخاب دسته، بخش مربوط به Master SKU را تنظیم می‌کند.'}</small></label>
+            <label><RequiredLabel>عیار</RequiredLabel><input name="purity" type="number" min="1" max="24" step="1" defaultValue={product.purity} disabled={identityLocked}/><small>{identityLocked?'بعد از ساخت Unit قفل می‌شود.':'عیار Master Product'}</small></label>
+          </div>
+          <div className={styles.grid2}><label><RequiredLabel>Master SKU</RequiredLabel><input name="masterSku" dir="ltr" defaultValue={product.masterSku} disabled={identityLocked}/><small>{identityLocked?'بعد از ساخت Unit قفل می‌شود.':'کد دسته‌بندی هنگام ذخیره با انتخاب بالا هماهنگ می‌شود.'}</small></label><label><RequiredLabel>کالکشن</RequiredLabel><select name="collectionId" defaultValue={product.collectionId??''}><option value="">بدون کالکشن</option>{collections.map(c=><option key={c.id} value={c.id}>{c.nameFa}</option>)}</select><small>برای Publish باید کالکشن انتخاب شده باشد.</small></label></div>
+          <label>وضعیت<select name="status" defaultValue={product.status}>{statuses.filter(([value])=>value!=='ACTIVE'||product.status==='ACTIVE').map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+          <div className={styles.readonly}><div><span>دسته‌بندی فعلی</span><strong>{categories.find(([value])=>value===categoryCode)?.[1]??categoryCode??'—'}</strong></div><div><span>عیار</span><strong>{product.purity}</strong></div><div><span>Unit موجود</span><strong>{product.availableCount}</strong></div></div>
           <button className={styles.primary} disabled={busy}>{busy?'در حال ذخیره...':'ذخیره اطلاعات اصلی'}</button>
         </form>
       </section>
