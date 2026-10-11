@@ -31,8 +31,11 @@ export default async function CustomerDetailPage({params}:{params:Promise<{id:st
       </div></section>
       <CustomerNoteEditor id={data.id} name={data.name} internalNote={data.internalNote}/>
 
-      <section className={styles.orders}><div className={styles.head}><span>ORDER HISTORY</span><h2>تاریخچه سفارش‌ها</h2></div><div className={styles.tableWrap}><table><thead><tr><th>سفارش</th><th>محصول</th><th>وضعیت</th><th>ارسال</th><th>مبلغ</th><th>تاریخ</th><th>After Sales</th><th></th></tr></thead><tbody>
-        {data.orders.map(order=><tr key={order.id}><td dir="ltr">{order.orderNumber}</td><td><strong>{order.item?.productNameFa??'—'}</strong><small dir="ltr">{order.item?.unitSku??''}</small></td><td>{statusFa(order.status)}</td><td>{statusFa(order.fulfillmentStatus)}</td><td>{toman(order.totalToman)}</td><td>{faDate(order.createdAt)}</td><td>{order.afterSales?<span className={styles.after}>{statusFa(order.afterSales.type)} • {statusFa(order.afterSales.status)}</span>:'—'}</td><td><a href={`/orders/${order.id}`}>جزئیات ←</a></td></tr>)}
+      <section className={styles.orders}><div className={styles.head}><span>ORDER HISTORY</span><h2>تاریخچه سفارش‌ها</h2></div><div className={styles.tableWrap}><table><thead><tr><th>سفارش</th><th>قطعات</th><th>وضعیت</th><th>ارسال</th><th>مبلغ</th><th>تاریخ</th><th>After Sales</th><th></th></tr></thead><tbody>
+        {data.orders.map(order=>{
+          const items=order.items?.length?order.items:order.item?[order.item]:[];
+          return <tr key={order.id}><td dir="ltr">{order.orderNumber}</td><td><strong>{new Intl.NumberFormat('fa-IR').format(items.length)} قطعه</strong>{items.map(item=><small key={item.unitSku}>{item.productNameFa} • <b dir="ltr">{item.unitSku}</b></small>)}</td><td>{statusFa(order.status)}</td><td>{statusFa(order.fulfillmentStatus)}</td><td>{toman(order.totalToman)}</td><td>{faDate(order.createdAt)}</td><td>{order.afterSales?<span className={styles.after}>{statusFa(order.afterSales.type)} • {statusFa(order.afterSales.status)}</span>:'—'}</td><td><a href={`/orders/${order.id}`}>جزئیات ←</a></td></tr>;
+        })}
         {data.orders.length===0&&<tr><td colSpan={8} className={styles.empty}>هنوز سفارشی برای این مشتری ثبت نشده.</td></tr>}
       </tbody></table></div></section>
     </div>
