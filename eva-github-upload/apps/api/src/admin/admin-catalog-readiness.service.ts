@@ -137,7 +137,7 @@ export class AdminCatalogReadinessService {
 
     const readiness = this.serialize(product);
     if (!readiness.readyToPublish) {
-      throw new ConflictException(`Product is not publish-ready: ${readiness.missing.join(', ')}`);
+      throw new ConflictException(`محصول هنوز آماده انتشار نیست: ${readiness.missing.join('، ')}`);
     }
 
     const updated = await this.prisma.masterProduct.update({
@@ -157,6 +157,12 @@ export class AdminCatalogReadinessService {
   }
 
   private serialize(product: any) {
+    const hasMainImage = Boolean(
+      product.images?.some(
+        (image: any) => image.role === 'MAIN' && image.url?.trim() && image.altText?.trim(),
+      ),
+    );
+
     const checks = {
       product: Boolean(product.id && product.nameFa && product.slug && product.masterSku),
       collection: Boolean(product.collectionId),
@@ -166,24 +172,26 @@ export class AdminCatalogReadinessService {
         product.goldColor?.trim() &&
         product.styleLabel?.trim(),
       ),
-      media: Boolean(product.images?.some((image: any) => image.role === 'MAIN' && image.url?.trim() && image.altText?.trim())),
+      media: hasMainImage,
       seo: Boolean(product.seoTitle?.trim() && product.seoDescription?.trim()),
       inventory: Boolean(product.units?.some((unit: any) => unit.status === 'AVAILABLE')),
       published: product.status === 'ACTIVE',
     };
 
-    const labels: Record<keyof typeof checks, string> = {
-      product: 'Product',
-      collection: 'Collection',
-      content: 'Content',
-      media: 'Main image',
-      seo: 'SEO',
-      inventory: 'Available unit',
-      published: 'Publish',
-    };
+    const missing: string[] = [];
+    if (!product.nameFa?.trim()) missing.push('نام فارسی محصول');
+    if (!product.slug?.trim()) missing.push('Slug محصول');
+    if (!product.masterSku?.trim()) missing.push('Master SKU');
+    if (!product.collectionId) missing.push('کالکشن');
+    if (!product.shortDescription?.trim()) missing.push('توضیح کوتاه');
+    if (!product.story?.trim()) missing.push('داستان محصول');
+    if (!product.goldColor?.trim()) missing.push('رنگ طلا');
+    if (!product.styleLabel?.trim()) missing.push('استایل محصول');
+    if (!hasMainImage) missing.push('تصویر اصلی با Alt Text');
+    if (!product.seoTitle?.trim()) missing.push('SEO Title');
+    if (!product.seoDescription?.trim()) missing.push('SEO Description');
+    if (!product.units?.some((unit: any) => unit.status === 'AVAILABLE')) missing.push('حداقل یک Unit موجود');
 
-    const publishRequirements = ['product', 'collection', 'content', 'media', 'seo', 'inventory'] as const;
-    const missing = publishRequirements.filter((key) => !checks[key]).map((key) => labels[key]);
     const completedSteps = Object.values(checks).filter(Boolean).length;
 
     return {
