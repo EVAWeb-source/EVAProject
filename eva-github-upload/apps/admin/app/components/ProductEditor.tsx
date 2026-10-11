@@ -12,8 +12,9 @@ type Readiness={completedSteps:number;totalSteps:number;readyToPublish:boolean;m
 
 const statuses=[['DRAFT','پیش‌نویس'],['ACTIVE','فعال'],['OUT_OF_STOCK','ناموجود'],['HIDDEN','مخفی'],['DISCONTINUED','توقف عرضه'],['ARCHIVED','آرشیو']];
 const unitStatuses=[['QC_PENDING','در انتظار QC'],['AVAILABLE','موجود'],['QUALITY_HOLD','توقف QC'],['DAMAGED','آسیب‌دیده'],['UNAVAILABLE','غیرقابل فروش']];
+const unitStatusLabel=Object.fromEntries(unitStatuses);
 
-async function request(path:string,method:'POST'|'PATCH',payload?:Record<string,unknown>){
+async function request(path:string,method:'POST'|'PATCH'|'DELETE',payload?:Record<string,unknown>){
   const response=await fetch('/api/admin/'+path,{method,headers:payload?{'content-type':'application/json'}:undefined,body:payload?JSON.stringify(payload):undefined});
   const raw=await response.text();
   if(!response.ok){
@@ -30,36 +31,82 @@ export default function ProductEditor({product,collections,readiness}:{product:P
   const [message,setMessage]=useState('');
   const [error,setError]=useState('');
 
+  function begin(){setBusy(true);setMessage('');setError('');}
+  function fail(cause:unknown,fallback:string){setError(cause instanceof Error?cause.message:fallback);}
+
   async function saveBasics(event:FormEvent<HTMLFormElement>){
-    event.preventDefault();setBusy(true);setMessage('');setError('');
+    event.preventDefault();begin();
     const data=new FormData(event.currentTarget);
     const nextStatus=String(data.get('status')??product.status);
     if(nextStatus==='ACTIVE'&&product.status!=='ACTIVE'){
       setBusy(false);setError('فعال‌سازی محصول فقط از تب «انتشار» و پس از تکمیل Readiness انجام می‌شود.');return;
     }
     try{
-      await request(`products/${product.id}`,'PATCH',{nameFa:data.get('nameFa'),status:nextStatus,collectionId:data.get('collectionId')||null});
+      await request(`products/${product.id}`,'PATCH',{
+        nameFa:data.get('nameFa'),
+        slug:data.get('slug'),
+        masterSku:data.get('masterSku'),
+        purity:Number(data.get('purity')??product.purity),
+        status:nextStatus,
+        collectionId:data.get('collectionId')||null,
+      });
       setMessage('اطلاعات اصلی محصول ذخیره شد.');router.refresh();
-    }catch(cause){setError(cause instanceof Error?cause.message:'ذخیره انجام نشد.');}
+    }catch(cause){fail(cause,'ذخیره انجام نشد.');}
     finally{setBusy(false);}
   }
 
   async function createUnit(event:FormEvent<HTMLFormElement>){
-    event.preventDefault();setBusy(true);setMessage('');setError('');
+    event.preventDefault();begin();
     const form=event.currentTarget;const data=new FormData(form);
     try{
       await request('units','POST',{productId:product.id,unitSku:data.get('unitSku'),exactWeightGram:data.get('exactWeightGram'),status:data.get('status')||'QC_PENDING'});
       form.reset();setMessage('Unit جدید ساخته شد.');window.dispatchEvent(new Event('eva-admin-catalog-change'));router.refresh();
-    }catch(cause){setError(cause instanceof Error?cause.message:'ساخت Unit انجام نشد.');}
+    }catch(cause){fail(cause,'ساخت Unit انجام نشد.');}
     finally{setBusy(false);}
   }
 
-  async function publish(){
-    setBusy(true);setMessage('');setError('');
-    try{await request(`catalog-readiness/${product.id}/publish`,'PATCH');setMessage('محصول منتشر شد و وارد کاتالوگ فروش شد.');router.refresh();}
-    catch(cause){setError(cause instanceof Error?cause.message:'انتشار انجام نشد.');}
+  async function saveUnit(event:FormEvent<HTMLFormElement>,unit:Unit){
+    event.preventDefault();begin();
+    const data=new FormData(event.currentTarget);
+    try{
+      await request(`units/${unit.id}`,'PATCH',{exactWeightGram:Number(data.get('exactWeightGram')),status:data.get('status')});
+      setMessage(`Unit ${unit.unitSku} بروزرسانی شد.`);window.dispatchEvent(new Event('eva-admin-catalog-change'));router.refresh();
+    }catch(cause){fail(cause,'بروزرسانی Unit انجام نشد.');}
     finally{setBusy(false);}
   }
+
+  async function deleteUnit(unit:Unit){
+    if(!window.confirm(`Unit ${unit.unitSku} حذف شود؟\nاگر سابقه سفارش یا رزرو داشته باشد سیستم اجازه حذف نمی‌دهد.`))return;
+    begin();
+    try{
+      await request(`units/${unit.id}`,'DELETE');
+      setMessage(`Unit ${unit.unitSku} حذف شد.`);window.dispatchEvent(new Event('eva-admin-catalog-change'));router.refresh();
+    }catch(cause){fail(cause,'حذف Unit انجام نشد.');}
+    finally{setBusy(false);}
+  }
+
+  async function deleteProduct(){
+    if(product.status==='ACTIVE'){
+      setError('برای حذف کامل، ابتدا وضعیت محصول را از «فعال» به مخفی یا آرشیو تغییر بده.');return;
+    }
+    const confirmed=window.confirm(`محصول «${product.nameFa}» برای همیشه حذف شود؟\nفقط محصولی بدون سابقه سفارش/رزرو قابل حذف است.`);
+    if(!confirmed)return;
+    begin();
+    try{
+      await request(`products/${product.id}`,'DELETE');
+      window.dispatchEvent(new Event('eva-admin-catalog-change'));
+      router.push('/catalog');router.refresh();
+    }catch(cause){fail(cause,'حذف محصول انجام نشد.');setBusy(false);}
+  }
+
+  async function publish(){
+    begin();
+    try{await request(`catalog-readiness/${product.id}/publish`,'PATCH');setMessage('محصول منتشر شد و وارد کاتالوگ فروش شد.');router.refresh();}
+    catch(cause){fail(cause,'انتشار انجام نشد.');}
+    finally{setBusy(false);}
+  }
+
+  const identityLocked=product.unitCount>0;
 
   return <div className={styles.editor}>
     <nav className={styles.tabs}>
@@ -71,15 +118,22 @@ export default function ProductEditor({product,collections,readiness}:{product:P
 
     {(message||error)&&<div className={error?styles.error:styles.success}>{error||message}</div>}
 
-    {tab==='BASICS'&&<section className={styles.card}>
-      <div className={styles.sectionHead}><div><span>MASTER PRODUCT</span><h2>اطلاعات اصلی</h2></div><small dir="ltr">{product.masterSku}</small></div>
-      <form className={styles.form} onSubmit={saveBasics}>
-        <div className={styles.grid2}><label>نام فارسی<input name="nameFa" defaultValue={product.nameFa}/></label><label>Slug<input dir="ltr" value={product.slug} disabled/></label></div>
-        <div className={styles.grid2}><label>کالکشن<select name="collectionId" defaultValue={product.collectionId??''}><option value="">بدون کالکشن</option>{collections.map(c=><option key={c.id} value={c.id}>{c.nameFa}</option>)}</select></label><label>وضعیت<select name="status" defaultValue={product.status}>{statuses.filter(([value])=>value!=='ACTIVE'||product.status==='ACTIVE').map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label></div>
-        <div className={styles.readonly}><div><span>Master SKU</span><strong dir="ltr">{product.masterSku}</strong></div><div><span>عیار</span><strong>{product.purity}</strong></div><div><span>Unit موجود</span><strong>{product.availableCount}</strong></div></div>
-        <button className={styles.primary} disabled={busy}>{busy?'در حال ذخیره...':'ذخیره اطلاعات اصلی'}</button>
-      </form>
-    </section>}
+    {tab==='BASICS'&&<>
+      <section className={styles.card}>
+        <div className={styles.sectionHead}><div><span>MASTER PRODUCT</span><h2>اطلاعات اصلی</h2></div><small dir="ltr">{product.masterSku}</small></div>
+        <form className={styles.form} onSubmit={saveBasics}>
+          <div className={styles.grid2}><label>نام فارسی<input name="nameFa" defaultValue={product.nameFa} required/></label><label>Slug<input name="slug" dir="ltr" defaultValue={product.slug} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*"/></label></div>
+          <div className={styles.grid2}><label>Master SKU<input name="masterSku" dir="ltr" defaultValue={product.masterSku} disabled={identityLocked}/><small>{identityLocked?'بعد از ساخت Unit قفل می‌شود.':'تا قبل از ساخت Unit قابل ویرایش است.'}</small></label><label>عیار<input name="purity" type="number" min="1" max="24" step="1" defaultValue={product.purity} disabled={identityLocked}/><small>{identityLocked?'بعد از ساخت Unit قفل می‌شود.':'عیار Master Product'}</small></label></div>
+          <div className={styles.grid2}><label>کالکشن<select name="collectionId" defaultValue={product.collectionId??''}><option value="">بدون کالکشن</option>{collections.map(c=><option key={c.id} value={c.id}>{c.nameFa}</option>)}</select></label><label>وضعیت<select name="status" defaultValue={product.status}>{statuses.filter(([value])=>value!=='ACTIVE'||product.status==='ACTIVE').map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label></div>
+          <div className={styles.readonly}><div><span>Master SKU</span><strong dir="ltr">{product.masterSku}</strong></div><div><span>عیار</span><strong>{product.purity}</strong></div><div><span>Unit موجود</span><strong>{product.availableCount}</strong></div></div>
+          <button className={styles.primary} disabled={busy}>{busy?'در حال ذخیره...':'ذخیره اطلاعات اصلی'}</button>
+        </form>
+      </section>
+      <section className={styles.dangerZone}>
+        <div><span>DANGER ZONE</span><h3>حذف دائمی محصول</h3><p>اگر محصول یا Unitهایش سابقه سفارش، رزرو یا After Sales داشته باشند حذف دائمی مسدود می‌شود. برای نگهداری تاریخچه از «آرشیو» استفاده کن.</p></div>
+        <button disabled={busy||product.status==='ACTIVE'} onClick={deleteProduct}>حذف دائمی محصول</button>
+      </section>
+    </>}
 
     {tab==='CONTENT'&&<ProductContentPanel products={[{id:product.id,nameFa:product.nameFa,masterSku:product.masterSku}]} initialProductId={product.id} hideSelector/>}
 
@@ -91,7 +145,12 @@ export default function ProductEditor({product,collections,readiness}:{product:P
         <label>وضعیت<select name="status" defaultValue="QC_PENDING">{unitStatuses.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
         <button disabled={busy}>+ ساخت Unit</button>
       </form>
-      <div className={styles.unitList}>{(product.units??[]).map(unit=><div key={unit.id} className={styles.unitRow}><div><strong dir="ltr">{unit.unitSku}</strong><small>{unit.exactWeightGram} گرم</small></div><span className={`badge ${unit.status.toLowerCase()}`}>{unit.status}</span><strong>{unit.currentPriceToman===null?'—':new Intl.NumberFormat('fa-IR').format(unit.currentPriceToman)+' تومان'}</strong></div>)}{(product.units?.length??0)===0&&<div className={styles.empty}>هنوز Unitی برای این محصول ثبت نشده است.</div>}</div>
+      <div className={styles.unitList}>{(product.units??[]).map(unit=><form key={unit.id} className={styles.unitRow} onSubmit={event=>saveUnit(event,unit)}>
+        <div><strong dir="ltr">{unit.unitSku}</strong><small>{unit.currentPriceToman===null?'قیمت پس از Quote محاسبه می‌شود':new Intl.NumberFormat('fa-IR').format(unit.currentPriceToman)+' تومان'}</small></div>
+        <label><span>وزن</span><input name="exactWeightGram" type="number" step="0.001" min="0.001" defaultValue={unit.exactWeightGram} disabled={['RESERVED','SOLD','RETURNED'].includes(unit.status)}/></label>
+        <label><span>وضعیت</span><select name="status" defaultValue={unit.status} disabled={['RESERVED','SOLD','RETURNED'].includes(unit.status)}>{unitStatuses.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select><small>{unitStatusLabel[unit.status]??unit.status}</small></label>
+        <div className={styles.unitActions}><button type="submit" disabled={busy||['RESERVED','SOLD','RETURNED'].includes(unit.status)}>ذخیره</button><button type="button" className={styles.deleteUnit} disabled={busy||['RESERVED','SOLD','RETURNED'].includes(unit.status)} onClick={()=>deleteUnit(unit)}>حذف</button></div>
+      </form>)}{(product.units?.length??0)===0&&<div className={styles.empty}>هنوز Unitی برای این محصول ثبت نشده است.</div>}</div>
     </section>}
 
     {tab==='PUBLISH'&&<section className={styles.card}>
