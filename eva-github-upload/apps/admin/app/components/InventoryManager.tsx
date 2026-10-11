@@ -2,16 +2,30 @@
 
 import { FormEvent, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import AdminFilterMenu, { type AdminFilterOption } from './AdminFilterMenu';
 
 type Product={id:string;nameFa:string;masterSku:string};
 type Unit={id:string;productId:string;unitSku:string;productNameFa:string;masterSku:string;exactWeightGram:string;currentPriceToman:number|null;status:string;reservedUntil:string|null};
 
-const statuses=[['QC_PENDING','در انتظار QC'],['AVAILABLE','موجود'],['QUALITY_HOLD','توقف QC'],['DAMAGED','آسیب‌دیده'],['UNAVAILABLE','غیرقابل فروش']];
+const statuses=[['QC_PENDING','در انتظار QC'],['AVAILABLE','موجود'],['QUALITY_HOLD','توقف QC'],['DAMAGED','آسیب‌دیده'],['UNAVAILABLE','غیرقابل فروش']] as const;
 const labels:Record<string,string>={QC_PENDING:'در انتظار QC',AVAILABLE:'موجود',RESERVED:'رزرو',SOLD:'فروخته‌شده',RETURNED:'مرجوعی',QUALITY_HOLD:'توقف QC',DAMAGED:'آسیب‌دیده',UNAVAILABLE:'غیرقابل فروش'};
 const categories=[['NEC','گردنبند'],['PEN','آویز'],['BRA','دستبند'],['RIN','انگشتر'],['EAR','گوشواره'],['SET','ست'],['ANK','پابند'],['CHM','چارم']] as const;
 const categoryLabels=Object.fromEntries(categories) as Record<string,string>;
 const attentionStatuses=new Set(['QC_PENDING','QUALITY_HOLD','RETURNED','DAMAGED']);
 const categoryFromSku=(sku:string)=>sku.split('-')[2]??'';
+const categoryOptions:AdminFilterOption[]=[{value:'ALL',label:'همه دسته‌بندی‌ها'},...categories.map(([value,label])=>({value,label}))];
+const statusOptions:AdminFilterOption[]=[{value:'ALL',label:'همه وضعیت‌ها'},...Object.entries(labels).map(([value,label])=>({value,label}))];
+const viewOptions=(attentionCount:number):AdminFilterOption[]=>[
+  {value:'ALL',label:'همه Unitها'},
+  {value:'ATTENTION',label:`نیازمند توجه (${new Intl.NumberFormat('fa-IR').format(attentionCount)})`},note:'QC، مرجوعی یا آسیب‌دیده'},
+];
+const sortOptions:AdminFilterOption[]=[
+  {value:'SKU',label:'بر اساس SKU'},
+  {value:'CATEGORY',label:'دسته‌بندی'},
+  {value:'WEIGHT_ASC',label:'وزن کم به زیاد'},
+  {value:'WEIGHT_DESC',label:'وزن زیاد به کم'},
+  {value:'STATUS',label:'وضعیت'},
+];
 
 async function request(path:string,method:'POST'|'PATCH',payload:Record<string,unknown>){
   const response=await fetch('/api/admin/'+path,{method,headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
@@ -32,6 +46,7 @@ export default function InventoryManager({products,units,initialProductId}:{prod
   const [message,setMessage]=useState('');
   const [error,setError]=useState('');
 
+  const productOptions=useMemo<AdminFilterOption[]>(()=>[{value:'ALL',label:'همه محصولات'},...products.map(p=>({value:p.id,label:p.nameFa,note:p.masterSku}))],[products]);
   const result=useMemo(()=>units.filter(unit=>{
     const q=query.trim().toLowerCase();
     const text=[unit.unitSku,unit.productNameFa,unit.masterSku,categoryLabels[categoryFromSku(unit.masterSku)]].filter(Boolean).join(' ').toLowerCase();
@@ -49,9 +64,7 @@ export default function InventoryManager({products,units,initialProductId}:{prod
   const attentionCount=useMemo(()=>units.filter(unit=>attentionStatuses.has(unit.status)).length,[units]);
   const filtersActive=Boolean(query)||status!=='ALL'||product!=='ALL'||category!=='ALL'||view!=='ALL'||sort!=='SKU';
 
-  function clearFilters(){
-    setQuery('');setStatus('ALL');setProduct('ALL');setCategory('ALL');setView('ALL');setSort('SKU');
-  }
+  function clearFilters(){setQuery('');setStatus('ALL');setProduct('ALL');setCategory('ALL');setView('ALL');setSort('SKU');}
 
   async function createUnit(event:FormEvent<HTMLFormElement>){
     event.preventDefault();setBusy('create');setMessage('');setError('');
@@ -90,11 +103,11 @@ export default function InventoryManager({products,units,initialProductId}:{prod
         </div>
         <div className="v2FilterGrid">
           <label className="v2FilterField v2FilterSearch"><span>جستجو</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Unit SKU، نام محصول یا Master SKU"/></label>
-          <label className="v2FilterField"><span>دسته‌بندی</span><select value={category} onChange={e=>setCategory(e.target.value)}><option value="ALL">همه دسته‌بندی‌ها</option>{categories.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
-          <label className="v2FilterField"><span>محصول</span><select value={product} onChange={e=>setProduct(e.target.value)}><option value="ALL">همه محصولات</option>{products.map(p=><option key={p.id} value={p.id}>{p.nameFa}</option>)}</select></label>
-          <label className="v2FilterField"><span>وضعیت</span><select value={status} onChange={e=>setStatus(e.target.value)}><option value="ALL">همه وضعیت‌ها</option>{Object.entries(labels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
-          <label className="v2FilterField"><span>توجه</span><select value={view} onChange={e=>setView(e.target.value)}><option value="ALL">همه Unitها</option><option value="ATTENTION">نیازمند توجه ({new Intl.NumberFormat('fa-IR').format(attentionCount)})</option></select></label>
-          <label className="v2FilterField"><span>مرتب‌سازی</span><select value={sort} onChange={e=>setSort(e.target.value)}><option value="SKU">بر اساس SKU</option><option value="CATEGORY">دسته‌بندی</option><option value="WEIGHT_ASC">وزن کم به زیاد</option><option value="WEIGHT_DESC">وزن زیاد به کم</option><option value="STATUS">وضعیت</option></select></label>
+          <div className="v2FilterField"><AdminFilterMenu label="دسته‌بندی" value={category} options={categoryOptions} onChange={setCategory}/></div>
+          <div className="v2FilterField"><AdminFilterMenu label="محصول" value={product} options={productOptions} onChange={setProduct}/></div>
+          <div className="v2FilterField"><AdminFilterMenu label="وضعیت" value={status} options={statusOptions} onChange={setStatus}/></div>
+          <div className="v2FilterField"><AdminFilterMenu label="توجه" value={view} options={viewOptions(attentionCount)} onChange={setView}/></div>
+          <div className="v2FilterField"><AdminFilterMenu label="مرتب‌سازی" value={sort} options={sortOptions} onChange={setSort}/></div>
         </div>
       </div>
 
