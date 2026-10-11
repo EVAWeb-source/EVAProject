@@ -414,15 +414,9 @@ export class AdminService {
     const status = String(input.status ?? 'DRAFT').toUpperCase();
     const collectionId = input.collectionId ? String(input.collectionId) : null;
 
-    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
-      throw new BadRequestException('Slug must contain only lowercase latin letters, numbers and hyphens');
-    }
-    if (!/^EVA-[A-Z0-9-]+$/.test(masterSku)) {
-      throw new BadRequestException('Master SKU must start with EVA- and use uppercase letters/numbers');
-    }
-    if (!Number.isInteger(purity) || purity < 1 || purity > 24) {
-      throw new BadRequestException('Purity must be an integer between 1 and 24');
-    }
+    this.validateSlug(slug);
+    this.validateMasterSku(masterSku);
+    this.validatePurity(purity);
     if (!PRODUCT_STATUSES.includes(status as (typeof PRODUCT_STATUSES)[number])) {
       throw new BadRequestException('Invalid product status');
     }
@@ -455,12 +449,33 @@ export class AdminService {
   async updateProduct(id: string, input: Record<string, unknown>) {
     const product = await this.prisma.masterProduct.findUnique({
       where: { id },
-      include: { units: { select: { status: true } } },
+      include: { units: { select: { id: true, status: true } } },
     });
     if (!product) throw new NotFoundException('Product not found');
 
     const data: Record<string, unknown> = {};
     if (input.nameFa !== undefined) data.nameFa = this.requiredString(input.nameFa, 'نام محصول');
+    if (input.slug !== undefined) {
+      const slug = this.requiredString(input.slug, 'slug').toLowerCase();
+      this.validateSlug(slug);
+      data.slug = slug;
+    }
+    if (input.masterSku !== undefined) {
+      const masterSku = this.requiredString(input.masterSku, 'Master SKU').toUpperCase();
+      this.validateMasterSku(masterSku);
+      if (masterSku !== product.masterSku && product.units.length > 0) {
+        throw new ConflictException('Master SKU cannot change after Units have been created');
+      }
+      data.masterSku = masterSku;
+    }
+    if (input.purity !== undefined) {
+      const purity = Number(input.purity);
+      this.validatePurity(purity);
+      if (purity !== product.purity && product.units.length > 0) {
+        throw new ConflictException('Purity cannot change after Units have been created');
+      }
+      data.purity = purity;
+    }
     if (input.status !== undefined) {
       const status = String(input.status).toUpperCase();
       if (!PRODUCT_STATUSES.includes(status as (typeof PRODUCT_STATUSES)[number])) {
@@ -481,11 +496,50 @@ export class AdminService {
       throw new BadRequestException('No editable fields supplied');
     }
 
-    return this.prisma.masterProduct.update({
+    try {
+      return await this.prisma.masterProduct.update({
+        where: { id },
+        data: data as any,
+        include: { collection: true },
+      });
+    } catch (error: any) {
+      if (error?.code === 'P2002') throw new ConflictException('Slug or Master SKU already exists');
+      throw error;
+    }
+  }
+
+  async deleteProduct(id: string) {
+    const product = await this.prisma.masterProduct.findUnique({
       where: { id },
-      data: data as any,
-      include: { collection: true },
+      include: {
+        units: {
+          include: {
+            _count: { select: { orderLines: true, reservations: true, afterSalesCases: true } },
+          },
+        },
+      },
     });
+    if (!product) throw new NotFoundException('Product not found');
+    if (product.status === 'ACTIVE') {
+      throw new ConflictException('Active product cannot be deleted. Hide or archive it first.');
+    }
+
+    const protectedUnit = product.units.find((unit) =>
+      ['RESERVED', 'SOLD', 'RETURNED'].includes(unit.status) ||
+      unit._count.orderLines > 0 ||
+      unit._count.reservations > 0 ||
+      unit._count.afterSalesCases > 0,
+    );
+    if (protectedUnit) {
+      throw new ConflictException('Product has inventory history and cannot be permanently deleted. Archive it instead.');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.physicalUnit.deleteMany({ where: { productId: product.id } });
+      await tx.masterProduct.delete({ where: { id: product.id } });
+    });
+
+    return { ok: true, id: product.id, nameFa: product.nameFa, masterSku: product.masterSku };
   }
 
   async createUnit(input: Record<string, unknown>) {
@@ -531,6 +585,9 @@ export class AdminService {
     if (unit.status === 'RESERVED') {
       throw new ConflictException('Reserved Unit cannot be edited manually');
     }
+    if (unit.status === 'RETURNED') {
+      throw new ConflictException('Returned Unit must be changed by the after-sales QC workflow');
+    }
 
     const data: Record<string, unknown> = {};
     if (input.status !== undefined) {
@@ -559,6 +616,58 @@ export class AdminService {
       data: data as any,
       include: { product: true },
     });
+  }
+
+  async deleteUnit(id: string) {
+    const unit = await this.prisma.physicalUnit.findUnique({
+      where: { id },
+      include: {
+        product: { select: { id: true, status: true } },
+        _count: { select: { orderLines: true, reservations: true, afterSalesCases: true } },
+      },
+    });
+    if (!unit) throw new NotFoundException('Unit not found');
+    if (['RESERVED', 'SOLD', 'RETURNED'].includes(unit.status)) {
+      throw new ConflictException('Reserved, sold or returned Unit cannot be deleted');
+    }
+    if (unit._count.orderLines > 0 || unit._count.reservations > 0 || unit._count.afterSalesCases > 0) {
+      throw new ConflictException('Unit has order/reservation history and cannot be permanently deleted');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.physicalUnit.delete({ where: { id: unit.id } });
+      if (unit.product.status === 'ACTIVE') {
+        const remainingAvailable = await tx.physicalUnit.count({
+          where: { productId: unit.product.id, status: 'AVAILABLE', id: { not: unit.id } },
+        });
+        if (remainingAvailable === 0) {
+          await tx.masterProduct.update({
+            where: { id: unit.product.id },
+            data: { status: 'OUT_OF_STOCK' },
+          });
+        }
+      }
+    });
+
+    return { ok: true, id: unit.id, unitSku: unit.unitSku };
+  }
+
+  private validateSlug(slug: string) {
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      throw new BadRequestException('Slug must contain only lowercase latin letters, numbers and hyphens');
+    }
+  }
+
+  private validateMasterSku(masterSku: string) {
+    if (!/^EVA-[A-Z0-9-]+$/.test(masterSku)) {
+      throw new BadRequestException('Master SKU must start with EVA- and use uppercase letters/numbers');
+    }
+  }
+
+  private validatePurity(purity: number) {
+    if (!Number.isInteger(purity) || purity < 1 || purity > 24) {
+      throw new BadRequestException('Purity must be an integer between 1 and 24');
+    }
   }
 
   private normalizeMobile(value: unknown) {
