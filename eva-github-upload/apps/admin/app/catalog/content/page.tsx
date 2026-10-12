@@ -8,16 +8,14 @@ export const dynamic='force-dynamic';
 export default async function CatalogContentPage(){
   await requireAdmin();
   const {data,error}=await loadDashboard();
-  const products=(data?.products??[])
-    .filter(product=>product.masterSku.startsWith('EVA-AGH-'))
-    .sort((a,b)=>a.masterSku.localeCompare(b.masterSku));
+  const products=(data?.products??[]).slice().sort((a,b)=>a.nameFa.localeCompare(b.nameFa,'fa'));
 
   return <AdminShell connected={!error}>
     <AdminPageHeader
-      eyebrow="BATCH CONTENT WORKFLOW"
-      title="محتوای گروهی کالکشن آغاز"
-      description="ویرایش سریع Content و SEO محصولات آغاز در یک صفحه، بدون رفت‌وبرگشت بین Product Editorها."
-      actions={<><a href="/catalog/onboarding">Readiness</a><a href="/catalog">کاتالوگ</a></>}
+      eyebrow="کاتالوگ"
+      title="محتوای محصولات"
+      description="ویرایش سریع محتوا و SEO همه محصولات در یک صفحه."
+      actions={<><a href="/catalog/onboarding">آمادگی انتشار</a><a href="/catalog">محصولات</a></>}
     />
     {error||!data
       ? <section className="setupCard"><h1>اطلاعات کاتالوگ قابل دریافت نیست.</h1><p>{error}</p></section>
