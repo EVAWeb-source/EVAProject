@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminFilterMenu, { type AdminFilterOption } from './AdminFilterMenu';
+import styles from './InventoryManager.module.css';
 
 type Product={id:string;nameFa:string;masterSku:string};
 type Unit={id:string;productId:string;unitSku:string;productNameFa:string;masterSku:string;exactWeightGram:string;currentPriceToman:number|null;status:string;reservedUntil:string|null};
@@ -26,6 +27,7 @@ const sortOptions:AdminFilterOption[]=[
   {value:'WEIGHT_DESC',label:'وزن زیاد به کم'},
   {value:'STATUS',label:'وضعیت'},
 ];
+const fa=(value:number)=>new Intl.NumberFormat('fa-IR').format(value);
 
 async function request(path:string,method:'POST'|'PATCH',payload:Record<string,unknown>){
   const response=await fetch('/api/admin/'+path,{method,headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
@@ -63,7 +65,6 @@ export default function InventoryManager({products,units,initialProductId}:{prod
 
   const attentionCount=useMemo(()=>units.filter(unit=>attentionStatuses.has(unit.status)).length,[units]);
   const filtersActive=Boolean(query)||status!=='ALL'||product!=='ALL'||category!=='ALL'||view!=='ALL'||sort!=='SKU';
-
   function clearFilters(){setQuery('');setStatus('ALL');setProduct('ALL');setCategory('ALL');setView('ALL');setSort('SKU');}
 
   async function createUnit(event:FormEvent<HTMLFormElement>){
@@ -85,7 +86,7 @@ export default function InventoryManager({products,units,initialProductId}:{prod
   return <>
     {(message||error)&&<div className={error?'actionMessage actionError':'actionMessage'}>{error||message}</div>}
     <section className="panel">
-      <div className="panelHead"><div><span>ADD UNIT</span><h2>ثبت قطعه فیزیکی</h2></div><small>هر Unit یک قطعه واقعی با وزن دقیق است</small></div>
+      <div className="panelHead"><div><h2>ثبت قطعه فیزیکی</h2></div><small>هر Unit یک قطعه واقعی با وزن دقیق است</small></div>
       <form className="v2CreateGrid" onSubmit={createUnit}>
         <label>محصول<select name="productId" required defaultValue={initialProductId??''}><option value="" disabled>انتخاب محصول</option>{products.map(p=><option key={p.id} value={p.id}>{p.nameFa} — {p.masterSku}</option>)}</select></label>
         <label>Unit SKU<input name="unitSku" dir="ltr" required placeholder="EVA-...-U01"/></label>
@@ -98,10 +99,10 @@ export default function InventoryManager({products,units,initialProductId}:{prod
     <section>
       <div className="v2FilterBar">
         <div className="v2FilterTop">
-          <div className="v2FilterTitle"><strong>فیلتر موجودی</strong><small>Unitها را بر اساس دسته‌بندی، محصول، وضعیت و وزن پیدا کن.</small></div>
-          <div className="v2FilterMeta"><span className="v2FilterCount">{new Intl.NumberFormat('fa-IR').format(result.length)} Unit</span>{filtersActive&&<button className="v2FilterReset" type="button" onClick={clearFilters}>پاک کردن فیلترها</button>}</div>
+          <div className="v2FilterTitle"><strong>فیلتر موجودی</strong><small>دسته‌بندی، محصول، وضعیت یا وزن را انتخاب کن.</small></div>
+          <div className="v2FilterMeta"><span className="v2FilterCount">{fa(result.length)} Unit</span>{filtersActive&&<button className="v2FilterReset" type="button" onClick={clearFilters}>پاک کردن</button>}</div>
         </div>
-        <div className="v2FilterGrid">
+        <div className="v2FilterGrid inventoryGrid">
           <label className="v2FilterField v2FilterSearch"><span>جستجو</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Unit SKU، نام محصول یا Master SKU"/></label>
           <div className="v2FilterField v2FilterWide"><AdminFilterMenu label="دسته‌بندی" value={category} options={categoryOptions} onChange={setCategory}/></div>
           <div className="v2FilterField v2FilterProduct"><AdminFilterMenu label="محصول" value={product} options={productOptions} onChange={setProduct}/></div>
@@ -111,19 +112,20 @@ export default function InventoryManager({products,units,initialProductId}:{prod
         </div>
       </div>
 
-      <div className="panel">
-        <div className="v2EditorList">{result.map(unit=>{
-          const locked=unit.status==='SOLD'||unit.status==='RESERVED';
-          const categoryCode=categoryFromSku(unit.masterSku);
-          return <form key={unit.id} className="v2UnitRow" onSubmit={event=>updateUnit(event,unit)}>
-            <div><strong dir="ltr">{unit.unitSku}</strong><small>{unit.productNameFa} • {categoryLabels[categoryCode]??categoryCode}</small></div>
-            <label>وزن<input name="exactWeightGram" type="number" step="0.001" min="0.001" defaultValue={unit.exactWeightGram} disabled={locked}/></label>
-            <label>وضعیت<select name="status" defaultValue={unit.status} disabled={locked}>{locked?<option value={unit.status}>{labels[unit.status]??unit.status}</option>:statuses.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
-            <div><span className={`badge ${unit.status.toLowerCase()}`}>{labels[unit.status]??unit.status}</span><small>{unit.currentPriceToman===null?'قیمت بعد از محاسبه':'قیمت: '+new Intl.NumberFormat('fa-IR').format(unit.currentPriceToman)}</small></div>
-            <button disabled={locked||busy===unit.id}>{locked?'قفل':'ذخیره'}</button>
-          </form>;
-        })}{result.length===0&&<div className="v2Empty">Unitی با این فیلتر پیدا نشد.</div>}</div>
-      </div>
+      <div className={styles.list}>{result.map(unit=>{
+        const locked=unit.status==='SOLD'||unit.status==='RESERVED';
+        const categoryCode=categoryFromSku(unit.masterSku);
+        return <form key={unit.id} className={styles.card} onSubmit={event=>updateUnit(event,unit)}>
+          <div className={styles.identity}>
+            <div className={styles.titleLine}><strong>{unit.productNameFa}</strong><span className={`badge ${unit.status.toLowerCase()}`}>{labels[unit.status]??unit.status}</span></div>
+            <code dir="ltr">{unit.unitSku}</code>
+            <div className={styles.meta}><span>{categoryLabels[categoryCode]??categoryCode}</span><span>{unit.masterSku}</span>{unit.currentPriceToman!==null&&<span>{new Intl.NumberFormat('fa-IR').format(unit.currentPriceToman)} تومان</span>}</div>
+          </div>
+          <label className={styles.field}>وزن دقیق<input name="exactWeightGram" type="number" step="0.001" min="0.001" defaultValue={unit.exactWeightGram} disabled={locked}/></label>
+          <label className={styles.field}>وضعیت<select name="status" defaultValue={unit.status} disabled={locked}>{locked?<option value={unit.status}>{labels[unit.status]??unit.status}</option>:statuses.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+          <button className={`${styles.save} ${locked?styles.locked:''}`} disabled={locked||busy===unit.id}>{locked?'قفل':'ذخیره'}</button>
+        </form>;
+      })}{result.length===0&&<div className={styles.empty}>Unitی با این فیلتر پیدا نشد.</div>}</div>
     </section>
   </>;
 }
