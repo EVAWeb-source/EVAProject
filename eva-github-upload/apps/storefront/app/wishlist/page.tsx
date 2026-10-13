@@ -5,12 +5,12 @@ import { publicMetadata } from '../lib/seo';
 export const dynamic='force-dynamic';
 
 export const metadata:Metadata=publicMetadata({
-  title:'علاقه‌مندی‌ها | ایوا',
-  description:'قطعه‌هایی که برای بعد نگه داشته‌ای، با موجودی و قیمت فعلی ایوا.',
+  title:'لیست‌های من | ایوا',
+  description:'علاقه‌مندی‌ها و خریدهای بعدی ایوا، با موجودی و قیمت فعلی.',
   path:'/wishlist',
 });
 
-type Product={id:string;nameFa:string;slug:string;masterSku:string;purity:number;images?:Array<{url:string;altText:string;role:string;sortOrder:number}>;collection:{nameFa:string}|null;units:Array<{exactWeightGram:string;currentPriceToman:string;status:string}>};
+type Product={id:string;nameFa:string;slug:string;masterSku:string;purity:number;images?:Array<{url:string;altText:string;role:string;sortOrder:number}>;collection:{nameFa:string}|null;units:Array<{id:string;unitSku:string;exactWeightGram:string;currentPriceToman:string;status:string}>};
 
 async function getProducts():Promise<Product[]>{
   const apiBase=process.env.API_URL ?? 'https://eva-api-production-c864.up.railway.app';
