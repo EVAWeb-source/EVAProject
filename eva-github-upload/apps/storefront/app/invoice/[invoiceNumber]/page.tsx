@@ -16,7 +16,8 @@ type Invoice={
   totalToman:number;
   items:Array<{
     productNameFa:string;masterSku:string;unitSku:string;exactWeightGram:string;purity:number;
-    goldRateTomanPerGram:number|null;goldValueToman:number|null;makingToman:number|null;profitToman:number|null;taxToman:number|null;finalPriceToman:number;
+    goldRateTomanPerGram:number|null;goldValueToman:number|null;makingToman:number|null;profitToman:number|null;taxToman:number|null;goldFinalToman:number|null;
+    stoneName:string|null;stoneCarat:number|null;stoneWeightGram:number|null;stonePriceTomanPerGram:number|null;stoneValueToman:number|null;finalPriceToman:number;
     rateVersion:string|null;pricingFormulaVersion:string|null;
   }>;
 };
@@ -24,7 +25,8 @@ type Invoice={
 const apiBase=process.env.API_URL ?? 'https://eva-api-production-c864.up.railway.app';
 const siteBase=process.env.NEXT_PUBLIC_SITE_URL ?? 'https://evaproject-production.up.railway.app';
 const toman=(value:number)=>`${new Intl.NumberFormat('fa-IR').format(value)} تومان`;
-const weight=(value:string)=>`${new Intl.NumberFormat('fa-IR',{minimumFractionDigits:2,maximumFractionDigits:3}).format(Number(value))} گرم`;
+const weight=(value:string|number)=>`${new Intl.NumberFormat('fa-IR',{minimumFractionDigits:0,maximumFractionDigits:3}).format(Number(value))} گرم`;
+const decimal=(value:number)=>new Intl.NumberFormat('fa-IR',{minimumFractionDigits:0,maximumFractionDigits:3}).format(value);
 
 async function getInvoice(invoiceNumber:string):Promise<Invoice>{
   const response=await fetch(`${apiBase}/api/v1/invoices/${encodeURIComponent(invoiceNumber)}`,{cache:'no-store'});
@@ -47,16 +49,27 @@ export default async function InvoicePage({params}:{params:Promise<{invoiceNumbe
 
       <section className={styles.section}><h2>خریدار و ارسال</h2><div className={styles.grid}><div className={styles.row}><span>نام خریدار</span><strong>{invoice.customer.name}</strong></div><div className={styles.row}><span>موبایل</span><strong dir="ltr">{invoice.customer.mobile}</strong></div><div className={styles.row}><span>گیرنده</span><strong>{invoice.customer.recipientName}</strong></div><div className={styles.row}><span>کدپستی</span><strong dir="ltr">{invoice.customer.postalCode}</strong></div></div><div className={styles.row}><span>آدرس</span><strong>{invoice.customer.province}، {invoice.customer.city}، {invoice.customer.address}</strong></div></section>
 
-      {invoice.items.map((item,index)=><section className={styles.section} key={item.unitSku}>
-        <h2>{invoice.items.length>1?`قطعه ${new Intl.NumberFormat('fa-IR').format(index+1)} — ${item.productNameFa}`:'مشخصات قطعه'}</h2>
-        <div className={styles.grid}><div className={styles.row}><span>محصول</span><strong>{item.productNameFa}</strong></div><div className={styles.row}><span>وزن دقیق</span><strong>{weight(item.exactWeightGram)}</strong></div><div className={styles.row}><span>عیار</span><strong>{item.purity} عیار</strong></div><div className={styles.row}><span>Unit SKU</span><strong dir="ltr">{item.unitSku}</strong></div><div className={styles.row}><span>Master SKU</span><strong dir="ltr">{item.masterSku}</strong></div></div>
-        <div className={styles.row}><span>مبلغ این قطعه</span><strong>{toman(item.finalPriceToman)}</strong></div>
-        {item.goldRateTomanPerGram!==null&&<div className={styles.row}><span>نرخ طلا / گرم</span><strong>{toman(item.goldRateTomanPerGram)}</strong></div>}
-        {item.goldValueToman!==null&&<div className={styles.row}><span>ارزش طلا</span><strong>{toman(item.goldValueToman)}</strong></div>}
-        {item.makingToman!==null&&<div className={styles.row}><span>اجرت</span><strong>{toman(item.makingToman)}</strong></div>}
-        {item.profitToman!==null&&<div className={styles.row}><span>سود</span><strong>{toman(item.profitToman)}</strong></div>}
-        {item.taxToman!==null&&<div className={styles.row}><span>مالیات</span><strong>{toman(item.taxToman)}</strong></div>}
-      </section>)}
+      {invoice.items.map((item,index)=>{
+        const hasStone=item.stoneCarat!==null&&item.stoneWeightGram!==null&&item.stoneValueToman!==null;
+        return <section className={styles.section} key={item.unitSku}>
+          <h2>{invoice.items.length>1?`قطعه ${new Intl.NumberFormat('fa-IR').format(index+1)} — ${item.productNameFa}`:'مشخصات قطعه'}</h2>
+          <div className={styles.grid}><div className={styles.row}><span>محصول</span><strong>{item.productNameFa}</strong></div><div className={styles.row}><span>وزن خالص طلا</span><strong>{weight(item.exactWeightGram)}</strong></div><div className={styles.row}><span>عیار</span><strong>{item.purity} عیار</strong></div><div className={styles.row}><span>Unit SKU</span><strong dir="ltr">{item.unitSku}</strong></div><div className={styles.row}><span>Master SKU</span><strong dir="ltr">{item.masterSku}</strong></div></div>
+          {item.goldRateTomanPerGram!==null&&<div className={styles.row}><span>نرخ تابلو طلا / گرم</span><strong>{toman(item.goldRateTomanPerGram)}</strong></div>}
+          {item.goldValueToman!==null&&<div className={styles.row}><span>ارزش طلای خالص</span><strong>{toman(item.goldValueToman)}</strong></div>}
+          {item.makingToman!==null&&<div className={styles.row}><span>اجرت</span><strong>{toman(item.makingToman)}</strong></div>}
+          {item.profitToman!==null&&<div className={styles.row}><span>سود</span><strong>{toman(item.profitToman)}</strong></div>}
+          {item.taxToman!==null&&<div className={styles.row}><span>مالیات اجرت و سود</span><strong>{toman(item.taxToman)}</strong></div>}
+          {item.goldFinalToman!==null&&<div className={styles.row}><span>قیمت نهایی طلا</span><strong>{toman(item.goldFinalToman)}</strong></div>}
+          {hasStone&&<>
+            <div className={styles.row}><span>نوع سنگ</span><strong>{item.stoneName??'سنگ'}</strong></div>
+            <div className={styles.row}><span>قیراط سنگ</span><strong>{decimal(item.stoneCarat!)} قیراط</strong></div>
+            <div className={styles.row}><span>وزن سنگ</span><strong>{weight(item.stoneWeightGram!)}</strong></div>
+            {item.stonePriceTomanPerGram!==null&&<div className={styles.row}><span>قیمت هر گرم سنگ</span><strong>{toman(item.stonePriceTomanPerGram)}</strong></div>}
+            <div className={styles.row}><span>قیمت سنگ</span><strong>{toman(item.stoneValueToman!)}</strong></div>
+          </>}
+          <div className={styles.row}><span>مبلغ نهایی این قطعه</span><strong>{toman(item.finalPriceToman)}</strong></div>
+        </section>;
+      })}
 
       <section className={styles.section}><h2>جمع سفارش و پرداخت</h2><div className={styles.grid}><div className={styles.row}><span>تعداد قطعات</span><strong>{new Intl.NumberFormat('fa-IR').format(invoice.items.length)}</strong></div><div className={styles.row}><span>درگاه</span><strong>{invoice.payment.provider}</strong></div><div className={styles.row}><span>کد مرجع</span><strong dir="ltr">{invoice.payment.reference}</strong></div></div><div className={`${styles.row} ${styles.total}`}><span>مبلغ نهایی سفارش</span><strong>{toman(invoice.totalToman)}</strong></div></section>
 
@@ -66,7 +79,7 @@ export default async function InvoicePage({params}:{params:Promise<{invoiceNumbe
       </section>
 
       <div className={styles.actions}><PrintButton/><a href={`/verify/${invoice.verificationCode}`}>بررسی فاکتور</a><a href="/shop">بازگشت به فروشگاه</a></div>
-      <p className={styles.note}>این نسخه فعلاً برای تست زیرساخت EVA صادر شده است. اطلاعات حقوقی فروشنده، قواعد مالیاتی نهایی و قالب رسمی نهایی فاکتور پیش از Launch تکمیل می‌شوند.</p>
+      <p className={styles.note}>وزن درج‌شده برای طلا، وزن خالص طلای قطعه است. در محصولات سنگ‌دار، وزن و ارزش سنگ جداگانه ثبت می‌شود. این نسخه همچنان در محیط تست زیرساخت EVA صادر می‌شود.</p>
     </article>
   </main>;
 }
