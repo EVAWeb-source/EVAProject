@@ -10,6 +10,7 @@ type Unit={id:string;unitSku:string;exactWeightGram:string;currentPriceToman:num
 type Product={id:string;nameFa:string;slug:string;masterSku:string;purity:number;status:string;collectionId:string|null;collection:string|null;unitCount:number;availableCount:number;units?:Unit[]};
 type Readiness={completedSteps:number;totalSteps:number;readyToPublish:boolean;missing:string[]}|null;
 type Tab='BASICS'|'CONTENT'|'UNITS'|'PUBLISH';
+type StoneMeta={hasStone:boolean;stoneName:string|null;stoneCarat:string|null;stonePriceTomanPerGram:number|null};
 
 const statuses=[['DRAFT','پیش‌نویس'],['ACTIVE','فعال'],['OUT_OF_STOCK','ناموجود'],['HIDDEN','مخفی'],['DISCONTINUED','توقف عرضه'],['ARCHIVED','آرشیو']];
 const unitStatuses=[['QC_PENDING','در انتظار QC'],['AVAILABLE','موجود'],['QUALITY_HOLD','توقف QC'],['DAMAGED','آسیب‌دیده'],['UNAVAILABLE','غیرقابل فروش']];
@@ -18,7 +19,7 @@ const categories=[['NEC','گردنبند'],['PEN','آویز'],['BRA','دستبن
 const wizardSteps:Array<{id:Tab;label:string;hint:string}>=[
   {id:'BASICS',label:'اطلاعات اصلی',hint:'هویت محصول'},
   {id:'CONTENT',label:'محتوا و تصاویر',hint:'متن، تصویر و SEO'},
-  {id:'UNITS',label:'Unit و موجودی',hint:'قطعه فیزیکی'},
+  {id:'UNITS',label:'Unit و موجودی',hint:'وزن طلا و سنگ'},
   {id:'PUBLISH',label:'انتشار',hint:'بررسی نهایی'},
 ];
 
@@ -37,6 +38,19 @@ async function request(path:string,method:'POST'|'PATCH'|'DELETE',payload?:Recor
   return raw?JSON.parse(raw):null;
 }
 
+function ExistingStoneFields({initial,disabled}:{initial?:StoneMeta;disabled:boolean}){
+  const [enabled,setEnabled]=useState(Boolean(initial?.hasStone));
+  useEffect(()=>setEnabled(Boolean(initial?.hasStone)),[initial?.hasStone]);
+  return <div className={styles.stoneEdit}>
+    <label className={styles.stoneToggle}><input type="checkbox" name="hasStone" checked={enabled} disabled={disabled} onChange={event=>setEnabled(event.target.checked)}/><span>این Unit سنگ دارد</span></label>
+    {enabled&&<div className={styles.stoneFields}>
+      <label><span>نوع / نام سنگ</span><input name="stoneName" defaultValue={initial?.stoneName??''} disabled={disabled} required placeholder="مثلاً زیرکن"/></label>
+      <label><span>قیراط سنگ</span><input name="stoneCarat" type="number" min="0.001" step="0.001" defaultValue={initial?.stoneCarat??''} disabled={disabled} required placeholder="0.500"/></label>
+      <label><span>قیمت هر گرم سنگ (تومان)</span><input name="stonePriceTomanPerGram" type="number" min="1" step="1" defaultValue={initial?.stonePriceTomanPerGram??''} disabled={disabled} required placeholder="2500000"/></label>
+    </div>}
+  </div>;
+}
+
 export default function ProductEditor({product,collections,readiness}:{product:Product;collections:Collection[];readiness:Readiness}){
   const router=useRouter();
   const [tab,setTab]=useState<Tab>('BASICS');
@@ -46,16 +60,29 @@ export default function ProductEditor({product,collections,readiness}:{product:P
   const [collectionId,setCollectionId]=useState(product.collectionId??'');
   const [masterSku,setMasterSku]=useState(product.masterSku);
   const [unitSku,setUnitSku]=useState(nextUnitSku(product.masterSku,product.units));
+  const [newUnitHasStone,setNewUnitHasStone]=useState(false);
+  const [stoneByUnit,setStoneByUnit]=useState<Record<string,StoneMeta>>({});
   const identityLocked=product.unitCount>0;
   const knownCategory=categories.some(([value])=>value===categoryCode);
   const skuCategoryValid=!categoryCode||categoryFromSku(masterSku)===categoryCode;
   const unitSkuValid=validUnitSku(product.masterSku,unitSku);
   const currentIndex=wizardSteps.findIndex(step=>step.id===tab);
 
+  async function loadStoneUnits(){
+    try{
+      const response=await fetch(`/api/admin/stone-units/product/${encodeURIComponent(product.id)}`,{cache:'no-store'});
+      if(!response.ok)return;
+      const data=await response.json() as {units:Array<StoneMeta&{id:string}>};
+      setStoneByUnit(Object.fromEntries(data.units.map(unit=>[unit.id,{hasStone:unit.hasStone,stoneName:unit.stoneName,stoneCarat:unit.stoneCarat,stonePriceTomanPerGram:unit.stonePriceTomanPerGram}])));
+    }catch{}
+  }
+
   useEffect(()=>{
     const requested=new URLSearchParams(window.location.search).get('step') as Tab|null;
     if(requested&&wizardSteps.some(step=>step.id===requested))setTab(requested);
-  },[]);
+    void loadStoneUnits();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[product.id]);
 
   function goTo(next:Tab){
     setTab(next);setMessage('');setError('');
@@ -83,15 +110,29 @@ export default function ProductEditor({product,collections,readiness}:{product:P
     event.preventDefault();
     if(!unitSkuValid){setError(`Unit SKU باید دقیقاً با ${product.masterSku}-U شروع شود و فقط شماره Unit در انتها تغییر کند.`);return;}
     begin();const form=event.currentTarget;const data=new FormData(form);
+    let created:any=null;
     try{
-      await request('units','POST',{productId:product.id,unitSku:unitSku.trim().toUpperCase(),exactWeightGram:data.get('exactWeightGram'),status:data.get('status')||'QC_PENDING'});
+      created=await request('units','POST',{productId:product.id,unitSku:unitSku.trim().toUpperCase(),exactWeightGram:data.get('exactWeightGram'),status:data.get('status')||'QC_PENDING'});
+      if(newUnitHasStone){
+        await request(`stone-units/${created.id}`,'PATCH',{hasStone:true,stoneName:data.get('stoneName'),stoneCarat:Number(data.get('stoneCarat')),stonePriceTomanPerGram:Number(data.get('stonePriceTomanPerGram'))});
+      }
       const currentNumber=Number(unitSku.match(/-U(\d+)$/)?.[1]??0);setUnitSku(`${product.masterSku}-U${String(currentNumber+1).padStart(2,'0')}`);
-      form.reset();setMessage('Unit جدید ساخته شد؛ در صورت نیاز Unit بعدی را اضافه کن یا به مرحله انتشار برو.');window.dispatchEvent(new Event('eva-admin-catalog-change'));router.refresh();
-    }catch(cause){fail(cause,'ساخت Unit انجام نشد.');}finally{setBusy(false);}
+      form.reset();setNewUnitHasStone(false);await loadStoneUnits();setMessage(newUnitHasStone?'Unit و اطلاعات سنگ ثبت شد؛ قیمت سنگ هنگام Quote به قیمت طلا اضافه می‌شود.':'Unit جدید ساخته شد؛ در صورت نیاز Unit بعدی را اضافه کن یا به مرحله انتشار برو.');window.dispatchEvent(new Event('eva-admin-catalog-change'));router.refresh();
+    }catch(cause){
+      if(created?.id&&newUnitHasStone){try{await request(`units/${created.id}`,'DELETE');}catch{}}
+      fail(cause,'ساخت Unit انجام نشد.');
+    }finally{setBusy(false);}
   }
 
-  async function saveUnit(event:FormEvent<HTMLFormElement>,unit:Unit){event.preventDefault();begin();const data=new FormData(event.currentTarget);try{await request(`units/${unit.id}`,'PATCH',{exactWeightGram:Number(data.get('exactWeightGram')),status:data.get('status')});setMessage(`Unit ${unit.unitSku} بروزرسانی شد.`);window.dispatchEvent(new Event('eva-admin-catalog-change'));router.refresh();}catch(cause){fail(cause,'بروزرسانی Unit انجام نشد.');}finally{setBusy(false);}}
-  async function deleteUnit(unit:Unit){if(!window.confirm(`Unit ${unit.unitSku} حذف شود؟\nاگر سابقه سفارش یا رزرو داشته باشد سیستم اجازه حذف نمی‌دهد.`))return;begin();try{await request(`units/${unit.id}`,'DELETE');setMessage(`Unit ${unit.unitSku} حذف شد.`);window.dispatchEvent(new Event('eva-admin-catalog-change'));router.refresh();}catch(cause){fail(cause,'حذف Unit انجام نشد.');}finally{setBusy(false);}}
+  async function saveUnit(event:FormEvent<HTMLFormElement>,unit:Unit){
+    event.preventDefault();begin();const data=new FormData(event.currentTarget);const hasStone=data.get('hasStone')==='on';
+    try{
+      await request(`units/${unit.id}`,'PATCH',{exactWeightGram:Number(data.get('exactWeightGram')),status:data.get('status')});
+      await request(`stone-units/${unit.id}`,'PATCH',{hasStone,stoneName:hasStone?data.get('stoneName'):null,stoneCarat:hasStone?Number(data.get('stoneCarat')):null,stonePriceTomanPerGram:hasStone?Number(data.get('stonePriceTomanPerGram')):null});
+      await loadStoneUnits();setMessage(`Unit ${unit.unitSku} بروزرسانی شد.`);window.dispatchEvent(new Event('eva-admin-catalog-change'));router.refresh();
+    }catch(cause){fail(cause,'بروزرسانی Unit انجام نشد.');}finally{setBusy(false);}
+  }
+  async function deleteUnit(unit:Unit){if(!window.confirm(`Unit ${unit.unitSku} حذف شود؟\nاگر سابقه سفارش یا رزرو داشته باشد سیستم اجازه حذف نمی‌دهد.`))return;begin();try{await request(`units/${unit.id}`,'DELETE');await loadStoneUnits();setMessage(`Unit ${unit.unitSku} حذف شد.`);window.dispatchEvent(new Event('eva-admin-catalog-change'));router.refresh();}catch(cause){fail(cause,'حذف Unit انجام نشد.');}finally{setBusy(false);}}
   async function deleteProduct(){if(product.status==='ACTIVE'){setError('برای حذف کامل، ابتدا وضعیت محصول را از «فعال» به مخفی یا آرشیو تغییر بده.');return;}if(!window.confirm(`محصول «${product.nameFa}» برای همیشه حذف شود؟\nفقط محصولی بدون سابقه سفارش/رزرو قابل حذف است.`))return;begin();try{await request(`products/${product.id}`,'DELETE');window.dispatchEvent(new Event('eva-admin-catalog-change'));router.push('/catalog');router.refresh();}catch(cause){fail(cause,'حذف محصول انجام نشد.');setBusy(false);}}
   async function publish(){begin();try{await request(`catalog-readiness/${product.id}/publish`,'PATCH');setMessage('محصول منتشر شد و وارد کاتالوگ فروش شد.');router.refresh();}catch(cause){fail(cause,'انتشار انجام نشد.');}finally{setBusy(false);}}
 
@@ -121,15 +162,23 @@ export default function ProductEditor({product,collections,readiness}:{product:P
     {tab==='CONTENT'&&<ProductContentPanel products={[{id:product.id,nameFa:product.nameFa,masterSku:product.masterSku}]} initialProductId={product.id} hideSelector onBack={()=>goTo('BASICS')} onSaved={()=>goTo('UNITS')} backLabel="مرحله قبل" saveLabel="ذخیره و مرحله بعد"/>}
 
     {tab==='UNITS'&&<section className={styles.card}>
-      <div className={styles.sectionHead}><div><span>مرحله ۳ از ۴</span><h2>Unit و موجودی</h2></div><a href="/inventory">همه موجودی‌ها</a></div>
-      <div className={styles.unitRequirement}><b>*</b><span>برای انتشار، حداقل یک Unit باید با وضعیت «موجود» ثبت شده باشد.</span></div>
+      <div className={styles.sectionHead}><div><span>مرحله ۳ از ۴</span><h2>Unit، وزن طلا و سنگ</h2></div><a href="/inventory">همه موجودی‌ها</a></div>
+      <div className={styles.unitRequirement}><b>*</b><span>وزن Unit در محاسبه قیمت، وزن خالص طلاست. اگر قطعه سنگ دارد، قیراط و قیمت سنگ جدا ثبت می‌شود.</span></div>
       <form className={styles.unitForm} onSubmit={createUnit}>
         <label><RequiredLabel>Unit SKU</RequiredLabel><input name="unitSku" dir="ltr" required value={unitSku} aria-invalid={!unitSkuValid} onChange={event=>setUnitSku(event.target.value.toUpperCase())}/><small>سیستم شماره Unit بعدی را پیشنهاد می‌دهد؛ فقط در صورت نیاز ادیت کن.</small>{!unitSkuValid&&<span className={styles.inlineError}>Unit SKU باید با {product.masterSku}-U شروع شود.</span>}</label>
-        <label><RequiredLabel>وزن دقیق (گرم)</RequiredLabel><input name="exactWeightGram" type="number" step="0.001" min="0.001" required placeholder="0.820"/></label>
+        <label><RequiredLabel>وزن خالص طلا (گرم)</RequiredLabel><input name="exactWeightGram" type="number" step="0.001" min="0.001" required placeholder="3.250"/></label>
         <label><RequiredLabel>وضعیت</RequiredLabel><select name="status" defaultValue="QC_PENDING">{unitStatuses.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
         <button disabled={busy}>+ ساخت Unit</button>
+        <div className={styles.stonePanel}>
+          <label className={styles.stoneToggle}><input type="checkbox" name="hasStone" checked={newUnitHasStone} onChange={event=>setNewUnitHasStone(event.target.checked)}/><span>این Unit سنگ دارد</span></label>
+          {newUnitHasStone&&<><div className={styles.stoneFields}>
+            <label><RequiredLabel>نوع / نام سنگ</RequiredLabel><input name="stoneName" required placeholder="مثلاً زیرکن"/></label>
+            <label><RequiredLabel>قیراط سنگ</RequiredLabel><input name="stoneCarat" type="number" min="0.001" step="0.001" required placeholder="0.500"/><small>هر ۱ قیراط = ۰.۲ گرم</small></label>
+            <label><RequiredLabel>قیمت هر گرم سنگ (تومان)</RequiredLabel><input name="stonePriceTomanPerGram" type="number" min="1" step="1" required placeholder="2500000"/></label>
+          </div><div className={styles.stoneFormula}>قیمت سنگ = قیراط × ۰.۲ × قیمت هر گرم سنگ؛ این مبلغ در انتها به قیمت نهایی طلا اضافه می‌شود.</div></>}
+        </div>
       </form>
-      <div className={styles.unitList}>{(product.units??[]).map(unit=><form key={unit.id} className={styles.unitRow} onSubmit={event=>saveUnit(event,unit)}><div><strong dir="ltr">{unit.unitSku}</strong><small>{unit.currentPriceToman===null?'قیمت پس از Quote محاسبه می‌شود':new Intl.NumberFormat('fa-IR').format(unit.currentPriceToman)+' تومان'}</small></div><label><span>وزن</span><input name="exactWeightGram" type="number" step="0.001" min="0.001" defaultValue={unit.exactWeightGram} disabled={['RESERVED','SOLD','RETURNED'].includes(unit.status)}/></label><label><span>وضعیت</span><select name="status" defaultValue={unit.status} disabled={['RESERVED','SOLD','RETURNED'].includes(unit.status)}>{unitStatuses.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select><small>{unitStatusLabel[unit.status]??unit.status}</small></label><div className={styles.unitActions}><button type="submit" disabled={busy||['RESERVED','SOLD','RETURNED'].includes(unit.status)}>ذخیره</button><button type="button" className={styles.deleteUnit} disabled={busy||['RESERVED','SOLD','RETURNED'].includes(unit.status)} onClick={()=>deleteUnit(unit)}>حذف</button></div></form>)}{(product.units?.length??0)===0&&<div className={styles.empty}>هنوز Unitی برای این محصول ثبت نشده است.</div>}</div>
+      <div className={styles.unitList}>{(product.units??[]).map(unit=>{const locked=['RESERVED','SOLD','RETURNED'].includes(unit.status);return <form key={unit.id} className={styles.unitRow} onSubmit={event=>saveUnit(event,unit)}><div><strong dir="ltr">{unit.unitSku}</strong><small>{unit.currentPriceToman===null?'قیمت پس از Quote محاسبه می‌شود':new Intl.NumberFormat('fa-IR').format(unit.currentPriceToman)+' تومان'}</small></div><label><span>وزن خالص طلا</span><input name="exactWeightGram" type="number" step="0.001" min="0.001" defaultValue={unit.exactWeightGram} disabled={locked}/></label><label><span>وضعیت</span><select name="status" defaultValue={unit.status} disabled={locked}>{unitStatuses.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select><small>{unitStatusLabel[unit.status]??unit.status}</small></label><div className={styles.unitActions}><button type="submit" disabled={busy||locked}>ذخیره</button><button type="button" className={styles.deleteUnit} disabled={busy||locked} onClick={()=>deleteUnit(unit)}>حذف</button></div><ExistingStoneFields initial={stoneByUnit[unit.id]} disabled={locked}/></form>;})}{(product.units?.length??0)===0&&<div className={styles.empty}>هنوز Unitی برای این محصول ثبت نشده است.</div>}</div>
       <div className={styles.wizardNav}><button type="button" className={styles.secondary} onClick={()=>goTo('CONTENT')}>مرحله قبل</button><button type="button" className={styles.primary} disabled={busy} onClick={()=>goTo('PUBLISH')}>مرحله بعد: انتشار</button></div>
     </section>}
 
