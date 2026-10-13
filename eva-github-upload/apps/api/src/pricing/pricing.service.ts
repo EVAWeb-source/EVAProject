@@ -1,6 +1,8 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 
+const EVA_PRICING_FORMULA_VERSION = 'EVA-BOARD-STONE-V2';
+
 @Injectable()
 export class PricingService {
   constructor(private readonly prisma: PrismaService) {}
@@ -31,18 +33,39 @@ export class PricingService {
     const profitPercent = Number(rule.profitPercent);
     const taxPercent = Number(rule.taxPercent);
 
-    // Temporary, configurable test formula. Keep this calculation centralized so
-    // catalog reads and reservation price locks always use the same formula.
+    // EVA approved formula (per gram):
+    // board price × (1 + making%) × (1 + profit%)
+    // tax is applied only to making + profit, never to the board-price gold value.
+    const makingPerGram = goldRateTomanPerGram * (makingPercent / 100);
+    const priceAfterMakingPerGram = goldRateTomanPerGram + makingPerGram;
+    const profitPerGram = priceAfterMakingPerGram * (profitPercent / 100);
+    const goldBeforeTaxPerGram = priceAfterMakingPerGram + profitPerGram;
+    const taxablePerGram = goldBeforeTaxPerGram - goldRateTomanPerGram;
+    const taxPerGram = taxablePerGram * (taxPercent / 100);
+
     const goldValueToman = Math.round(exactWeightGram * goldRateTomanPerGram);
-    const makingToman = Math.round(goldValueToman * (makingPercent / 100));
-    const profitToman = Math.round(
-      (goldValueToman + makingToman) * (profitPercent / 100),
+    const makingToman = Math.round(exactWeightGram * makingPerGram);
+    const profitToman = Math.round(exactWeightGram * profitPerGram);
+    const taxToman = Math.round(exactWeightGram * taxPerGram);
+    const goldSubtotalBeforeTaxToman = Math.round(exactWeightGram * goldBeforeTaxPerGram);
+    const goldFinalToman = goldSubtotalBeforeTaxToman + taxToman;
+
+    const stoneCarat = unit.stoneCarat === null || unit.stoneCarat === undefined
+      ? null
+      : Number(unit.stoneCarat);
+    const stonePriceTomanPerGram = unit.stonePriceTomanPerGram === null || unit.stonePriceTomanPerGram === undefined
+      ? null
+      : Number(unit.stonePriceTomanPerGram);
+    const hasStone = Boolean(
+      stoneCarat !== null && stoneCarat > 0 &&
+      stonePriceTomanPerGram !== null && stonePriceTomanPerGram > 0,
     );
-    const taxToman = Math.round(
-      (makingToman + profitToman) * (taxPercent / 100),
-    );
-    const finalPriceToman =
-      goldValueToman + makingToman + profitToman + taxToman;
+    const stoneWeightGram = hasStone ? stoneCarat! * 0.2 : null;
+    const stoneValueToman = hasStone
+      ? Math.round(stoneWeightGram! * stonePriceTomanPerGram!)
+      : 0;
+
+    const finalPriceToman = goldFinalToman + stoneValueToman;
 
     return {
       unitId: unit.id,
@@ -55,12 +78,19 @@ export class PricingService {
       makingToman,
       profitToman,
       taxToman,
+      goldSubtotalBeforeTaxToman,
+      goldFinalToman,
+      stoneName: hasStone ? (unit.stoneName ?? 'سنگ') : null,
+      stoneCarat: hasStone ? stoneCarat : null,
+      stoneWeightGram,
+      stonePriceTomanPerGram: hasStone ? stonePriceTomanPerGram : null,
+      stoneValueToman,
       finalPriceToman,
       rateVersion: rate.rateVersion,
       rateSource: rate.source,
       rateObservedAt: rate.observedAt,
       pricingRuleId: rule.id,
-      pricingFormulaVersion: rule.formulaVersion,
+      pricingFormulaVersion: EVA_PRICING_FORMULA_VERSION,
       parameters: {
         makingPercent,
         profitPercent,
