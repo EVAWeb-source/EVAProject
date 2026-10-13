@@ -12,7 +12,11 @@ import styles from '../tolou/product.module.css';
 
 export const dynamic='force-dynamic';
 
-type ApiPricing={goldRateTomanPerGram:number;goldValueToman:number;makingToman:number;profitToman:number;taxToman:number;finalPriceToman:number;rateVersion:string;pricingFormulaVersion:string};
+type ApiPricing={
+  goldRateTomanPerGram:number;goldValueToman:number;makingToman:number;profitToman:number;taxToman:number;
+  goldSubtotalBeforeTaxToman:number;goldFinalToman:number;stoneName:string|null;stoneCarat:number|null;stoneWeightGram:number|null;
+  stonePriceTomanPerGram:number|null;stoneValueToman:number;finalPriceToman:number;rateVersion:string;pricingFormulaVersion:string;
+};
 type ApiUnit={id:string;unitSku:string;exactWeightGram:string;currentPriceToman:string;status:string;pricing:ApiPricing};
 type ProductImage={id:string;url:string;altText:string;role:'MAIN'|'GALLERY'|'ON_BODY'|'DETAIL';sortOrder:number};
 type ApiProduct={nameFa:string;slug:string;masterSku:string;purity:number;shortDescription:string|null;story:string|null;goldColor:string|null;styleLabel:string|null;details:string|null;dimensions:string|null;sizeGuide:string|null;careInstructions:string|null;packagingNote:string|null;seoTitle:string|null;seoDescription:string|null;images:ProductImage[];collection:{nameFa:string;slug:string}|null;units:ApiUnit[]};
