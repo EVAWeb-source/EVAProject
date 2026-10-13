@@ -11,7 +11,11 @@ import styles from './product.module.css';
 
 export const dynamic='force-dynamic';
 
-type ApiPricing={goldRateTomanPerGram:number;goldValueToman:number;makingToman:number;profitToman:number;taxToman:number;finalPriceToman:number;rateVersion:string;pricingFormulaVersion:string};
+type ApiPricing={
+  goldRateTomanPerGram:number;goldValueToman:number;makingToman:number;profitToman:number;taxToman:number;
+  goldSubtotalBeforeTaxToman:number;goldFinalToman:number;stoneName:string|null;stoneCarat:number|null;stoneWeightGram:number|null;
+  stonePriceTomanPerGram:number|null;stoneValueToman:number;finalPriceToman:number;rateVersion:string;pricingFormulaVersion:string;
+};
 type ApiUnit={id:string;unitSku:string;exactWeightGram:string;currentPriceToman:string;status:string;pricing:ApiPricing};
 type ProductImage={id:string;url:string;altText:string;role:'MAIN'|'GALLERY'|'ON_BODY'|'DETAIL';sortOrder:number};
 type ApiProduct={nameFa:string;slug:string;masterSku:string;purity:number;shortDescription:string|null;story:string|null;goldColor:string|null;styleLabel:string|null;details:string|null;dimensions:string|null;sizeGuide:string|null;careInstructions:string|null;packagingNote:string|null;seoTitle:string|null;seoDescription:string|null;images:ProductImage[];collection:{nameFa:string;slug:string}|null;units:ApiUnit[]};
@@ -54,7 +58,7 @@ export default async function TolouPage(){
 
     <ProductNotes items={notes}/>
 
-    <section className={styles.assuranceSection}><article><span>01 / AUTHENTICITY</span><h3>وزن و عیار مشخص</h3><p>هر Unit با وزن دقیق و عیار ثبت‌شده خودش برای انتخاب نمایش داده می‌شود.</p></article><article><span>02 / INVOICE</span><h3>فاکتور متصل به قطعه</h3><p>سفارش بر اساس همان Unit و قیمت انتخاب‌شده ثبت می‌شود.</p></article><article><span>03 / DELIVERY</span><h3>ارسال و بسته‌بندی</h3><p>{product.packagingNote||'جزئیات ارسال و بسته‌بندی در مسیر ثبت سفارش به‌صورت شفاف نمایش داده می‌شود.'}</p></article></section>
+    <section className={styles.assuranceSection}><article><span>01 / AUTHENTICITY</span><h3>وزن و عیار مشخص</h3><p>هر Unit با وزن خالص طلای ثبت‌شده خودش و در صورت وجود، مشخصات سنگ جداگانه نمایش داده می‌شود.</p></article><article><span>02 / INVOICE</span><h3>فاکتور متصل به قطعه</h3><p>سفارش بر اساس همان Unit و قیمت انتخاب‌شده ثبت می‌شود.</p></article><article><span>03 / DELIVERY</span><h3>ارسال و بسته‌بندی</h3><p>{product.packagingNote||'جزئیات ارسال و بسته‌بندی در مسیر ثبت سفارش به‌صورت شفاف نمایش داده می‌شود.'}</p></article></section>
 
     {related.length>0?<section className={styles.relatedSection}><div className={styles.relatedHeading}><div><span>YOU MAY ALSO LIKE</span><h2>شاید این‌ها را هم دوست داشته باشی</h2></div><Link href="/shop/necklaces">مشاهده بیشتر ←</Link></div><CatalogGrid products={related}/></section>:null}
   </main>;
