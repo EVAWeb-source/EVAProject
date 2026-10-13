@@ -33,7 +33,15 @@ export class CatalogService {
         },
         units: {
           where: { status: 'AVAILABLE' },
-          select: { id: true, unitSku: true, exactWeightGram: true, status: true },
+          select: {
+            id: true,
+            unitSku: true,
+            exactWeightGram: true,
+            stoneName: true,
+            stoneCarat: true,
+            stonePriceTomanPerGram: true,
+            status: true,
+          },
           orderBy: { exactWeightGram: 'asc' },
         },
       },
@@ -89,6 +97,15 @@ export class CatalogService {
         exactWeightGram: unit.exactWeightGram.toString(),
         currentPriceToman: String(quote.finalPriceToman),
         status: unit.status,
+        stone: quote.stoneCarat === null
+          ? null
+          : {
+              name: quote.stoneName,
+              carat: quote.stoneCarat,
+              weightGram: quote.stoneWeightGram,
+              priceTomanPerGram: quote.stonePriceTomanPerGram,
+              valueToman: quote.stoneValueToman,
+            },
       };
 
       if (!includeBreakdown) return base;
@@ -102,6 +119,13 @@ export class CatalogService {
           makingToman: quote.makingToman,
           profitToman: quote.profitToman,
           taxToman: quote.taxToman,
+          goldSubtotalBeforeTaxToman: quote.goldSubtotalBeforeTaxToman,
+          goldFinalToman: quote.goldFinalToman,
+          stoneName: quote.stoneName,
+          stoneCarat: quote.stoneCarat,
+          stoneWeightGram: quote.stoneWeightGram,
+          stonePriceTomanPerGram: quote.stonePriceTomanPerGram,
+          stoneValueToman: quote.stoneValueToman,
           finalPriceToman: quote.finalPriceToman,
           rateVersion: quote.rateVersion,
           pricingFormulaVersion: quote.pricingFormulaVersion,
