@@ -29,9 +29,6 @@ export class ReservationsService {
       ),
     ];
 
-    // Once one reservation belonging to an order expires, the whole order hold
-    // is considered expired. This keeps multi-item orders atomic from the
-    // customer's point of view and avoids leaving sibling units locked.
     const linkedActive = orderIds.length
       ? await this.prisma.reservation.findMany({
           where: { orderId: { in: orderIds }, status: 'ACTIVE' },
@@ -77,9 +74,7 @@ export class ReservationsService {
     await this.releaseExpired();
 
     const uniqueIds = [...new Set(unitIds.filter(Boolean))];
-    if (uniqueIds.length === 0) {
-      throw new NotFoundException('No units selected');
-    }
+    if (uniqueIds.length === 0) throw new NotFoundException('No units selected');
     if (uniqueIds.length !== unitIds.length) {
       throw new ConflictException('Duplicate units are not allowed');
     }
@@ -113,6 +108,7 @@ export class ReservationsService {
       for (let index = 0; index < orderedUnits.length; index += 1) {
         const unit = orderedUnits[index];
         const quote = quotes[index];
+        const hasStone = quote.stoneCarat !== null;
         const claim = await tx.physicalUnit.updateMany({
           where: { id: unit.id, status: 'AVAILABLE' },
           data: {
@@ -139,6 +135,12 @@ export class ReservationsService {
             makingToman: BigInt(quote.makingToman),
             profitToman: BigInt(quote.profitToman),
             taxToman: BigInt(quote.taxToman),
+            goldFinalToman: BigInt(quote.goldFinalToman),
+            stoneName: hasStone ? quote.stoneName : null,
+            stoneCarat: hasStone ? Number(quote.stoneCarat).toFixed(3) : null,
+            stoneWeightGram: hasStone ? Number(quote.stoneWeightGram).toFixed(3) : null,
+            stonePriceTomanPerGram: hasStone ? BigInt(quote.stonePriceTomanPerGram) : null,
+            stoneValueToman: hasStone ? BigInt(quote.stoneValueToman) : null,
             rateVersion: quote.rateVersion,
             pricingFormulaVersion: quote.pricingFormulaVersion,
             pricingRuleId: quote.pricingRuleId,
@@ -230,8 +232,7 @@ export class ReservationsService {
       Math.floor((new Date(reservation.expiresAt).getTime() - Date.now()) / 1000),
     );
 
-    const lockedPrice =
-      reservation.lockedPriceToman ?? reservation.unit.currentPriceToman;
+    const lockedPrice = reservation.lockedPriceToman ?? reservation.unit.currentPriceToman;
 
     return {
       token: reservation.token,
@@ -240,24 +241,17 @@ export class ReservationsService {
       remainingSeconds,
       pricing: {
         lockedPriceToman: lockedPrice === null ? null : Number(lockedPrice),
-        goldRateTomanPerGram:
-          reservation.goldRateTomanPerGram === null
-            ? null
-            : Number(reservation.goldRateTomanPerGram),
-        goldValueToman:
-          reservation.goldValueToman === null
-            ? null
-            : Number(reservation.goldValueToman),
-        makingToman:
-          reservation.makingToman === null
-            ? null
-            : Number(reservation.makingToman),
-        profitToman:
-          reservation.profitToman === null
-            ? null
-            : Number(reservation.profitToman),
-        taxToman:
-          reservation.taxToman === null ? null : Number(reservation.taxToman),
+        goldRateTomanPerGram: reservation.goldRateTomanPerGram === null ? null : Number(reservation.goldRateTomanPerGram),
+        goldValueToman: reservation.goldValueToman === null ? null : Number(reservation.goldValueToman),
+        makingToman: reservation.makingToman === null ? null : Number(reservation.makingToman),
+        profitToman: reservation.profitToman === null ? null : Number(reservation.profitToman),
+        taxToman: reservation.taxToman === null ? null : Number(reservation.taxToman),
+        goldFinalToman: reservation.goldFinalToman === null ? null : Number(reservation.goldFinalToman),
+        stoneName: reservation.stoneName,
+        stoneCarat: reservation.stoneCarat === null ? null : Number(reservation.stoneCarat),
+        stoneWeightGram: reservation.stoneWeightGram === null ? null : Number(reservation.stoneWeightGram),
+        stonePriceTomanPerGram: reservation.stonePriceTomanPerGram === null ? null : Number(reservation.stonePriceTomanPerGram),
+        stoneValueToman: reservation.stoneValueToman === null ? null : Number(reservation.stoneValueToman),
         rateVersion: reservation.rateVersion,
         pricingFormulaVersion: reservation.pricingFormulaVersion,
       },
