@@ -86,8 +86,7 @@ export class OrdersService {
         throw new BadRequestException('Unit is not reserved');
       }
 
-      const lockedPrice =
-        reservation.lockedPriceToman ?? reservation.unit.currentPriceToman;
+      const lockedPrice = reservation.lockedPriceToman ?? reservation.unit.currentPriceToman;
       if (lockedPrice === null) {
         throw new BadRequestException('Reservation does not have a locked price');
       }
@@ -141,6 +140,12 @@ export class OrdersService {
               makingToman: reservation.makingToman,
               profitToman: reservation.profitToman,
               taxToman: reservation.taxToman,
+              goldFinalToman: reservation.goldFinalToman,
+              stoneName: reservation.stoneName,
+              stoneCarat: reservation.stoneCarat,
+              stoneWeightGram: reservation.stoneWeightGram,
+              stonePriceTomanPerGram: reservation.stonePriceTomanPerGram,
+              stoneValueToman: reservation.stoneValueToman,
               rateVersion: reservation.rateVersion,
               pricingFormulaVersion: reservation.pricingFormulaVersion,
               pricingRuleId: reservation.pricingRuleId,
@@ -175,10 +180,7 @@ export class OrdersService {
       include: { lines: true, payments: { orderBy: { createdAt: 'desc' } } },
     });
 
-    if (!order) {
-      throw new NotFoundException('Order not found');
-    }
-
+    if (!order) throw new NotFoundException('Order not found');
     return this.toPublicOrder(order);
   }
 
@@ -205,6 +207,12 @@ export class OrdersService {
       makingToman: bigint | null;
       profitToman: bigint | null;
       taxToman: bigint | null;
+      goldFinalToman: bigint | null;
+      stoneName: string | null;
+      stoneCarat: unknown | null;
+      stoneWeightGram: unknown | null;
+      stonePriceTomanPerGram: bigint | null;
+      stoneValueToman: bigint | null;
       rateVersion: string | null;
       pricingFormulaVersion: string | null;
     }>;
@@ -226,17 +234,17 @@ export class OrdersService {
       purity: line.purity,
       priceToman: Number(line.unitPriceToman),
       pricing: {
-        goldRateTomanPerGram:
-          line.goldRateTomanPerGram === null
-            ? null
-            : Number(line.goldRateTomanPerGram),
-        goldValueToman:
-          line.goldValueToman === null ? null : Number(line.goldValueToman),
-        makingToman:
-          line.makingToman === null ? null : Number(line.makingToman),
-        profitToman:
-          line.profitToman === null ? null : Number(line.profitToman),
+        goldRateTomanPerGram: line.goldRateTomanPerGram === null ? null : Number(line.goldRateTomanPerGram),
+        goldValueToman: line.goldValueToman === null ? null : Number(line.goldValueToman),
+        makingToman: line.makingToman === null ? null : Number(line.makingToman),
+        profitToman: line.profitToman === null ? null : Number(line.profitToman),
         taxToman: line.taxToman === null ? null : Number(line.taxToman),
+        goldFinalToman: line.goldFinalToman === null ? null : Number(line.goldFinalToman),
+        stoneName: line.stoneName,
+        stoneCarat: line.stoneCarat === null ? null : Number(line.stoneCarat),
+        stoneWeightGram: line.stoneWeightGram === null ? null : Number(line.stoneWeightGram),
+        stonePriceTomanPerGram: line.stonePriceTomanPerGram === null ? null : Number(line.stonePriceTomanPerGram),
+        stoneValueToman: line.stoneValueToman === null ? null : Number(line.stoneValueToman),
         rateVersion: line.rateVersion,
         pricingFormulaVersion: line.pricingFormulaVersion,
       },
@@ -265,7 +273,6 @@ export class OrdersService {
           }
         : null,
       items,
-      // Backward-compatible first item for older storefront/admin consumers.
       item: items[0] ?? null,
     };
   }
