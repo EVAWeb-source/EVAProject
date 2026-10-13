@@ -5,13 +5,18 @@ import { useEffect, useState } from 'react';
 import styles from './product.module.css';
 import extra from './ProductPurchaseExtras.module.css';
 
-type PurchasePricing = {goldRateTomanPerGram:number;goldValueToman:number;makingToman:number;profitToman:number;taxToman:number;finalPriceToman:number;rateVersion:string;pricingFormulaVersion:string};
+type PurchasePricing = {
+  goldRateTomanPerGram:number;goldValueToman:number;makingToman:number;profitToman:number;taxToman:number;
+  goldSubtotalBeforeTaxToman:number;goldFinalToman:number;stoneName:string|null;stoneCarat:number|null;stoneWeightGram:number|null;
+  stonePriceTomanPerGram:number|null;stoneValueToman:number;finalPriceToman:number;rateVersion:string;pricingFormulaVersion:string;
+};
 type PurchaseUnit = {id:string;unitSku:string;weight:string;price:number;pricing:PurchasePricing};
 type ProductInfo = {name:string;slug:string;masterSku:string;collection:string;collectionSlug:string;category:string;purity:number;shortDescription?:string;imageUrl?:string};
 type ProductPurchaseProps = { product:ProductInfo; units:PurchaseUnit[] };
 type CartItem={productId:string;unitId:string;unitSku:string;name:string;collection:string;weight:string;purity:string;price:number;imageUrl?:string;slug:string};
 
 function toman(value:number){return new Intl.NumberFormat('fa-IR').format(value);}
+function decimal(value:number){return new Intl.NumberFormat('fa-IR',{minimumFractionDigits:0,maximumFractionDigits:3}).format(value);}
 function readCart():CartItem[]{try{const raw=window.localStorage.getItem('eva-cart');if(!raw)return [];const value=JSON.parse(raw);const items=Array.isArray(value)?value:[value];return items.filter((item):item is CartItem=>Boolean(item&&typeof item==='object'&&item.unitId));}catch{return [];}}
 function readSaved():CartItem[]{try{const raw=window.localStorage.getItem('eva-saved-for-later');if(!raw)return [];const value=JSON.parse(raw);return Array.isArray(value)?value.filter((item):item is CartItem=>Boolean(item&&typeof item==='object'&&item.unitId)):[];}catch{return [];}}
 function writeSaved(items:CartItem[]){if(items.length)window.localStorage.setItem('eva-saved-for-later',JSON.stringify(items));else window.localStorage.removeItem('eva-saved-for-later');window.dispatchEvent(new Event('eva-saved-change'));}
@@ -49,20 +54,37 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
   if(!selected){return <div className={styles.purchasePanel}><Link className={styles.collectionLink} href={'/collections/'+product.collectionSlug}>کالکشن {product.collection}</Link><div className={styles.titleRow}><div><span className={styles.productType}>{product.category}</span><h1>{product.name}</h1></div><button type="button" className={styles.iconAction} onClick={toggleWishlist} aria-label={liked?'حذف از علاقه‌مندی‌ها':'افزودن به علاقه‌مندی‌ها'} aria-pressed={liked}>{liked?'♥':'♡'}</button></div><p className={styles.subtitle}>{subtitle}</p><div className={styles.soldOut}><span>در حال حاضر Unit قابل سفارش برای این محصول موجود نیست.</span><Link href="/shop">مشاهده محصولات موجود</Link></div></div>;}
 
   const breakdown=selected.pricing;
+  const hasStone=breakdown.stoneCarat!==null&&breakdown.stoneWeightGram!==null&&breakdown.stonePriceTomanPerGram!==null;
   return <>
     <div className={styles.purchasePanel}>
       <div className={styles.purchaseTopline}><Link className={styles.collectionLink} href={'/collections/'+product.collectionSlug}>کالکشن {product.collection}</Link><span>{product.category}</span></div>
       <div className={styles.titleRow}><div><h1>{product.name}</h1></div><button type="button" className={liked?styles.iconAction+' '+styles.iconActionActive:styles.iconAction} onClick={toggleWishlist} aria-label={liked?'حذف از علاقه‌مندی‌ها':'افزودن به علاقه‌مندی‌ها'} aria-pressed={liked}>{liked?'♥':'♡'}</button></div>
       <p className={styles.subtitle}>{subtitle}</p>
-      <div className={styles.priceBlock}><div className={styles.primaryPrice}><strong>{toman(selected.price)}</strong><span>تومان</span></div><div className={styles.priceMeta}><span>{selected.weight}</span><i aria-hidden="true"/><span>{product.purity} عیار</span></div></div>
-      <div className={styles.selectorBlock}><div className={styles.labelRow}><strong>انتخاب وزن</strong><span>هر گزینه یک قطعه واقعی با قیمت خودش است.</span></div><div className={styles.units}>{units.map(unit=><button type="button" key={unit.id} className={selected.id===unit.id?styles.unitActive:''} onClick={()=>{setSelected(unit);setAdded(false);setCartStatus('');}} aria-pressed={selected.id===unit.id}><span>{unit.weight}</span><small>{toman(unit.price)} تومان</small></button>)}</div></div>
+      <div className={styles.priceBlock}><div className={styles.primaryPrice}><strong>{toman(selected.price)}</strong><span>تومان</span></div><div className={styles.priceMeta}><span>{selected.weight} طلای خالص قطعه</span><i aria-hidden="true"/><span>{product.purity} عیار</span>{hasStone&&<><i aria-hidden="true"/><span>{decimal(breakdown.stoneCarat!)} قیراط {breakdown.stoneName??'سنگ'}</span></>}</div></div>
+      <div className={styles.selectorBlock}><div className={styles.labelRow}><strong>انتخاب وزن</strong><span>وزن نمایش‌داده‌شده وزن خالص طلای هر Unit است.</span></div><div className={styles.units}>{units.map(unit=><button type="button" key={unit.id} className={selected.id===unit.id?styles.unitActive:''} onClick={()=>{setSelected(unit);setAdded(false);setCartStatus('');}} aria-pressed={selected.id===unit.id}><span>{unit.weight}</span><small>{toman(unit.price)} تومان</small></button>)}</div></div>
       <div className={styles.selectedSku}><span>کد قطعه انتخاب‌شده</span><b dir="ltr">{selected.unitSku}</b></div>
       <div className={styles.availability}><span aria-hidden="true"/> موجود و قابل سفارش</div>
       <button type="button" className={added?styles.addToCart+' '+styles.addedToCart:styles.addToCart} onClick={addToCart}>{added?'✓ داخل سبد خرید':'افزودن به سبد خرید'}</button>
       <div className={styles.actionStatus} aria-live="polite">{cartStatus||shareState}</div>
       <div className={styles.secondaryActions}><button type="button" className={saved?extra.savedAction:''} onClick={toggleSaveLater}>{saved?'▣ در خریدهای بعدی':'▱ ذخیره برای خرید بعدی'}</button><button type="button" onClick={shareProduct}>{shareState||'اشتراک‌گذاری'}</button></div>
-      <details className={styles.breakdown}><summary className={styles.breakdownToggle}><span>جزئیات قیمت</span><b aria-hidden="true">＋</b></summary><div className={styles.breakdownRows}><div><span>نرخ پایه طلا / گرم</span><strong>{toman(breakdown.goldRateTomanPerGram)} تومان</strong></div><div><span>ارزش طلا</span><strong>{toman(breakdown.goldValueToman)} تومان</strong></div><div><span>اجرت</span><strong>{toman(breakdown.makingToman)} تومان</strong></div><div><span>سود</span><strong>{toman(breakdown.profitToman)} تومان</strong></div><div><span>مالیات</span><strong>{toman(breakdown.taxToman)} تومان</strong></div><div className={styles.total}><span>قیمت نهایی این قطعه</span><strong>{toman(breakdown.finalPriceToman)} تومان</strong></div><p>جزئیات بالا مربوط به همین Unit و وزن دقیق انتخاب‌شده است.</p></div></details>
-      <div className={styles.microTrust}><span>وزن دقیق</span><span>فاکتور معتبر</span><span>ارسال امن</span></div>
+      <details className={styles.breakdown}><summary className={styles.breakdownToggle}><span>جزئیات قیمت</span><b aria-hidden="true">＋</b></summary><div className={styles.breakdownRows}>
+        <div><span>نرخ تابلو طلا / گرم</span><strong>{toman(breakdown.goldRateTomanPerGram)} تومان</strong></div>
+        <div><span>ارزش طلای خالص</span><strong>{toman(breakdown.goldValueToman)} تومان</strong></div>
+        <div><span>اجرت</span><strong>{toman(breakdown.makingToman)} تومان</strong></div>
+        <div><span>سود</span><strong>{toman(breakdown.profitToman)} تومان</strong></div>
+        <div><span>مالیات اجرت و سود</span><strong>{toman(breakdown.taxToman)} تومان</strong></div>
+        <div><span>قیمت نهایی طلا</span><strong>{toman(breakdown.goldFinalToman)} تومان</strong></div>
+        {hasStone&&<>
+          <div><span>سنگ</span><strong>{breakdown.stoneName??'سنگ'}</strong></div>
+          <div><span>قیراط سنگ</span><strong>{decimal(breakdown.stoneCarat!)} قیراط</strong></div>
+          <div><span>وزن سنگ</span><strong>{decimal(breakdown.stoneWeightGram!)} گرم</strong></div>
+          <div><span>قیمت هر گرم سنگ</span><strong>{toman(breakdown.stonePriceTomanPerGram!)} تومان</strong></div>
+          <div><span>قیمت سنگ</span><strong>{toman(breakdown.stoneValueToman)} تومان</strong></div>
+        </>}
+        <div className={styles.total}><span>قیمت نهایی این قطعه</span><strong>{toman(breakdown.finalPriceToman)} تومان</strong></div>
+        <p>{hasStone?'قیمت نهایی از قیمت طلا + قیمت سنگ تشکیل شده است. مالیات فعلی فقط روی اجرت و سود طلا محاسبه می‌شود.':'مالیات فقط روی اجرت و سود طلا محاسبه شده است.'}</p>
+      </div></details>
+      <div className={styles.microTrust}><span>وزن خالص طلا</span><span>فاکتور معتبر</span><span>ارسال امن</span></div>
     </div>
     {miniCartOpen&&<div className={extra.miniCartBackdrop} role="presentation" onMouseDown={event=>{if(event.currentTarget===event.target)setMiniCartOpen(false);}}><div className={extra.miniCart} role="dialog" aria-modal="true" aria-label="محصول به سبد خرید اضافه شد"><button className={extra.miniCartClose} type="button" onClick={()=>setMiniCartOpen(false)} aria-label="بستن">×</button><span className={extra.miniCartEyebrow}>ADDED TO CART</span><h2>{product.name}</h2><div className={extra.miniCartItem}>{product.imageUrl?<img src={product.imageUrl} alt=""/>:<div className={extra.miniCartFallback}/>}<div><strong>{selected.weight}</strong><span dir="ltr">{selected.unitSku}</span><b>{toman(selected.price)} تومان</b></div></div><div className={extra.miniCartActions}><Link href="/cart">مشاهده سبد خرید</Link><button type="button" onClick={()=>setMiniCartOpen(false)}>ادامه خرید</button></div></div></div>}
   </>;
