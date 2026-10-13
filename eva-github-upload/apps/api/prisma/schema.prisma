@@ -143,19 +143,22 @@ model ProductImage {
 }
 
 model PhysicalUnit {
-  id                String           @id @default(cuid())
-  unitSku           String           @unique
-  productId         String
-  product           MasterProduct    @relation(fields: [productId], references: [id], onDelete: Restrict)
-  exactWeightGram   Decimal          @db.Decimal(8, 3)
-  currentPriceToman BigInt?
-  status            UnitStatus       @default(QC_PENDING)
-  reservedUntil     DateTime?
-  orderLines        OrderLine[]
-  reservations      Reservation[]
-  afterSalesCases   AfterSalesCase[]
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  id                       String           @id @default(cuid())
+  unitSku                  String           @unique
+  productId                String
+  product                  MasterProduct    @relation(fields: [productId], references: [id], onDelete: Restrict)
+  exactWeightGram          Decimal          @db.Decimal(8, 3)
+  stoneName                String?
+  stoneCarat               Decimal?         @db.Decimal(8, 3)
+  stonePriceTomanPerGram   BigInt?
+  currentPriceToman        BigInt?
+  status                   UnitStatus       @default(QC_PENDING)
+  reservedUntil            DateTime?
+  orderLines               OrderLine[]
+  reservations             Reservation[]
+  afterSalesCases          AfterSalesCase[]
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
 
   @@index([productId, status])
   @@index([status, reservedUntil])
@@ -253,6 +256,12 @@ model OrderLine {
   makingToman              BigInt?
   profitToman              BigInt?
   taxToman                 BigInt?
+  goldFinalToman           BigInt?
+  stoneName                String?
+  stoneCarat               Decimal?     @db.Decimal(8, 3)
+  stoneWeightGram          Decimal?     @db.Decimal(8, 3)
+  stonePriceTomanPerGram   BigInt?
+  stoneValueToman          BigInt?
   rateVersion              String?
   pricingFormulaVersion    String?
   pricingRuleId            String?
@@ -263,25 +272,31 @@ model OrderLine {
 }
 
 model Reservation {
-  id                    String            @id @default(cuid())
-  token                 String            @unique
-  unitId                String
-  unit                  PhysicalUnit      @relation(fields: [unitId], references: [id], onDelete: Restrict)
-  status                ReservationStatus @default(ACTIVE)
-  expiresAt             DateTime
-  lockedPriceToman      BigInt?
-  goldRateTomanPerGram  BigInt?
-  goldValueToman        BigInt?
-  makingToman           BigInt?
-  profitToman           BigInt?
-  taxToman              BigInt?
-  rateVersion           String?
-  pricingFormulaVersion String?
-  pricingRuleId         String?
-  orderId               String?
-  order                 Order?            @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
+  id                       String            @id @default(cuid())
+  token                    String            @unique
+  unitId                   String
+  unit                     PhysicalUnit      @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  status                   ReservationStatus @default(ACTIVE)
+  expiresAt                DateTime
+  lockedPriceToman         BigInt?
+  goldRateTomanPerGram     BigInt?
+  goldValueToman           BigInt?
+  makingToman              BigInt?
+  profitToman              BigInt?
+  taxToman                 BigInt?
+  goldFinalToman           BigInt?
+  stoneName                String?
+  stoneCarat               Decimal?          @db.Decimal(8, 3)
+  stoneWeightGram          Decimal?          @db.Decimal(8, 3)
+  stonePriceTomanPerGram   BigInt?
+  stoneValueToman          BigInt?
+  rateVersion              String?
+  pricingFormulaVersion    String?
+  pricingRuleId            String?
+  orderId                  String?
+  order                    Order?             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
 
   @@index([unitId, status, expiresAt])
   @@index([status, expiresAt])
@@ -319,8 +334,8 @@ model Invoice {
   recipientName    String
   province         String
   city             String
-  address            String
-  postalCode        String
+  address          String
+  postalCode       String
   paymentProvider  String
   paymentReference String
   totalToman       BigInt
@@ -333,24 +348,30 @@ model Invoice {
 }
 
 model InvoiceLine {
-  id                    String   @id @default(cuid())
-  invoiceId             String
-  invoice               Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
-  productNameFa         String
-  masterSku             String
-  unitSku               String
-  exactWeightGram       Decimal  @db.Decimal(8, 3)
-  purity                 Int
-  goldRateTomanPerGram  BigInt?
-  goldValueToman        BigInt?
-  makingToman           BigInt?
-  profitToman           BigInt?
-  taxToman              BigInt?
-  finalPriceToman       BigInt
-  rateVersion           String?
-  pricingFormulaVersion String?
-  pricingRuleId         String?
-  createdAt             DateTime @default(now())
+  id                       String   @id @default(cuid())
+  invoiceId                String
+  invoice                  Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  productNameFa            String
+  masterSku                String
+  unitSku                  String
+  exactWeightGram          Decimal  @db.Decimal(8, 3)
+  purity                   Int
+  goldRateTomanPerGram     BigInt?
+  goldValueToman           BigInt?
+  makingToman              BigInt?
+  profitToman              BigInt?
+  taxToman                 BigInt?
+  goldFinalToman           BigInt?
+  stoneName                String?
+  stoneCarat               Decimal? @db.Decimal(8, 3)
+  stoneWeightGram          Decimal? @db.Decimal(8, 3)
+  stonePriceTomanPerGram   BigInt?
+  stoneValueToman          BigInt?
+  finalPriceToman          BigInt
+  rateVersion              String?
+  pricingFormulaVersion    String?
+  pricingRuleId            String?
+  createdAt                DateTime @default(now())
 
   @@index([invoiceId])
   @@index([unitSku])
