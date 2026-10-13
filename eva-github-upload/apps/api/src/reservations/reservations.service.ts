@@ -139,7 +139,7 @@ export class ReservationsService {
             stoneName: hasStone ? quote.stoneName : null,
             stoneCarat: hasStone ? Number(quote.stoneCarat).toFixed(3) : null,
             stoneWeightGram: hasStone ? Number(quote.stoneWeightGram).toFixed(3) : null,
-            stonePriceTomanPerGram: hasStone ? BigInt(quote.stonePriceTomanPerGram) : null,
+            stonePriceTomanPerGram: hasStone ? BigInt(quote.stonePriceTomanPerGram!) : null,
             stoneValueToman: hasStone ? BigInt(quote.stoneValueToman) : null,
             rateVersion: quote.rateVersion,
             pricingFormulaVersion: quote.pricingFormulaVersion,
