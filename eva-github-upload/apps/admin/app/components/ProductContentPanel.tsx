@@ -7,11 +7,20 @@ import styles from './ProductContentPanel.module.css';
 type Product = { id:string; nameFa:string; masterSku:string };
 type ImageItem = { id?:string; url:string; altText:string; role:'MAIN'|'GALLERY'|'ON_BODY'|'DETAIL'; sortOrder:number };
 type ProductContent = {id:string;nameFa:string;masterSku:string;shortDescription:string|null;story:string|null;goldColor:string|null;styleLabel:string|null;details:string|null;dimensions:string|null;sizeGuide:string|null;careInstructions:string|null;packagingNote:string|null;seoTitle:string|null;seoDescription:string|null;images:ImageItem[]};
+type ProductContentPanelProps={
+  products:Product[];
+  initialProductId?:string;
+  hideSelector?:boolean;
+  onSaved?:()=>void;
+  onBack?:()=>void;
+  saveLabel?:string;
+  backLabel?:string;
+};
 
 const blankImage=(sortOrder:number):ImageItem=>({url:'',altText:'',role:sortOrder===0?'MAIN':'GALLERY',sortOrder});
 function RequiredLabel({children}:{children:ReactNode}){return <span className={styles.requiredLabel}>{children}<b aria-hidden="true">*</b></span>;}
 
-export default function ProductContentPanel({products,initialProductId,hideSelector=false}:{products:Product[];initialProductId?:string;hideSelector?:boolean}){
+export default function ProductContentPanel({products,initialProductId,hideSelector=false,onSaved,onBack,saveLabel='ذخیره تغییرات',backLabel='مرحله قبل'}:ProductContentPanelProps){
   const router=useRouter();
   const [productId,setProductId]=useState(initialProductId ?? products[0]?.id ?? '');
   const [data,setData]=useState<ProductContent|null>(null);
@@ -26,7 +35,7 @@ export default function ProductContentPanel({products,initialProductId,hideSelec
   function addImage(){if(images.length<12)setImages(current=>[...current,blankImage(current.length)]);}
   function removeImage(index:number){setImages(current=>current.filter((_,i)=>i!==index).map((item,i)=>({...item,sortOrder:i})));}
 
-  async function submit(event:FormEvent<HTMLFormElement>){event.preventDefault();if(!productId||saving)return;setSaving(true);setMessage('');setError('');const form=new FormData(event.currentTarget);const payload={shortDescription:form.get('shortDescription'),story:form.get('story'),goldColor:form.get('goldColor'),styleLabel:form.get('styleLabel'),details:form.get('details'),dimensions:form.get('dimensions'),sizeGuide:form.get('sizeGuide'),careInstructions:form.get('careInstructions'),packagingNote:form.get('packagingNote'),seoTitle:form.get('seoTitle'),seoDescription:form.get('seoDescription'),images:images.filter(image=>image.url.trim()).map((image,index)=>({url:image.url.trim(),altText:image.altText.trim(),role:image.role,sortOrder:index}))};try{const response=await fetch('/api/admin/products/'+productId+'/content',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});const raw=await response.text();if(!response.ok)throw new Error(raw||'ذخیره انجام نشد.');const updated:ProductContent=JSON.parse(raw);setData(updated);const next=[...(updated.images??[])];while(next.length<4)next.push(blankImage(next.length));setImages(next);setMessage('محتوا و تصاویر محصول ذخیره شد.');window.dispatchEvent(new Event('eva-admin-catalog-change'));router.refresh();}catch(cause){setError(cause instanceof Error?cause.message:'ذخیره انجام نشد.');}finally{setSaving(false);}}
+  async function submit(event:FormEvent<HTMLFormElement>){event.preventDefault();if(!productId||saving)return;setSaving(true);setMessage('');setError('');const form=new FormData(event.currentTarget);const payload={shortDescription:form.get('shortDescription'),story:form.get('story'),goldColor:form.get('goldColor'),styleLabel:form.get('styleLabel'),details:form.get('details'),dimensions:form.get('dimensions'),sizeGuide:form.get('sizeGuide'),careInstructions:form.get('careInstructions'),packagingNote:form.get('packagingNote'),seoTitle:form.get('seoTitle'),seoDescription:form.get('seoDescription'),images:images.filter(image=>image.url.trim()).map((image,index)=>({url:image.url.trim(),altText:image.altText.trim(),role:image.role,sortOrder:index}))};try{const response=await fetch('/api/admin/products/'+productId+'/content',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});const raw=await response.text();if(!response.ok)throw new Error(raw||'ذخیره انجام نشد.');const updated:ProductContent=JSON.parse(raw);setData(updated);const next=[...(updated.images??[])];while(next.length<4)next.push(blankImage(next.length));setImages(next);setMessage('محتوا و تصاویر محصول ذخیره شد.');window.dispatchEvent(new Event('eva-admin-catalog-change'));onSaved?.();router.refresh();}catch(cause){setError(cause instanceof Error?cause.message:'ذخیره انجام نشد.');}finally{setSaving(false);}}
 
   return <section id="product-content" className={styles.panel}>
     <div className={styles.head}><div><h3>محتوا و تصاویر</h3><p>متن، تصاویر و اطلاعات SEO محصول را در یک‌جا مدیریت کن.</p></div>{!hideSelector&&<select value={productId} onChange={event=>setProductId(event.target.value)} aria-label="انتخاب محصول">{products.map(product=><option key={product.id} value={product.id}>{product.nameFa} — {product.masterSku}</option>)}</select>}</div>
@@ -54,7 +63,7 @@ export default function ProductContentPanel({products,initialProductId,hideSelec
       </section>
 
       <section className={styles.section}><div className={styles.sectionHead}><strong>SEO</strong></div><div className={styles.grid2}><label><RequiredLabel>SEO Title</RequiredLabel><input name="seoTitle" defaultValue={data.seoTitle??''} maxLength={120} /></label><label><RequiredLabel>SEO Description</RequiredLabel><textarea name="seoDescription" defaultValue={data.seoDescription??''} rows={2} maxLength={320} /></label></div></section>
-      <button className={styles.save} disabled={saving}>{saving?'در حال ذخیره...':'ذخیره تغییرات'}</button>
+      <div className={styles.actions}>{onBack&&<button type="button" className={styles.back} disabled={saving} onClick={onBack}>{backLabel}</button>}<button className={styles.save} disabled={saving}>{saving?'در حال ذخیره...':saveLabel}</button></div>
     </form>}
   </section>;
 }
