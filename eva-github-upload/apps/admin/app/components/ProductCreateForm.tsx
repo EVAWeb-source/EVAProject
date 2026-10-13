@@ -11,6 +11,7 @@ type ExistingProduct={masterSku:string};
 const categories=[
   ['NEC','گردنبند'],['PEN','آویز'],['BRA','دستبند'],['RIN','انگشتر'],['EAR','گوشواره'],['SET','ست'],['ANK','پابند'],['CHM','چارم'],
 ] as const;
+const wizardSteps=['اطلاعات اصلی','محتوا و تصاویر','Unit و موجودی','انتشار'];
 
 function RequiredLabel({children}:{children:ReactNode}){
   return <span className={styles.requiredLabel}>{children}<b aria-hidden="true">*</b></span>;
@@ -72,12 +73,13 @@ export default function ProductCreateForm({collections,existingProducts}:{collec
         purity:Number(data.get('purity')??18),collectionId:collectionId||null,status:'DRAFT',
       });
       window.dispatchEvent(new Event('eva-admin-catalog-change'));
-      router.push(`/catalog/products/${product.id}`);router.refresh();
+      router.push(`/catalog/products/${product.id}?step=CONTENT`);router.refresh();
     }catch(cause){setError(cause instanceof Error?cause.message:'ساخت محصول انجام نشد.');setBusy(false);}
   }
 
   return <section className={styles.wrap}>
-    <div className={styles.intro}><span>NEW MASTER PRODUCT</span><h2>محصول را ابتدا به‌صورت Draft بساز</h2><p>سیستم SKU را بر اساس کالکشن، دسته‌بندی و Slug پیشنهاد می‌دهد؛ اگر لازم بود می‌توانی پیشنهاد را دستی ویرایش کنی.</p></div>
+    <div className={styles.stepperWrap}><div className={styles.stepper} aria-label="مراحل ساخت محصول">{wizardSteps.map((label,index)=><div key={label} className={`${styles.step} ${index===0?styles.stepActive:''}`}><span className={styles.stepNumber}>{index+1}</span><div><strong>{label}</strong><small>{index===0?'مرحله فعلی':'در ادامه'}</small></div></div>)}</div></div>
+    <div className={styles.intro}><span>مرحله ۱ از ۴</span><h2>اطلاعات اصلی محصول</h2><p>محصول ابتدا به‌صورت Draft ساخته می‌شود. بعد از ثبت این مرحله، سیستم مستقیم وارد «محتوا و تصاویر» می‌شود.</p></div>
     {error&&<div className={styles.error}>{error}</div>}
     <form className={styles.form} onSubmit={submit}>
       <div className={styles.requiredNote}><b>*</b><span>فیلد الزامی؛ کالکشن برای Publish الزامی است حتی اگر Draft بدون آن ذخیره شود.</span></div>
@@ -96,7 +98,7 @@ export default function ProductCreateForm({collections,existingProducts}:{collec
         {!skuCategoryValid&&<span className={styles.inlineError}>کد دسته داخل SKU با دسته‌بندی انتخاب‌شده یکسان نیست؛ باید {categoryCode} باشد.</span>}
       </label>
       <div className={styles.note}><strong>وضعیت اولیه: پیش‌نویس</strong><span>محصول تا وقتی محتوا، تصویر و Unit موجود نداشته باشد وارد فروشگاه نمی‌شود.</span></div>
-      <div className={styles.actions}><a href="/catalog">انصراف</a><button disabled={busy}>{busy?'در حال ساخت…':'ساخت محصول و ادامه'}</button></div>
+      <div className={styles.actions}><a href="/catalog">انصراف</a><button disabled={busy}>{busy?'در حال ساخت…':'ساخت محصول و مرحله بعد'}</button></div>
     </form>
   </section>;
 }
