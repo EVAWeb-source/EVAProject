@@ -20,15 +20,14 @@ export class AdminPricingController {
     }
     const result = await this.pricing.updateConfig(body);
     await this.audit.record({
-      action: 'PRICING_UPDATED',
-      entityType: 'PRICING',
-      entityId: result.rule.id,
-      summary: `نرخ و فرمول قیمت‌گذاری بروزرسانی شد`,
+      action: 'GOLD_RATE_UPDATED',
+      entityType: 'GOLD_RATE',
+      entityId: result.rate.rateVersion,
+      summary: 'نرخ هر گرم طلا بروزرسانی شد',
       metadata: {
         tomanPerGram: result.rate.tomanPerGram,
-        makingPercent: result.rule.makingPercent,
-        profitPercent: result.rule.profitPercent,
-        taxPercent: result.rule.taxPercent,
+        source: result.rate.source,
+        rateVersion: result.rate.rateVersion,
         repricedUnits: result.repricedUnits,
       },
     });
