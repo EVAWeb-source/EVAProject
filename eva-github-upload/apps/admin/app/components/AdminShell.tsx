@@ -28,7 +28,7 @@ const navGroups = [
   {
     label:'مالی',
     items:[
-      { href:'/pricing', label:'قیمت‌گذاری', icon:'₮' },
+      { href:'/pricing', label:'نرخ طلا', icon:'₮' },
       { href:'/invoices', label:'فاکتورها', icon:'▤' },
     ],
   },
