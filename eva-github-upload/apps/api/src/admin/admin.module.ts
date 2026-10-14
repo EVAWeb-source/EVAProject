@@ -6,6 +6,8 @@ import { AdminPricingService } from './admin-pricing.service.js';
 import { AdminService } from './admin.service.js';
 import { AdminProductContentController } from './admin-product-content.controller.js';
 import { AdminProductContentService } from './admin-product-content.service.js';
+import { AdminProductPricingController } from './admin-product-pricing.controller.js';
+import { AdminProductPricingService } from './admin-product-pricing.service.js';
 import { AdminCatalogReadinessController } from './admin-catalog-readiness.controller.js';
 import { AdminCatalogReadinessService } from './admin-catalog-readiness.service.js';
 import { AdminAfterSalesController } from './admin-after-sales.controller.js';
@@ -29,6 +31,7 @@ import { AdminStoneService } from './admin-stone.service.js';
     AdminController,
     AdminPricingController,
     AdminProductContentController,
+    AdminProductPricingController,
     AdminCatalogReadinessController,
     AdminAfterSalesController,
     AdminCustomersController,
@@ -42,6 +45,7 @@ import { AdminStoneService } from './admin-stone.service.js';
     AdminService,
     AdminPricingService,
     AdminProductContentService,
+    AdminProductPricingService,
     AdminCatalogReadinessService,
     AdminAfterSalesService,
     AdminCustomersService,
