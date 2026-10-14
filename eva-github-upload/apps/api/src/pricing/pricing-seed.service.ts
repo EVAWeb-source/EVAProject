@@ -6,12 +6,13 @@ export class PricingSeedService implements OnModuleInit {
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
-    const existingRule = await this.prisma.pricingRule.findFirst({
+    let existingRule = await this.prisma.pricingRule.findFirst({
       where: { isActive: true },
+      orderBy: { updatedAt: 'desc' },
     });
 
     if (!existingRule) {
-      await this.prisma.pricingRule.create({
+      existingRule = await this.prisma.pricingRule.create({
         data: {
           id: 'default-demo-rule',
           name: 'EVA Temporary Demo Formula',
@@ -23,6 +24,21 @@ export class PricingSeedService implements OnModuleInit {
         },
       });
     }
+
+    await this.prisma.masterProduct.updateMany({
+      where: {
+        OR: [
+          { makingPercent: null },
+          { profitPercent: null },
+          { taxPercent: null },
+        ],
+      },
+      data: {
+        makingPercent: existingRule.makingPercent,
+        profitPercent: existingRule.profitPercent,
+        taxPercent: existingRule.taxPercent,
+      },
+    });
 
     const existingRate = await this.prisma.goldRate.findFirst({
       where: { purity: 18 },
