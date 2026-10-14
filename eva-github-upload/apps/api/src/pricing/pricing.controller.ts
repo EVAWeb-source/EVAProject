@@ -10,14 +10,16 @@ export class PricingController {
     const { rule, rate } = await this.pricing.getCurrentConfig(18);
 
     return {
-      rule: {
-        id: rule.id,
-        name: rule.name,
-        formulaVersion: rule.formulaVersion,
-        makingPercent: Number(rule.makingPercent),
-        profitPercent: Number(rule.profitPercent),
-        taxPercent: Number(rule.taxPercent),
-      },
+      rule: rule
+        ? {
+            id: rule.id,
+            name: rule.name,
+            formulaVersion: rule.formulaVersion,
+            makingPercent: Number(rule.makingPercent),
+            profitPercent: Number(rule.profitPercent),
+            taxPercent: Number(rule.taxPercent),
+          }
+        : null,
       rate: {
         purity: rate.purity,
         tomanPerGram: Math.round(Number(rate.irrPerGram) / 10),
@@ -25,7 +27,7 @@ export class PricingController {
         rateVersion: rate.rateVersion,
         observedAt: rate.observedAt,
       },
-      mode: 'DEMO_CONFIGURABLE',
+      mode: 'GLOBAL_GOLD_RATE_PRODUCT_PRICING',
     };
   }
 
