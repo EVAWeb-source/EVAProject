@@ -5,14 +5,13 @@ import { useRouter } from 'next/navigation';
 
 type Props = {
   rate: null | { purity: number; tomanPerGram: number; source: string; rateVersion: string; observedAt: string };
-  rule: null | { id: string; name: string; formulaVersion: string; makingPercent: number; profitPercent: number; taxPercent: number; updatedAt: string };
 };
 
 function toman(value: number) {
   return new Intl.NumberFormat('fa-IR').format(value);
 }
 
-export default function PricingActions({ rate, rule }: Props) {
+export default function PricingActions({ rate }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -26,12 +25,7 @@ export default function PricingActions({ rate, rule }: Props) {
     setError('');
 
     const data = new FormData(event.currentTarget);
-    const payload = {
-      tomanPerGram: Number(data.get('tomanPerGram')),
-      makingPercent: Number(data.get('makingPercent')),
-      profitPercent: Number(data.get('profitPercent')),
-      taxPercent: Number(data.get('taxPercent')),
-    };
+    const payload = { tomanPerGram: Number(data.get('tomanPerGram')) };
 
     try {
       const response = await fetch('/api/admin/pricing/config', {
@@ -50,10 +44,10 @@ export default function PricingActions({ rate, rule }: Props) {
         }
       }
       const result = JSON.parse(raw);
-      setMessage(`تنظیمات جدید ذخیره شد و قیمت ${new Intl.NumberFormat('fa-IR').format(result.repricedUnits ?? 0)} Unit بروزرسانی شد.`);
+      setMessage(`نرخ طلا ذخیره شد و قیمت ${new Intl.NumberFormat('fa-IR').format(result.repricedUnits ?? 0)} Unit قابل‌فروش با درصدهای اختصاصی خودشان بروزرسانی شد.`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'بروزرسانی قیمت انجام نشد.');
+      setError(err instanceof Error ? err.message : 'بروزرسانی نرخ طلا انجام نشد.');
     } finally {
       setBusy(false);
     }
@@ -62,8 +56,8 @@ export default function PricingActions({ rate, rule }: Props) {
   return (
     <div className="pricingAdminBox">
       <div className="pricingAdminIntro">
-        <div><span>PRICING CONTROL</span><h3>تنظیم موتور قیمت‌گذاری</h3></div>
-        <p>این تنظیمات روی قیمت جاری Unitهای قابل‌فروش اعمال می‌شود. سفارش‌ها، رزروهای فعال و فاکتورهای قبلی تغییر نمی‌کنند.</p>
+        <div><span>GOLD RATE</span><h3>نرخ سراسری طلا</h3></div>
+        <p>فقط نرخ هر گرم طلا در این بخش مشترک است. اجرت، سود و مالیات داخل هر محصول مدیریت می‌شوند. Snapshot سفارش‌ها و فاکتورهای قبلی دست‌نخورده می‌مانند.</p>
       </div>
 
       {(message || error) && <div className={error ? 'actionMessage actionError' : 'actionMessage'}>{error || message}</div>}
@@ -72,26 +66,14 @@ export default function PricingActions({ rate, rule }: Props) {
         <label>
           نرخ طلای ۱۸ عیار / گرم (تومان)
           <input name="tomanPerGram" type="number" min="1" step="1" required defaultValue={rate?.tomanPerGram ?? 14000000} />
-          <small>{rate ? `نسخه فعلی: ${rate.rateVersion}` : 'بدون نرخ فعلی'}</small>
+          <small>{rate ? `منبع: ${rate.source} • نسخه: ${rate.rateVersion}` : 'بدون نرخ فعلی'}</small>
         </label>
-        <label>
-          اجرت (%)
-          <input name="makingPercent" type="number" min="0" max="100" step="0.001" required defaultValue={rule?.makingPercent ?? 12} />
-        </label>
-        <label>
-          سود (%)
-          <input name="profitPercent" type="number" min="0" max="100" step="0.001" required defaultValue={rule?.profitPercent ?? 7} />
-        </label>
-        <label>
-          مالیات (%)
-          <input name="taxPercent" type="number" min="0" max="100" step="0.001" required defaultValue={rule?.taxPercent ?? 10} />
-        </label>
-        <button className="primaryButton" disabled={busy}>{busy ? 'در حال بروزرسانی...' : 'ثبت نرخ و فرمول جدید'}</button>
+        <button className="primaryButton" disabled={busy}>{busy ? 'در حال بروزرسانی...' : 'ثبت نرخ جدید طلا'}</button>
       </form>
 
       <div className="pricingCurrentLine">
         <span>نرخ فعلی</span><strong>{rate ? `${toman(rate.tomanPerGram)} تومان` : '—'}</strong>
-        <span>Formula</span><strong dir="ltr">{rule?.formulaVersion ?? '—'}</strong>
+        <span>منبع</span><strong dir="ltr">{rate?.source ?? '—'}</strong>
       </div>
     </div>
   );
