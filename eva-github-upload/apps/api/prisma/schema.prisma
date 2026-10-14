@@ -104,6 +104,9 @@ model MasterProduct {
   slug             String          @unique
   masterSku        String          @unique
   purity           Int             @default(18)
+  makingPercent    Decimal?        @db.Decimal(7, 3)
+  profitPercent    Decimal?        @db.Decimal(7, 3)
+  taxPercent       Decimal?        @db.Decimal(7, 3)
   status           ProductStatus   @default(DRAFT)
   collectionId     String?
   collection       Collection?     @relation(fields: [collectionId], references: [id])
