@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import AdminShell from '../../../components/AdminShell';
 import AdminPageHeader from '../../../components/AdminPageHeader';
 import ProductEditor from '../../../components/ProductEditor';
+import ProductPricingPanel from '../../../components/ProductPricingPanel';
 import { loadCatalogReadiness, loadDashboard, requireAdmin, STOREFRONT_BASE } from '../../../lib/admin-data';
 
 export const dynamic='force-dynamic';
@@ -18,5 +19,6 @@ export default async function ProductEditorPage({params}:{params:Promise<{id:str
   return <AdminShell connected={!error}>
     <AdminPageHeader eyebrow="PRODUCT EDITOR" title={product.nameFa} description={`${product.collection??'بدون کالکشن'} • ${product.masterSku}`} actions={<><a href="/catalog">← محصولات</a><a href={`${STOREFRONT_BASE}/products/${product.slug}`} target="_blank" rel="noreferrer">مشاهده در فروشگاه ↗</a></>}/>
     <ProductEditor product={product} collections={data!.collections} readiness={ready}/>
+    <ProductPricingPanel productId={product.id}/>
   </AdminShell>;
 }
