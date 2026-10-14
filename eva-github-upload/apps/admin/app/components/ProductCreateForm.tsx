@@ -33,16 +33,16 @@ function buildSuggestedSku(collectionCode:string,categoryCode:string,slug:string
   return `EVA-${(collectionCode||'GEN').toUpperCase()}-${categoryCode||'CAT'}-${slugToken(slug)}-${sequence}`;
 }
 
-async function createProduct(payload:Record<string,unknown>){
-  const response=await fetch('/api/admin/products',{
-    method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload),
+async function adminRequest(path:string,method:'POST'|'PATCH'|'DELETE',payload?:Record<string,unknown>){
+  const response=await fetch('/api/admin/'+path,{
+    method,headers:payload?{'content-type':'application/json'}:undefined,body:payload?JSON.stringify(payload):undefined,
   });
   const raw=await response.text();
   if(!response.ok){
     try{const parsed=JSON.parse(raw);throw new Error(Array.isArray(parsed.message)?parsed.message.join('، '):(parsed.message||parsed.error||raw));}
     catch(error){if(error instanceof Error&&error.message!=='Unexpected end of JSON input')throw error;throw new Error(raw||`HTTP ${response.status}`);}
   }
-  return JSON.parse(raw) as CreatedProduct;
+  return raw?JSON.parse(raw):null;
 }
 
 export default function ProductCreateForm({collections,existingProducts}:{collections:Collection[];existingProducts:ExistingProduct[]}){
@@ -67,19 +67,28 @@ export default function ProductCreateForm({collections,existingProducts}:{collec
     if(!skuCategoryValid){setError(`کد دسته‌بندی داخل Master SKU باید ${categoryCode} باشد.`);return;}
     setBusy(true);setError('');
     const data=new FormData(event.currentTarget);
+    let product:CreatedProduct|null=null;
     try{
-      const product=await createProduct({
+      product=await adminRequest('products','POST',{
         nameFa:data.get('nameFa'),slug:slug.trim().toLowerCase(),masterSku:masterSku.trim().toUpperCase(),categoryCode,
         purity:Number(data.get('purity')??18),collectionId:collectionId||null,status:'DRAFT',
+      }) as CreatedProduct;
+      await adminRequest(`product-pricing/${product.id}`,'PATCH',{
+        makingPercent:Number(data.get('makingPercent')),
+        profitPercent:Number(data.get('profitPercent')),
+        taxPercent:Number(data.get('taxPercent')),
       });
       window.dispatchEvent(new Event('eva-admin-catalog-change'));
       router.push(`/catalog/products/${product.id}?step=CONTENT`);router.refresh();
-    }catch(cause){setError(cause instanceof Error?cause.message:'ساخت محصول انجام نشد.');setBusy(false);}
+    }catch(cause){
+      if(product?.id){try{await adminRequest(`products/${product.id}`,'DELETE');}catch{}}
+      setError(cause instanceof Error?cause.message:'ساخت محصول انجام نشد.');setBusy(false);
+    }
   }
 
   return <section className={styles.wrap}>
     <div className={styles.stepperWrap}><div className={styles.stepper} aria-label="مراحل ساخت محصول">{wizardSteps.map((label,index)=><div key={label} className={`${styles.step} ${index===0?styles.stepActive:''}`}><span className={styles.stepNumber}>{index+1}</span><div><strong>{label}</strong><small>{index===0?'مرحله فعلی':'در ادامه'}</small></div></div>)}</div></div>
-    <div className={styles.intro}><span>مرحله ۱ از ۴</span><h2>اطلاعات اصلی محصول</h2><p>محصول ابتدا به‌صورت Draft ساخته می‌شود. بعد از ثبت این مرحله، سیستم مستقیم وارد «محتوا و تصاویر» می‌شود.</p></div>
+    <div className={styles.intro}><span>مرحله ۱ از ۴</span><h2>اطلاعات اصلی و قیمت‌گذاری محصول</h2><p>قیمت هر گرم طلا از نرخ سراسری می‌آید؛ اجرت، سود و مالیات برای همین محصول ثبت می‌شوند.</p></div>
     {error&&<div className={styles.error}>{error}</div>}
     <form className={styles.form} onSubmit={submit}>
       <div className={styles.requiredNote}><b>*</b><span>فیلد الزامی؛ کالکشن برای Publish الزامی است حتی اگر Draft بدون آن ذخیره شود.</span></div>
@@ -97,7 +106,13 @@ export default function ProductCreateForm({collections,existingProducts}:{collec
         <small>{manualMode?'حالت دستی فعال است؛ فقط ساختار SKU و کد دسته‌بندی همچنان اعتبارسنجی می‌شوند.':'پیشنهاد سیستم به‌صورت خودکار با اطلاعات بالا به‌روز می‌شود.'}</small>
         {!skuCategoryValid&&<span className={styles.inlineError}>کد دسته داخل SKU با دسته‌بندی انتخاب‌شده یکسان نیست؛ باید {categoryCode} باشد.</span>}
       </label>
-      <div className={styles.note}><strong>وضعیت اولیه: پیش‌نویس</strong><span>محصول تا وقتی محتوا، تصویر و Unit موجود نداشته باشد وارد فروشگاه نمی‌شود.</span></div>
+      <div className={styles.note}><strong>قیمت‌گذاری همین محصول</strong><span>این درصدها فقط برای این محصول هستند. تغییر نرخ سراسری طلا، با همین درصدها قیمت Unitها را دوباره محاسبه می‌کند.</span></div>
+      <div className={styles.grid2}>
+        <label><RequiredLabel>اجرت (%)</RequiredLabel><input name="makingPercent" type="number" min="0" max="100" step="0.001" required placeholder="17"/></label>
+        <label><RequiredLabel>سود (%)</RequiredLabel><input name="profitPercent" type="number" min="0" max="100" step="0.001" required placeholder="7"/></label>
+      </div>
+      <label><RequiredLabel>مالیات (%)</RequiredLabel><input name="taxPercent" type="number" min="0" max="100" step="0.001" required placeholder="10"/><small>مالیات طبق فرمول تأییدشده فقط روی بخش اجرت + سود طلا اعمال می‌شود.</small></label>
+      <div className={styles.note}><strong>وضعیت اولیه: پیش‌نویس</strong><span>محصول تا وقتی محتوا، تصویر، قیمت‌گذاری و Unit موجود نداشته باشد وارد فروشگاه نمی‌شود.</span></div>
       <div className={styles.actions}><a href="/catalog">انصراف</a><button disabled={busy}>{busy?'در حال ساخت…':'ساخت محصول و مرحله بعد'}</button></div>
     </form>
   </section>;
