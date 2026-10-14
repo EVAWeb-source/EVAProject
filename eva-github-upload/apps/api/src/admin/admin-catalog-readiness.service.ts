@@ -41,6 +41,7 @@ export class AdminCatalogReadinessService {
         total: items.length,
         active: items.filter((item) => item.status === 'ACTIVE').length,
         readyToPublish: items.filter((item) => item.readyToPublish && item.status !== 'ACTIVE').length,
+        needsPricing: items.filter((item) => !item.checks.pricing).length,
         needsContent: items.filter((item) => !item.checks.content).length,
         needsMedia: items.filter((item) => !item.checks.media).length,
         needsSeo: items.filter((item) => !item.checks.seo).length,
@@ -51,7 +52,10 @@ export class AdminCatalogReadinessService {
   }
 
   async createAghazDrafts() {
-    const collection = await this.prisma.collection.findUnique({ where: { slug: 'aghaz' } });
+    const [collection, fallbackRule] = await Promise.all([
+      this.prisma.collection.findUnique({ where: { slug: 'aghaz' } }),
+      this.prisma.pricingRule.findFirst({ where: { isActive: true }, orderBy: { updatedAt: 'desc' } }),
+    ]);
     if (!collection) throw new NotFoundException('Aghaz collection not found');
 
     const masterSkus = AGHAZ_BLUEPRINT.map((item) => item.masterSku);
@@ -76,10 +80,7 @@ export class AdminCatalogReadinessService {
       const skuMatch = bySku.get(blueprint.masterSku);
       if (skuMatch) {
         if (skuMatch.slug !== blueprint.slug) {
-          conflicts.push({
-            ...blueprint,
-            reason: `Master SKU already exists with slug ${skuMatch.slug}`,
-          });
+          conflicts.push({ ...blueprint, reason: `Master SKU already exists with slug ${skuMatch.slug}` });
         } else {
           existing.push(skuMatch);
         }
@@ -88,10 +89,7 @@ export class AdminCatalogReadinessService {
 
       const slugMatch = bySlug.get(blueprint.slug);
       if (slugMatch) {
-        conflicts.push({
-          ...blueprint,
-          reason: `Slug is already used by ${slugMatch.masterSku}`,
-        });
+        conflicts.push({ ...blueprint, reason: `Slug is already used by ${slugMatch.masterSku}` });
         continue;
       }
 
@@ -101,6 +99,9 @@ export class AdminCatalogReadinessService {
           slug: blueprint.slug,
           masterSku: blueprint.masterSku,
           purity: 18,
+          makingPercent: fallbackRule?.makingPercent ?? null,
+          profitPercent: fallbackRule?.profitPercent ?? null,
+          taxPercent: fallbackRule?.taxPercent ?? null,
           status: 'DRAFT',
           collectionId: collection.id,
         },
@@ -162,10 +163,13 @@ export class AdminCatalogReadinessService {
         (image: any) => image.role === 'MAIN' && image.url?.trim() && image.altText?.trim(),
       ),
     );
+    const hasPricing = [product.makingPercent, product.profitPercent, product.taxPercent]
+      .every((value) => value !== null && value !== undefined && Number.isFinite(Number(value)));
 
     const checks = {
       product: Boolean(product.id && product.nameFa && product.slug && product.masterSku),
       collection: Boolean(product.collectionId),
+      pricing: hasPricing,
       content: Boolean(
         product.shortDescription?.trim() &&
         product.story?.trim() &&
@@ -183,6 +187,9 @@ export class AdminCatalogReadinessService {
     if (!product.slug?.trim()) missing.push('Slug محصول');
     if (!product.masterSku?.trim()) missing.push('Master SKU');
     if (!product.collectionId) missing.push('کالکشن');
+    if (product.makingPercent === null || product.makingPercent === undefined) missing.push('اجرت محصول');
+    if (product.profitPercent === null || product.profitPercent === undefined) missing.push('سود محصول');
+    if (product.taxPercent === null || product.taxPercent === undefined) missing.push('مالیات محصول');
     if (!product.shortDescription?.trim()) missing.push('توضیح کوتاه');
     if (!product.story?.trim()) missing.push('داستان محصول');
     if (!product.goldColor?.trim()) missing.push('رنگ طلا');
@@ -205,12 +212,17 @@ export class AdminCatalogReadinessService {
       collection: product.collection
         ? { id: product.collection.id, nameFa: product.collection.nameFa, slug: product.collection.slug, code: product.collection.code }
         : null,
+      pricing: hasPricing ? {
+        makingPercent: Number(product.makingPercent),
+        profitPercent: Number(product.profitPercent),
+        taxPercent: Number(product.taxPercent),
+      } : null,
       imageCount: product.images?.length ?? 0,
       availableUnitCount: product.units?.filter((unit: any) => unit.status === 'AVAILABLE').length ?? 0,
       unitCount: product.units?.length ?? 0,
       checks,
       completedSteps,
-      totalSteps: 7,
+      totalSteps: 8,
       readyToPublish: missing.length === 0,
       missing,
     };
