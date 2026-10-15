@@ -12,6 +12,13 @@ type Pricing={
   repricedUnits?:number;
 };
 
+type Props={
+  productId:string;
+  onBack?:()=>void;
+  onSaved?:()=>void;
+  saveLabel?:string;
+};
+
 async function request(path:string,method:'GET'|'PATCH',payload?:Record<string,unknown>){
   const response=await fetch('/api/admin/'+path,{
     method,
@@ -27,7 +34,7 @@ async function request(path:string,method:'GET'|'PATCH',payload?:Record<string,u
   return raw?JSON.parse(raw):null;
 }
 
-export default function ProductPricingPanel({productId}:{productId:string}){
+export default function ProductPricingPanel({productId,onBack,onSaved,saveLabel}:{productId:string}&Props){
   const [pricing,setPricing]=useState<Pricing|null>(null);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
@@ -50,26 +57,27 @@ export default function ProductPricingPanel({productId}:{productId:string}){
         taxPercent:Number(data.get('taxPercent')),
       }) as Pricing;
       setPricing(result);
-      setMessage(`قیمت‌گذاری محصول ذخیره شد و ${new Intl.NumberFormat('fa-IR').format(result.repricedUnits??0)} Unit همین محصول بروزرسانی شد.`);
       window.dispatchEvent(new Event('eva-admin-catalog-change'));
+      if(onSaved){onSaved();return;}
+      setMessage(`قیمت‌گذاری محصول ذخیره شد و ${new Intl.NumberFormat('fa-IR').format(result.repricedUnits??0)} Unit همین محصول بروزرسانی شد.`);
     }catch(cause){setError(cause instanceof Error?cause.message:'ذخیره قیمت‌گذاری انجام نشد.');}
     finally{setBusy(false);}
   }
 
   return <section className={styles.panel}>
     <div className={styles.head}>
-      <div><span>PRODUCT PRICING</span><h2>قیمت‌گذاری این محصول</h2></div>
-      <small>{pricing?.source==='LEGACY_FALLBACK'?'مقادیر قدیمی؛ با ذخیره به محصول منتقل می‌شوند':'مستقل از سایر محصولات'}</small>
+      <div><span>PRODUCT PRICING</span><h2>قیمت‌گذاری محصول</h2></div>
+      <small>{pricing?.source==='LEGACY_FALLBACK'?'مقادیر قدیمی؛ با ذخیره به محصول منتقل می‌شوند':'اختصاصی همین محصول'}</small>
     </div>
-    <p className={styles.description}>نرخ هر گرم طلا از بخش «نرخ طلا» می‌آید. اجرت، سود و مالیات فقط برای همین محصول هستند؛ تغییر این اعداد فقط Unitهای همین محصول را Reprice می‌کند.</p>
+    <p className={styles.description}>نرخ هر گرم طلا از بخش «نرخ طلا» به‌صورت سراسری می‌آید. اجرت، سود و مالیات در این مرحله فقط برای همین محصول تعیین می‌شوند.</p>
     {error&&<div className={styles.error}>{error}</div>}
     {message&&<div className={styles.success}>{message}</div>}
     {pricing?<form className={styles.form} onSubmit={submit}>
-      <label>اجرت (%)<input name="makingPercent" type="number" min="0" max="100" step="0.001" required defaultValue={pricing.makingPercent??''}/></label>
-      <label>سود (%)<input name="profitPercent" type="number" min="0" max="100" step="0.001" required defaultValue={pricing.profitPercent??''}/></label>
-      <label>مالیات (%)<input name="taxPercent" type="number" min="0" max="100" step="0.001" required defaultValue={pricing.taxPercent??''}/></label>
-      <button disabled={busy}>{busy?'در حال ذخیره…':'ذخیره قیمت‌گذاری محصول'}</button>
+      <label>اجرت (%)<input name="makingPercent" type="number" min="0" max="100" step="0.001" required defaultValue={pricing.makingPercent??''} placeholder="17"/></label>
+      <label>سود (%)<input name="profitPercent" type="number" min="0" max="100" step="0.001" required defaultValue={pricing.profitPercent??''} placeholder="7"/></label>
+      <label>مالیات (%)<input name="taxPercent" type="number" min="0" max="100" step="0.001" required defaultValue={pricing.taxPercent??''} placeholder="10"/></label>
+      <div className={styles.note}><strong>سنگ</strong><span>قیمت سنگ در مرحله Unit ثبت می‌شود؛ چون قیراط و قیمت سنگ می‌تواند برای هر قطعه متفاوت باشد.</span></div>
+      <div className={styles.actions}>{onBack?<button type="button" className={styles.secondary} onClick={onBack}>مرحله قبل</button>:<span/>}<button className={styles.primary} disabled={busy}>{busy?'در حال ذخیره…':saveLabel??'ذخیره قیمت‌گذاری محصول'}</button></div>
     </form>:!error?<div className={styles.loading}>در حال دریافت…</div>:null}
-    <div className={styles.note}><strong>سنگ</strong><span>قیمت سنگ روی هر Unit ثبت می‌شود چون قیراط و مشخصات سنگ می‌تواند بین قطعات یک مدل متفاوت باشد.</span></div>
   </section>;
 }
