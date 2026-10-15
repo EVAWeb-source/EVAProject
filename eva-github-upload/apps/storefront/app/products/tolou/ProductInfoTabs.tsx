@@ -20,7 +20,7 @@ export default function ProductInfoTabs(props:Props){
         {tab==='GUIDE'&&<div className={styles.guide}>{props.sizeGuide&&<article><strong>راهنمای سایز</strong><p>{props.sizeGuide}</p></article>}{props.careInstructions&&<article><strong>مراقبت</strong><p>{props.careInstructions}</p></article>}{props.packagingNote&&<article><strong>بسته‌بندی</strong><p>{props.packagingNote}</p></article>}</div>}
       </div>
     </section>
-    {props.story&&<section className={styles.storySection} dir="rtl"><div className={styles.storyHead}><span>THE STORY</span><h2>داستان {props.specs.find(item=>item.label==='کالکشن')?.value??'این قطعه'}</h2></div><article className={styles.storyCard}><span className={styles.storyMark}>“</span><p>{props.story}</p></article></section>}
+    {props.story&&<section className={styles.storySection} dir="rtl"><div className={styles.storyHead}><span>THE STORY</span><h2>داستان محصول</h2></div><article className={styles.storyCard}><span className={styles.storyMark}>“</span><p>{props.story}</p></article></section>}
   </>;
 }
 
