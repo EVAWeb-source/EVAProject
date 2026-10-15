@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 
+type SiteEventRow = { event: string; sessionId: string; path: string; referrer: string | null; createdAt: Date };
+
 function startOfUtcDay(date: Date) {
   const next = new Date(date);
   next.setUTCHours(0, 0, 0, 0);
@@ -26,6 +28,25 @@ function changePercent(current: number, previous: number): number | null {
 export class AdminAnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async siteEventsSince(since: Date): Promise<SiteEventRow[]> {
+    await this.prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "SiteEvent" (
+        "id" TEXT PRIMARY KEY,
+        "event" TEXT NOT NULL,
+        "sessionId" TEXT NOT NULL,
+        "path" TEXT NOT NULL,
+        "referrer" TEXT,
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    return this.prisma.$queryRaw<SiteEventRow[]>`
+      SELECT "event", "sessionId", "path", "referrer", "createdAt"
+      FROM "SiteEvent"
+      WHERE "createdAt" >= ${since} AND "event" = 'PAGE_VIEW'
+      ORDER BY "createdAt" ASC
+    `;
+  }
+
   async overview(inputDays?: number) {
     const days = [7, 30, 90].includes(Number(inputDays)) ? Number(inputDays) : 30;
     const end = new Date();
@@ -38,10 +59,7 @@ export class AdminAnalyticsService {
         include: { lines: true },
         orderBy: { createdAt: 'asc' },
       }),
-      this.prisma.siteEvent.findMany({
-        where: { createdAt: { gte: previousStart }, event: 'PAGE_VIEW' },
-        orderBy: { createdAt: 'asc' },
-      }),
+      this.siteEventsSince(previousStart),
       this.prisma.paymentAttempt.findMany({
         where: { createdAt: { gte: previousStart } },
         select: { status: true, createdAt: true },
