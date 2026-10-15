@@ -1,27 +1,43 @@
 import AdminShell from './components/AdminShell';
 import AdminPageHeader from './components/AdminPageHeader';
+import { RevenueTrend } from './components/AnalyticsVisuals';
 import styles from './dashboard.module.css';
 import { faDate, faNumber, loadCatalogReadiness, loadDashboard, loadOperations, requireAdmin, statusFa, toman } from './lib/admin-data';
+import { loadAnalytics } from './lib/analytics-data';
 
 export const dynamic='force-dynamic';
 
 const severityLabel:Record<string,string>={ok:'اوکی',warning:'نیاز به توجه',danger:'فوری'};
+function delta(value:number|null){if(value===null)return 'بدون مبنای مقایسه';if(value===0)return 'بدون تغییر';return `${value>0?'↑':'↓'} ${faNumber(Math.abs(value))}٪ نسبت به دوره قبل`;}
 
 export default async function DashboardPage(){
   await requireAdmin();
-  const [{data,error},{data:readiness},{data:operations}]=await Promise.all([loadDashboard(),loadCatalogReadiness(),loadOperations()]);
+  const [{data,error},{data:readiness},{data:operations},{data:analytics}]=await Promise.all([loadDashboard(),loadCatalogReadiness(),loadOperations(),loadAnalytics(30)]);
 
   return <AdminShell connected={!error}>
-    <AdminPageHeader eyebrow="OPERATIONS OVERVIEW" title="داشبورد EVA" description="وضعیت روزانه فروشگاه، هشدارها و کارهایی که نیاز به رسیدگی دارند." meta={data?`آخرین بروزرسانی: ${faDate(data.generatedAt)}`:undefined} actions={<a href="/audit">تاریخچه فعالیت</a>}/>
+    <AdminPageHeader eyebrow="OPERATIONS OVERVIEW" title="داشبورد EVA" description="تصویر سریع فروش، رفتار سایت و کارهای مهم امروز." meta={data?`آخرین بروزرسانی: ${faDate(data.generatedAt)}`:undefined} actions={<a href="/analytics">مشاهده تحلیل کامل</a>}/>
 
     {error||!data?<div className={styles.error}>{error??'اطلاعات داشبورد قابل دریافت نیست.'}</div>:<>
+      {analytics&&<>
+        <section className={styles.executiveMetrics}>
+          <article className={styles.executiveHero}><span>فروش ۳۰ روز</span><b>{toman(analytics.summary.revenueToman)}</b><small>{delta(analytics.changes.revenue)}</small></article>
+          <article><span>سفارش پرداخت‌شده</span><b>{faNumber(analytics.summary.orders)}</b><small>{delta(analytics.changes.orders)}</small></article>
+          <article><span>میانگین سبد</span><b>{toman(analytics.summary.aovToman)}</b><small>{delta(analytics.changes.aov)}</small></article>
+          <article><span>نرخ تبدیل سایت</span><b>{faNumber(analytics.summary.conversionRate)}٪</b><small>{faNumber(analytics.summary.sessions)} Session</small></article>
+        </section>
+        <section className={styles.insightGrid}>
+          <article className={`${styles.panel} ${styles.salesChart}`}><div className={styles.head}><div><span>30 DAY REVENUE</span><h2>روند فروش</h2></div><a href="/analytics">تحلیل کامل</a></div><div className={styles.chartBody}><RevenueTrend data={analytics.daily} compact/></div></article>
+          <article className={`${styles.panel} ${styles.sitePulse}`}><div className={styles.head}><div><span>SITE PULSE</span><h2>نبض سایت</h2></div><a href="/analytics">جزئیات</a></div><div className={styles.pulseGrid}><div><span>Page View</span><b>{faNumber(analytics.summary.pageViews)}</b></div><div><span>Session</span><b>{faNumber(analytics.summary.sessions)}</b></div><div><span>مشتری جدید</span><b>{faNumber(analytics.summary.newCustomers)}</b></div><div><span>موفقیت پرداخت</span><b>{faNumber(analytics.summary.paymentSuccessRate)}٪</b></div></div></article>
+        </section>
+      </>}
+
       <section className={styles.metrics}>
         <article><span>محصول فعال</span><b>{faNumber(data.summary.activeProducts)}</b><small>{faNumber(data.products.length)} محصول کل</small></article>
         <article><span>Unit موجود</span><b>{faNumber(data.summary.units.available)}</b><small>{faNumber(operations?.metrics.inventoryAttention??0)} نیازمند توجه</small></article>
         <article><span>آماده ارسال</span><b>{faNumber(operations?.metrics.readyToShip??0)}</b><small>{faNumber(operations?.metrics.overdueFulfillment??0)} معطل بیش از ۲۴ ساعت</small></article>
         <article><span>After Sales باز</span><b>{faNumber(operations?.metrics.openAfterSales??0)}</b><small>لغو، مرجوعی، QC و Refund</small></article>
         <article><span>موجودی کم</span><b>{faNumber(operations?.metrics.lowStockProducts??0)}</b><small>محصول فعال با ≤ ۱ Unit</small></article>
-        <article className={styles.wide}><span>فروش ثبت‌شده آزمایشی</span><b>{toman(data.summary.paidRevenueToman)}</b><small>{faNumber(data.summary.orders.paid)} سفارش PAID فعلی</small></article>
+        <article className={styles.wide}><span>فروش ثبت‌شده کل</span><b>{toman(data.summary.paidRevenueToman)}</b><small>{faNumber(data.summary.orders.paid)} سفارش PAID</small></article>
       </section>
 
       <section className={styles.layout}>
