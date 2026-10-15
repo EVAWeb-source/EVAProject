@@ -6,10 +6,10 @@ import { useEffect } from 'react';
 const SESSION_KEY='eva-site-session';
 
 function sessionId(){
-  let value=localStorage.getItem(SESSION_KEY);
+  let value=sessionStorage.getItem(SESSION_KEY);
   if(value)return value;
   value=globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  localStorage.setItem(SESSION_KEY,value);
+  sessionStorage.setItem(SESSION_KEY,value);
   return value;
 }
 
