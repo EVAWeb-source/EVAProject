@@ -84,25 +84,28 @@ export default function PricingActions({ rate }: Props) {
       {(message || error) && <div className={`${styles.message} ${error ? styles.error : ''}`}>{error || message}</div>}
 
       <form className={styles.form} onSubmit={submit}>
-        <label className={styles.field}>
-          نرخ طلای ۱۸ عیار / گرم
-          <div className={styles.inputWrap}>
-            <input
-              className={styles.input}
-              name="tomanPerGramDisplay"
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              required
-              value={rateInput}
-              onChange={(event) => setRateInput(separated(event.target.value))}
-              aria-label="نرخ طلای ۱۸ عیار به تومان"
-            />
-            <span className={styles.suffix}>تومان</span>
+        <div className={styles.fieldGroup}>
+          <label className={styles.fieldLabel} htmlFor="gold-rate-input">نرخ طلای ۱۸ عیار / گرم</label>
+          <div className={styles.controlRow}>
+            <div className={styles.inputWrap}>
+              <input
+                id="gold-rate-input"
+                className={styles.input}
+                name="tomanPerGramDisplay"
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                required
+                value={rateInput}
+                onChange={(event) => setRateInput(separated(event.target.value))}
+                aria-label="نرخ طلای ۱۸ عیار به تومان"
+              />
+              <span className={styles.suffix}>تومان</span>
+            </div>
+            <button className={styles.button} disabled={busy}>{busy ? 'در حال ثبت...' : 'ثبت نرخ جدید'}</button>
           </div>
-          <small>{rate ? `منبع فعلی: ${rate.source}` : 'هنوز نرخ فعالی ثبت نشده است.'}</small>
-        </label>
-        <button className={styles.button} disabled={busy}>{busy ? 'در حال ثبت...' : 'ثبت نرخ جدید'}</button>
+          <small className={styles.meta}>{rate ? `منبع فعلی: ${rate.source}` : 'هنوز نرخ فعالی ثبت نشده است.'}</small>
+        </div>
       </form>
 
       <div className={styles.foot}><span className={styles.dot}/><span>با ثبت نرخ جدید، فقط Unitهای قابل‌فروش دوباره قیمت‌گذاری می‌شوند.</span></div>
