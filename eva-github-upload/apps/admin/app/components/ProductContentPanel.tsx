@@ -62,7 +62,7 @@ export default function ProductContentPanel({products,initialProductId,hideSelec
         </div>;})}</div>
       </section>
 
-      <section className={styles.section}><div className={styles.sectionHead}><strong>SEO</strong></div><div className={styles.grid2}><label><RequiredLabel>SEO Title</RequiredLabel><input name="seoTitle" defaultValue={data.seoTitle??''} maxLength={120} /></label><label><RequiredLabel>SEO Description</RequiredLabel><textarea name="seoDescription" defaultValue={data.seoDescription??''} rows={2} maxLength={320} /></label></div></section>
+      <section className={styles.section}><div className={styles.sectionHead}><strong>SEO</strong></div><div className={`${styles.grid2} ${styles.seoGrid}`}><label><RequiredLabel>SEO Title</RequiredLabel><input name="seoTitle" defaultValue={data.seoTitle??''} maxLength={120} /></label><label><RequiredLabel>SEO Description</RequiredLabel><textarea name="seoDescription" defaultValue={data.seoDescription??''} rows={2} maxLength={320} /></label></div></section>
       <div className={styles.actions}>{onBack&&<button type="button" className={styles.back} disabled={saving} onClick={onBack}>{backLabel}</button>}<button className={styles.save} disabled={saving}>{saving?'در حال ذخیره...':saveLabel}</button></div>
     </form>}
   </section>;
