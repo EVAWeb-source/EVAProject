@@ -10,6 +10,7 @@ const navGroups = [
     label:'فروش',
     items:[
       { href:'/', label:'داشبورد', icon:'⌂', exact:true },
+      { href:'/analytics', label:'تحلیل و آمار', icon:'⌁' },
       { href:'/orders', label:'سفارش‌ها', icon:'≡' },
       { href:'/fulfillment', label:'ارسال', icon:'→' },
       { href:'/customers', label:'مشتری‌ها', icon:'◎' },
