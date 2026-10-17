@@ -36,6 +36,7 @@ async function forward(request: Request, context: { params: Promise<{ path: stri
     /^notifications$/,
     /^notifications\/test$/,
     /^media$/,
+    /^media\/home-content$/,
     /^media\/upload$/,
     /^media\/slots\/[^/]+$/,
     /^media\/[^/]+$/,
