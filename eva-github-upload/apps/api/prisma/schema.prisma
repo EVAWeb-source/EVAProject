@@ -494,3 +494,16 @@ model AdminAuditLog {
   @@index([action, createdAt])
   @@index([entityType, entityId, createdAt])
 }
+
+model SiteEvent {
+  id        String   @id
+  event     String
+  sessionId String
+  path      String
+  referrer  String?
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([createdAt])
+  @@index([sessionId, createdAt])
+  @@index([path, createdAt])
+}
