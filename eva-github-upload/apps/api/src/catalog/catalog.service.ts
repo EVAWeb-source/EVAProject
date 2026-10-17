@@ -15,7 +15,7 @@ export class CatalogService {
     await this.reservations.releaseExpired();
 
     const products = await this.prisma.masterProduct.findMany({
-      where: { status: 'ACTIVE' },
+      where: { status: 'ACTIVE', isVisible: true },
       select: {
         id: true,
         nameFa: true,
@@ -67,7 +67,7 @@ export class CatalogService {
       },
     });
 
-    if (!product || product.status !== 'ACTIVE') {
+    if (!product || product.status !== 'ACTIVE' || !product.isVisible) {
       throw new NotFoundException('Product not found');
     }
 
