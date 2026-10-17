@@ -11,6 +11,11 @@ export class MediaController {
     return this.media.getSiteMedia();
   }
 
+  @Get('site-content/home')
+  homeContent() {
+    return this.media.getHomeContent();
+  }
+
   @Get('media/:id')
   async file(@Param('id') id: string, @Res() response: Response) {
     const result = await this.media.getObject(id);
