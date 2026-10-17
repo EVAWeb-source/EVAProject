@@ -85,16 +85,16 @@ export default function ProductMediaGallery({images,name}:{images:ProductImage[]
           <span className={styles.zoomHint} aria-hidden="true">⌕</span>
           <span className={styles.imageMeta}><b>{labels[active.role]}</b><small>{String(activeIndex+1).padStart(2,'0')} / {String(sorted.length).padStart(2,'0')}</small></span>
         </button>
-        {sorted.length>1&&<div className={styles.inlineArrows} aria-label="جابجایی تصاویر"><button type="button" className={styles.prevArrow} onClick={previous} aria-label="تصویر قبلی">‹</button><button type="button" className={styles.nextArrow} onClick={next} aria-label="تصویر بعدی">›</button></div>}
+        {sorted.length>1&&<div className={styles.inlineArrows} aria-label="جابجایی تصاویر"><button type="button" className={styles.prevArrow} onClick={previous} aria-label="تصویر قبلی">←</button><button type="button" className={styles.nextArrow} onClick={next} aria-label="تصویر بعدی">→</button></div>}
       </div>
     </div>
 
     {lightboxOpen&&<div className={styles.lightbox} role="dialog" aria-modal="true" aria-label={`نمای بزرگ تصاویر ${name}`} onMouseDown={event=>{if(event.currentTarget===event.target)setLightboxOpen(false);}}>
       <div className={styles.lightboxTop}><span>{name}</span><button type="button" onClick={()=>setLightboxOpen(false)} aria-label="بستن تصویر بزرگ">×</button></div>
       <div className={styles.lightboxBody} onTouchStart={event=>{touchStart.current=event.touches[0].clientX;}} onTouchEnd={onTouchEnd}>
-        {sorted.length>1&&<button type="button" className={styles.lightboxPrev} onClick={previous} aria-label="تصویر قبلی">‹</button>}
+        {sorted.length>1&&<button type="button" className={styles.lightboxPrev} onClick={previous} aria-label="تصویر قبلی">←</button>}
         <img src={active.url} alt={active.altText||`${name} - ${labels[active.role]}`} />
-        {sorted.length>1&&<button type="button" className={styles.lightboxNext} onClick={next} aria-label="تصویر بعدی">›</button>}
+        {sorted.length>1&&<button type="button" className={styles.lightboxNext} onClick={next} aria-label="تصویر بعدی">→</button>}
       </div>
       <div className={styles.lightboxFooter}><span>{labels[active.role]}</span><b>{activeIndex+1} / {sorted.length}</b></div>
     </div>}
