@@ -25,16 +25,31 @@ export class AdminProductLifecycleService {
     if (!product) throw new NotFoundException('Product not found');
 
     const data: Record<string, unknown> = {};
-    if (input.isVisible !== undefined) {
+
+    if (input.restore === true) {
+      if (product.status !== 'ARCHIVED') {
+        throw new BadRequestException('Only archived products can be restored');
+      }
+      data.status = 'ACTIVE';
+      data.isVisible = true;
+    } else if (input.archive === true) {
+      data.status = 'ARCHIVED';
+      data.isVisible = false;
+    } else if (input.isVisible !== undefined) {
       if (typeof input.isVisible !== 'boolean') {
         throw new BadRequestException('isVisible must be boolean');
       }
+
       data.isVisible = input.isVisible;
+
+      // An archived product cannot be visible on the storefront because the
+      // public catalog only serves ACTIVE products. Turning visibility back on
+      // is therefore treated as an explicit restore from archive.
+      if (input.isVisible === true && product.status === 'ARCHIVED') {
+        data.status = 'ACTIVE';
+      }
     }
-    if (input.archive === true) {
-      data.status = 'ARCHIVED';
-      data.isVisible = false;
-    }
+
     if (Object.keys(data).length === 0) {
       throw new BadRequestException('No lifecycle fields supplied');
     }
