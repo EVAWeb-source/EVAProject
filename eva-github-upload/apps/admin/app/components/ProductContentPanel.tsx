@@ -8,18 +8,16 @@ type Product = { id:string; nameFa:string; masterSku:string };
 type ImageItem = { id?:string; url:string; altText:string; role:'MAIN'|'GALLERY'|'ON_BODY'|'DETAIL'; sortOrder:number };
 type UploadedAsset = { id:string; url:string; originalName:string; mimeType:string; sizeBytes:number };
 type ProductContent = {id:string;nameFa:string;masterSku:string;shortDescription:string|null;story:string|null;goldColor:string|null;styleLabel:string|null;details:string|null;dimensions:string|null;sizeGuide:string|null;careInstructions:string|null;packagingNote:string|null;seoTitle:string|null;seoDescription:string|null;images:ImageItem[]};
-type ProductContentPanelProps={
-  products:Product[];
-  initialProductId?:string;
-  hideSelector?:boolean;
-  onSaved?:()=>void;
-  onBack?:()=>void;
-  saveLabel?:string;
-  backLabel?:string;
-};
+type ProductContentPanelProps={products:Product[];initialProductId?:string;hideSelector?:boolean;onSaved?:()=>void;onBack?:()=>void;saveLabel?:string;backLabel?:string;};
 
 const blankImage=(sortOrder:number):ImageItem=>({url:'',altText:'',role:sortOrder===0?'MAIN':'GALLERY',sortOrder});
 function RequiredLabel({children}:{children:ReactNode}){return <span className={styles.requiredLabel}>{children}<b aria-hidden="true">*</b></span>;}
+function prepareImages(items:ImageItem[]){
+  const real=items.filter(item=>item.url.trim()).slice(0,12).map((item,index)=>({...item,sortOrder:index}));
+  if(real.length<12)real.push(blankImage(real.length));
+  return real.length?real:[blankImage(0)];
+}
+function reindex(items:ImageItem[]){return items.slice(0,12).map((item,index)=>({...item,sortOrder:index}));}
 
 export default function ProductContentPanel({products,initialProductId,hideSelector=false,onSaved,onBack,saveLabel='ذخیره تغییرات',backLabel='مرحله قبل'}:ProductContentPanelProps){
   const router=useRouter();
@@ -27,32 +25,29 @@ export default function ProductContentPanel({products,initialProductId,hideSelec
   const dragIndex=useRef<number|null>(null);
   const [productId,setProductId]=useState(initialProductId ?? products[0]?.id ?? '');
   const [data,setData]=useState<ProductContent|null>(null);
-  const [images,setImages]=useState<ImageItem[]>([blankImage(0),blankImage(1),blankImage(2),blankImage(3)]);
+  const [images,setImages]=useState<ImageItem[]>([blankImage(0)]);
   const [loading,setLoading]=useState(false);const [saving,setSaving]=useState(false);const [uploading,setUploading]=useState(false);const [message,setMessage]=useState('');const [error,setError]=useState('');
 
   useEffect(()=>{if(initialProductId)setProductId(initialProductId);},[initialProductId]);
   useEffect(()=>{const selectProduct=(event:Event)=>{const custom=event as CustomEvent<{productId?:string}>;const next=custom.detail?.productId;if(next&&products.some(product=>product.id===next))setProductId(next);};window.addEventListener('eva-admin-select-product',selectProduct);return()=>window.removeEventListener('eva-admin-select-product',selectProduct);},[products]);
-  useEffect(()=>{if(!productId){setData(null);return;}let cancelled=false;async function load(){setLoading(true);setMessage('');setError('');try{const response=await fetch('/api/admin/products/'+productId+'/content',{cache:'no-store'});if(!response.ok)throw new Error(await response.text());const payload:ProductContent=await response.json();if(cancelled)return;setData(payload);const existing=payload.images??[];const next=[...existing];while(next.length<4)next.push(blankImage(next.length));setImages(next.slice(0,12).map((item,index)=>({...item,sortOrder:item.sortOrder??index})));}catch(cause){if(!cancelled)setError(cause instanceof Error?cause.message:'دریافت اطلاعات محصول انجام نشد.');}finally{if(!cancelled)setLoading(false);}}void load();return()=>{cancelled=true;};},[productId]);
+  useEffect(()=>{if(!productId){setData(null);return;}let cancelled=false;async function load(){setLoading(true);setMessage('');setError('');try{const response=await fetch('/api/admin/products/'+productId+'/content',{cache:'no-store'});if(!response.ok)throw new Error(await response.text());const payload:ProductContent=await response.json();if(cancelled)return;setData(payload);setImages(prepareImages(payload.images??[]));}catch(cause){if(!cancelled)setError(cause instanceof Error?cause.message:'دریافت اطلاعات محصول انجام نشد.');}finally{if(!cancelled)setLoading(false);}}void load();return()=>{cancelled=true;};},[productId]);
 
-  function normalize(items:ImageItem[]){return items.slice(0,12).map((item,index)=>({...item,sortOrder:index}));}
-  function updateImage(index:number,field:keyof ImageItem,value:string|number){setImages(current=>current.map((item,i)=>i===index?({...item,[field]:value} as ImageItem):item));}
-  function addImage(){if(images.length<12)setImages(current=>normalize([...current,blankImage(current.length)]));}
-  function removeImage(index:number){setImages(current=>{const next=current.filter((_,i)=>i!==index);while(next.length<4)next.push(blankImage(next.length));return normalize(next);});}
-  function makeMain(index:number){setImages(current=>normalize(current.map((item,i)=>({...item,role:i===index?'MAIN':item.role==='MAIN'?'GALLERY':item.role}))));}
-  function moveImage(from:number,to:number){if(from===to||from<0||to<0)return;setImages(current=>{const next=[...current];const [item]=next.splice(from,1);next.splice(to,0,item);return normalize(next);});}
-
-  async function uploadOne(file:File):Promise<UploadedAsset>{
-    const form=new FormData();form.append('file',file);
-    const response=await fetch('/api/admin/media/upload',{method:'POST',body:form});
-    const raw=await response.text();
-    if(!response.ok)throw new Error(raw||`آپلود ${file.name} انجام نشد.`);
-    return JSON.parse(raw) as UploadedAsset;
+  function updateImage(index:number,field:keyof ImageItem,value:string|number){
+    setImages(current=>{
+      const next=current.map((item,i)=>i===index?({...item,[field]:value} as ImageItem):item);
+      if(field==='url'&&index===next.length-1&&String(value).trim()&&next.length<12)next.push(blankImage(next.length));
+      return reindex(next);
+    });
   }
+  function removeImage(index:number){setImages(current=>prepareImages(current.filter((_,i)=>i!==index)));}
+  function makeMain(index:number){setImages(current=>reindex(current.map((item,i)=>({...item,role:i===index?'MAIN':item.role==='MAIN'?'GALLERY':item.role}))));}
+  function moveImage(from:number,to:number){if(from===to||from<0||to<0)return;setImages(current=>{const next=[...current];const [item]=next.splice(from,1);next.splice(to,0,item);return reindex(next);});}
 
+  async function uploadOne(file:File):Promise<UploadedAsset>{const form=new FormData();form.append('file',file);const response=await fetch('/api/admin/media/upload',{method:'POST',body:form});const raw=await response.text();if(!response.ok)throw new Error(raw||`آپلود ${file.name} انجام نشد.`);return JSON.parse(raw) as UploadedAsset;}
   async function uploadFiles(files:File[]){
     if(!files.length||uploading)return;
-    const remaining=12-images.filter(item=>item.url.trim()).length;
-    const selected=files.slice(0,remaining);
+    const currentCount=images.filter(item=>item.url.trim()).length;
+    const selected=files.slice(0,12-currentCount);
     if(!selected.length){setError('حداکثر ۱۲ تصویر برای هر محصول قابل ثبت است.');return;}
     setUploading(true);setMessage('');setError('');
     try{
@@ -60,26 +55,21 @@ export default function ProductContentPanel({products,initialProductId,hideSelec
       setImages(current=>{
         const filled=current.filter(item=>item.url.trim());
         let hasMain=filled.some(item=>item.role==='MAIN');
-        for(const asset of uploaded){
-          filled.push({url:asset.url,altText:'',role:hasMain?'GALLERY':'MAIN',sortOrder:filled.length});
-          hasMain=true;
-        }
-        while(filled.length<4)filled.push(blankImage(filled.length));
-        return normalize(filled);
+        for(const asset of uploaded){filled.push({url:asset.url,altText:'',role:hasMain?'GALLERY':'MAIN',sortOrder:filled.length});hasMain=true;}
+        return prepareImages(filled);
       });
       setMessage(`${uploaded.length} تصویر با موفقیت آپلود شد. Alt Text را تکمیل و تغییرات را ذخیره کن.`);
     }catch(cause){setError(cause instanceof Error?cause.message:'آپلود تصویر انجام نشد.');}
     finally{setUploading(false);if(fileInput.current)fileInput.current.value='';}
   }
 
-  async function submit(event:FormEvent<HTMLFormElement>){event.preventDefault();if(!productId||saving||uploading)return;setSaving(true);setMessage('');setError('');const form=new FormData(event.currentTarget);const payload={shortDescription:form.get('shortDescription'),story:form.get('story'),goldColor:form.get('goldColor'),styleLabel:form.get('styleLabel'),details:form.get('details'),dimensions:form.get('dimensions'),sizeGuide:form.get('sizeGuide'),careInstructions:form.get('careInstructions'),packagingNote:form.get('packagingNote'),seoTitle:form.get('seoTitle'),seoDescription:form.get('seoDescription'),images:images.filter(image=>image.url.trim()).map((image,index)=>({url:image.url.trim(),altText:image.altText.trim(),role:image.role,sortOrder:index}))};try{const response=await fetch('/api/admin/products/'+productId+'/content',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});const raw=await response.text();if(!response.ok)throw new Error(raw||'ذخیره انجام نشد.');const updated:ProductContent=JSON.parse(raw);setData(updated);const next=[...(updated.images??[])];while(next.length<4)next.push(blankImage(next.length));setImages(normalize(next));setMessage('محتوا و تصاویر محصول ذخیره شد.');window.dispatchEvent(new Event('eva-admin-catalog-change'));onSaved?.();router.refresh();}catch(cause){setError(cause instanceof Error?cause.message:'ذخیره انجام نشد.');}finally{setSaving(false);}}
+  async function submit(event:FormEvent<HTMLFormElement>){event.preventDefault();if(!productId||saving||uploading)return;setSaving(true);setMessage('');setError('');const form=new FormData(event.currentTarget);const payload={shortDescription:form.get('shortDescription'),story:form.get('story'),goldColor:form.get('goldColor'),styleLabel:form.get('styleLabel'),details:form.get('details'),dimensions:form.get('dimensions'),sizeGuide:form.get('sizeGuide'),careInstructions:form.get('careInstructions'),packagingNote:form.get('packagingNote'),seoTitle:form.get('seoTitle'),seoDescription:form.get('seoDescription'),images:images.filter(image=>image.url.trim()).map((image,index)=>({url:image.url.trim(),altText:image.altText.trim(),role:image.role,sortOrder:index}))};try{const response=await fetch('/api/admin/products/'+productId+'/content',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});const raw=await response.text();if(!response.ok)throw new Error(raw||'ذخیره انجام نشد.');const updated:ProductContent=JSON.parse(raw);setData(updated);setImages(prepareImages(updated.images??[]));setMessage('محتوا و تصاویر محصول ذخیره شد.');window.dispatchEvent(new Event('eva-admin-catalog-change'));onSaved?.();router.refresh();}catch(cause){setError(cause instanceof Error?cause.message:'ذخیره انجام نشد.');}finally{setSaving(false);}}
 
   return <section id="product-content" className={styles.panel}>
     <div className={styles.head}><div><h3>محتوا و تصاویر</h3><p>متن، تصاویر و اطلاعات SEO محصول را در یک‌جا مدیریت کن.</p></div>{!hideSelector&&<select value={productId} onChange={event=>setProductId(event.target.value)} aria-label="انتخاب محصول">{products.map(product=><option key={product.id} value={product.id}>{product.nameFa} — {product.masterSku}</option>)}</select>}</div>
     {loading&&<div className={styles.notice}>در حال دریافت محتوای محصول...</div>}{message&&<div className={styles.success}>{message}</div>}{error&&<div className={styles.error}>{error}</div>}
     {data&&!loading&&<form onSubmit={submit} className={styles.form}>
       <div className={styles.identity}><div><strong>{data.nameFa}</strong><span dir="ltr">{data.masterSku}</span></div><div className={styles.requiredNote}><b>*</b><span>الزامی برای انتشار</span></div></div>
-
       <section className={styles.section}><div className={styles.sectionHead}><strong>محتوای اصلی</strong></div>
         <div className={styles.grid2}><label><RequiredLabel>رنگ طلا</RequiredLabel><input name="goldColor" defaultValue={data.goldColor??''} placeholder="مثلاً زرد" /></label><label><RequiredLabel>استایل</RequiredLabel><input name="styleLabel" defaultValue={data.styleLabel??''} placeholder="مثلاً مینیمال / روزمره" /></label></div>
         <label><RequiredLabel>توضیح کوتاه</RequiredLabel><textarea name="shortDescription" defaultValue={data.shortDescription??''} rows={2} placeholder="یک توضیح کوتاه کنار عنوان محصول" /></label>
@@ -90,8 +80,8 @@ export default function ProductContentPanel({products,initialProductId,hideSelec
       </section>
 
       <section className={`${styles.section} ${styles.mediaSection}`} onDragOver={event=>event.preventDefault()} onDrop={event=>{if(event.dataTransfer.files?.length){event.preventDefault();void uploadFiles(Array.from(event.dataTransfer.files));}}}>
-        <div className={styles.mediaHead}><div><strong>تصاویر</strong><span>فایل را بکش و اینجا رها کن یا از کامپیوتر انتخاب کن. JPG/PNG/WebP/AVIF تا ۱۰MB.</span></div><div className={styles.mediaActions}><input ref={fileInput} className={styles.fileInput} type="file" multiple accept="image/jpeg,image/png,image/webp,image/avif" onChange={event=>void uploadFiles(Array.from(event.target.files??[]))}/><button type="button" onClick={()=>fileInput.current?.click()} disabled={uploading}>{uploading?'در حال آپلود...':'↑ آپلود عکس'}</button><button type="button" onClick={addImage} disabled={images.length>=12}>+ URL</button></div></div>
-        <div className={styles.dropHint}>تصاویر را می‌توانی برای تغییر ترتیب بکشـی. ستاره، تصویر اصلی محصول را مشخص می‌کند.</div>
+        <div className={styles.mediaHead}><div><strong>تصاویر محصول</strong><span>استاندارد پیشنهادی: <b>1600×2000 px · نسبت 4:5</b> — JPG/PNG/WebP/AVIF تا ۱۰MB.</span></div><div className={styles.mediaActions}><input ref={fileInput} className={styles.fileInput} type="file" multiple accept="image/jpeg,image/png,image/webp,image/avif" onChange={event=>void uploadFiles(Array.from(event.target.files??[]))}/><button type="button" onClick={()=>fileInput.current?.click()} disabled={uploading}>{uploading?'در حال آپلود...':'↑ آپلود عکس'}</button></div></div>
+        <div className={styles.dropHint}>در شروع فقط یک ردیف نمایش داده می‌شود؛ با آپلود یا واردکردن URL، ردیف بعدی خودکار اضافه می‌شود. تصاویر را برای تغییر ترتیب بکش و ستاره را برای تصویر اصلی بزن.</div>
         <div className={styles.imageList}>{images.map((image,index)=>{const isMain=image.role==='MAIN';return <div className={`${styles.imageRow} ${isMain?styles.mainImageRow:''}`} key={`${image.id??image.url}-${index}`} draggable={Boolean(image.url)} onDragStart={()=>{dragIndex.current=index;}} onDragOver={event=>event.preventDefault()} onDrop={event=>{if(event.dataTransfer.files?.length)return;event.preventDefault();if(dragIndex.current!==null)moveImage(dragIndex.current,index);dragIndex.current=null;}}>
           <div className={styles.preview}>{image.url?<img src={image.url} alt="پیش‌نمایش" />:<span>{index+1}</span>}</div>
           <label>{isMain?<RequiredLabel>URL تصویر اصلی</RequiredLabel>:'URL'}<input value={image.url} onChange={event=>updateImage(index,'url',event.target.value)} dir="ltr" placeholder="https://..." /></label>
