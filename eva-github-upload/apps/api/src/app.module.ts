@@ -13,11 +13,13 @@ import { CustomerModule } from './customer/customer.module.js';
 import { TrackingModule } from './tracking/tracking.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { AnalyticsModule } from './analytics/analytics.module.js';
+import { MediaModule } from './media/media.module.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    MediaModule,
     HealthModule,
     PricingModule,
     ReservationsModule,
