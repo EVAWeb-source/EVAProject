@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './ProductMediaGallery.module.css';
 
 type ProductImage={id:string;url:string;altText:string;role:'MAIN'|'GALLERY'|'ON_BODY'|'DETAIL';sortOrder:number};
@@ -6,31 +9,94 @@ const labels:Record<ProductImage['role'],string>={MAIN:'نمای اصلی',GALLE
 const roleOrder:Record<ProductImage['role'],number>={MAIN:0,ON_BODY:1,DETAIL:2,GALLERY:3};
 
 export default function ProductMediaGallery({images,name}:{images:ProductImage[];name:string}){
-  const sorted=[...images].sort((a,b)=>{
+  const sorted=useMemo(()=>[...images].sort((a,b)=>{
     const roleDiff=roleOrder[a.role]-roleOrder[b.role];
     return roleDiff!==0?roleDiff:a.sortOrder-b.sortOrder;
-  });
+  }),[images]);
+  const [activeIndex,setActiveIndex]=useState(0);
+  const [lightboxOpen,setLightboxOpen]=useState(false);
+  const touchStart=useRef<number|null>(null);
 
-  if(sorted.length){
-    return <div className={styles.gallery} aria-label={`تصاویر ${name}`}>
-      {sorted.map((image,index)=><figure className={index===0?styles.card+' '+styles.main:styles.card} key={image.id}>
-        <img
-          src={image.url}
-          alt={image.altText||`${name} - ${labels[image.role]}`}
-          loading={index===0?'eager':'lazy'}
-          decoding="async"
-          fetchPriority={index===0?'high':'auto'}
-          width={1200}
-          height={1500}
-        />
-        <figcaption><span>{String(index+1).padStart(2,'0')}</span><b>{labels[image.role]??'تصویر محصول'}</b></figcaption>
-      </figure>)}
+  useEffect(()=>{
+    if(activeIndex>sorted.length-1)setActiveIndex(0);
+  },[activeIndex,sorted.length]);
+
+  useEffect(()=>{
+    if(!lightboxOpen)return;
+    const previousOverflow=document.body.style.overflow;
+    document.body.style.overflow='hidden';
+    function onKeyDown(event:KeyboardEvent){
+      if(event.key==='Escape')setLightboxOpen(false);
+      if(event.key==='ArrowLeft')setActiveIndex(current=>(current-1+sorted.length)%sorted.length);
+      if(event.key==='ArrowRight')setActiveIndex(current=>(current+1)%sorted.length);
+    }
+    window.addEventListener('keydown',onKeyDown);
+    return()=>{document.body.style.overflow=previousOverflow;window.removeEventListener('keydown',onKeyDown);};
+  },[lightboxOpen,sorted.length]);
+
+  function previous(){if(sorted.length>1)setActiveIndex(current=>(current-1+sorted.length)%sorted.length);}
+  function next(){if(sorted.length>1)setActiveIndex(current=>(current+1)%sorted.length);}
+  function onTouchEnd(event:React.TouchEvent){
+    if(touchStart.current===null)return;
+    const delta=event.changedTouches[0].clientX-touchStart.current;
+    touchStart.current=null;
+    if(Math.abs(delta)<45)return;
+    if(delta>0)previous();else next();
+  }
+
+  if(!sorted.length){
+    return <div className={styles.gallery} aria-label={`نمایش نمونه ${name}`}>
+      <div className={styles.stage}><div className={styles.fallback}><span className={styles.fallbackLine}/><span className={styles.fallbackGem}><i/></span><small>تصویر محصول به‌زودی</small></div></div>
     </div>;
   }
 
-  return <div className={styles.gallery} aria-label={`نمایش نمونه ${name}`}>
-    <div className={styles.card+' '+styles.main}><div className={styles.heroJewel}><span className={styles.chain}/><span className={styles.pendant}><i/></span></div><span className={styles.label}>نمای اصلی</span></div>
-    <div className={styles.card}><div className={styles.onBody}><span className={styles.neck}/><span className={styles.bodyChain}/><span className={styles.bodyPendant}/></div><span className={styles.label}>نمای روی بدن</span></div>
-    <div className={styles.card}><div className={styles.detail}><span/></div><span className={styles.label}>جزئیات</span></div>
-  </div>;
+  const active=sorted[activeIndex]??sorted[0];
+  return <>
+    <div className={styles.gallery} aria-label={`تصاویر ${name}`}>
+      <div className={styles.thumbnailRail} aria-label="انتخاب تصویر">
+        {sorted.map((image,index)=><button
+          type="button"
+          className={index===activeIndex?styles.thumbnail+' '+styles.thumbnailActive:styles.thumbnail}
+          onClick={()=>setActiveIndex(index)}
+          aria-label={`نمایش ${labels[image.role]} ${index+1}`}
+          aria-pressed={index===activeIndex}
+          key={image.id}
+        ><img src={image.url} alt="" loading={index<3?'eager':'lazy'} decoding="async" /></button>)}
+      </div>
+
+      <div className={styles.stageWrap}>
+        <button
+          type="button"
+          className={styles.stage}
+          onClick={()=>setLightboxOpen(true)}
+          aria-label={`بزرگ‌نمایی تصویر ${active.altText||name}`}
+          onTouchStart={event=>{touchStart.current=event.touches[0].clientX;}}
+          onTouchEnd={onTouchEnd}
+        >
+          <img
+            src={active.url}
+            alt={active.altText||`${name} - ${labels[active.role]}`}
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
+            width={1200}
+            height={1500}
+          />
+          <span className={styles.zoomHint} aria-hidden="true">⌕</span>
+          <span className={styles.imageMeta}><b>{labels[active.role]}</b><small>{String(activeIndex+1).padStart(2,'0')} / {String(sorted.length).padStart(2,'0')}</small></span>
+        </button>
+        {sorted.length>1&&<div className={styles.inlineArrows} aria-label="جابجایی تصاویر"><button type="button" onClick={previous} aria-label="تصویر قبلی">‹</button><button type="button" onClick={next} aria-label="تصویر بعدی">›</button></div>}
+      </div>
+    </div>
+
+    {lightboxOpen&&<div className={styles.lightbox} role="dialog" aria-modal="true" aria-label={`نمای بزرگ تصاویر ${name}`} onMouseDown={event=>{if(event.currentTarget===event.target)setLightboxOpen(false);}}>
+      <div className={styles.lightboxTop}><span>{name}</span><button type="button" onClick={()=>setLightboxOpen(false)} aria-label="بستن تصویر بزرگ">×</button></div>
+      <div className={styles.lightboxBody} onTouchStart={event=>{touchStart.current=event.touches[0].clientX;}} onTouchEnd={onTouchEnd}>
+        {sorted.length>1&&<button type="button" className={styles.lightboxPrev} onClick={previous} aria-label="تصویر قبلی">‹</button>}
+        <img src={active.url} alt={active.altText||`${name} - ${labels[active.role]}`} />
+        {sorted.length>1&&<button type="button" className={styles.lightboxNext} onClick={next} aria-label="تصویر بعدی">›</button>}
+      </div>
+      <div className={styles.lightboxFooter}><span>{labels[active.role]}</span><b>{activeIndex+1} / {sorted.length}</b></div>
+    </div>}
+  </>;
 }
