@@ -153,9 +153,9 @@ model MediaAsset {
   sizeBytes    Int
   width        Int?
   height       Int?
+  siteSlots    SiteMediaSlot[]
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
-  siteSlots    SiteMediaSlot[]
 
   @@index([createdAt])
 }
@@ -294,6 +294,7 @@ model OrderLine {
   stoneValueToman          BigInt?
   rateVersion              String?
   pricingFormulaVersion    String?
+  pricingRuleId            String?
   createdAt                DateTime     @default(now())
 
   @@index([orderId])
@@ -301,74 +302,185 @@ model OrderLine {
 }
 
 model Reservation {
-  id            String            @id @default(cuid())
-  unitId        String
-  unit          PhysicalUnit      @relation(fields: [unitId], references: [id], onDelete: Restrict)
-  orderId       String?
-  order         Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  status        ReservationStatus @default(ACTIVE)
-  expiresAt     DateTime
-  idempotencyKey String?          @unique
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  id                       String            @id @default(cuid())
+  token                    String            @unique
+  unitId                   String
+  unit                     PhysicalUnit      @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  status                   ReservationStatus @default(ACTIVE)
+  expiresAt                DateTime
+  lockedPriceToman         BigInt?
+  goldRateTomanPerGram     BigInt?
+  goldValueToman           BigInt?
+  makingToman              BigInt?
+  profitToman              BigInt?
+  taxToman                 BigInt?
+  goldFinalToman           BigInt?
+  stoneName                String?
+  stoneCarat               Decimal?          @db.Decimal(8, 3)
+  stoneWeightGram          Decimal?          @db.Decimal(8, 3)
+  stonePriceTomanPerGram   BigInt?
+  stoneValueToman          BigInt?
+  rateVersion              String?
+  pricingFormulaVersion    String?
+  pricingRuleId            String?
+  orderId                  String?
+  order                    Order?             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
 
-  @@index([unitId, status])
+  @@index([unitId, status, expiresAt])
   @@index([status, expiresAt])
+  @@index([orderId])
 }
 
 model PaymentAttempt {
-  id          String        @id @default(cuid())
-  orderId     String
-  order       Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  provider    String
-  authority   String?       @unique
-  amountToman BigInt
-  status      PaymentStatus @default(INITIATED)
-  requestData Json?
-  responseData Json?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id           String        @id @default(cuid())
+  token        String        @unique
+  orderId      String
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  provider     String        @default("DEMO")
+  status       PaymentStatus @default(INITIATED)
+  amountToman  BigInt
+  referenceId  String?       @unique
+  failureCode  String?
+  paidAt       DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   @@index([orderId, status])
+  @@index([status, createdAt])
 }
 
 model Invoice {
-  id            String        @id @default(cuid())
-  invoiceNumber String        @unique
-  orderId       String        @unique
-  order         Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  status        InvoiceStatus @default(ISSUED)
-  payload       Json
-  issuedAt      DateTime      @default(now())
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id               String        @id @default(cuid())
+  invoiceNumber    String        @unique
+  verificationCode String        @unique
+  status           InvoiceStatus @default(ISSUED)
+  orderId          String        @unique
+  order            Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  sellerName       String        @default("EVA")
+  customerName     String
+  customerMobile   String
+  recipientName    String
+  province         String
+  city             String
+  address          String
+  postalCode       String
+  paymentProvider  String
+  paymentReference String
+  totalToman       BigInt
+  lines            InvoiceLine[]
+  issuedAt         DateTime      @default(now())
+  createdAt        DateTime      @default(now())
+
+  @@index([status, issuedAt])
+  @@index([customerMobile, issuedAt])
+}
+
+model InvoiceLine {
+  id                       String   @id @default(cuid())
+  invoiceId                String
+  invoice                  Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  productNameFa            String
+  masterSku                String
+  unitSku                  String
+  exactWeightGram          Decimal  @db.Decimal(8, 3)
+  purity                   Int
+  goldRateTomanPerGram     BigInt?
+  goldValueToman           BigInt?
+  makingToman              BigInt?
+  profitToman              BigInt?
+  taxToman                 BigInt?
+  goldFinalToman           BigInt?
+  stoneName                String?
+  stoneCarat               Decimal? @db.Decimal(8, 3)
+  stoneWeightGram          Decimal? @db.Decimal(8, 3)
+  stonePriceTomanPerGram   BigInt?
+  stoneValueToman          BigInt?
+  finalPriceToman          BigInt
+  rateVersion              String?
+  pricingFormulaVersion    String?
+  pricingRuleId            String?
+  createdAt                DateTime @default(now())
+
+  @@index([invoiceId])
+  @@index([unitSku])
 }
 
 model AfterSalesCase {
-  id             String           @id @default(cuid())
-  caseNumber     String           @unique
-  orderId        String
-  order          Order            @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  unitId         String?
-  unit           PhysicalUnit?    @relation(fields: [unitId], references: [id], onDelete: Restrict)
-  type           AfterSalesType
-  status         AfterSalesStatus @default(REQUESTED)
-  reason         String
-  customerNote   String?
-  internalNote   String?
-  approvedAmount BigInt?
-  requestedAt    DateTime         @default(now())
-  completedAt    DateTime?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id                String           @id @default(cuid())
+  orderId           String
+  order             Order            @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  unitId            String
+  unit              PhysicalUnit     @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  type              AfterSalesType
+  status             AfterSalesStatus @default(REQUESTED)
+  reason            String
+  note              String?
+  refundAmountToman BigInt?
+  refundReference   String?
+  qcOutcome         UnitStatus?
+  requestedAt       DateTime         @default(now())
+  approvedAt        DateTime?
+  receivedAt        DateTime?
+  qcCompletedAt     DateTime?
+  refundedAt        DateTime?
+  rejectedAt        DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
-  @@index([orderId, status])
-  @@index([unitId])
-  @@index([type, status])
+  @@index([orderId, createdAt])
+  @@index([unitId, createdAt])
+  @@index([type, status, createdAt])
+}
+
+model OtpChallenge {
+  id         String    @id @default(cuid())
+  mobile     String
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([mobile, createdAt])
+  @@index([mobile, expiresAt])
+}
+
+model CustomerSession {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  mobile     String
+  expiresAt  DateTime
+  lastUsedAt DateTime  @default(now())
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([mobile, expiresAt])
+}
+
+model SmsNotification {
+  id          String   @id @default(cuid())
+  orderId     String?
+  orderNumber String?
+  mobile      String
+  event       String
+  body        String
+  provider    String   @default("NOT_CONFIGURED")
+  status      String   @default("PENDING_PROVIDER")
+  providerRef String?
+  error       String?
+  createdAt   DateTime @default(now())
+  sentAt      DateTime?
+
+  @@index([orderNumber, createdAt])
+  @@index([mobile, createdAt])
+  @@index([status, createdAt])
 }
 
 model AdminAuditLog {
   id         String   @id @default(cuid())
+  actor      String   @default("ADMIN")
   action     String
   entityType String
   entityId   String?
@@ -377,22 +489,6 @@ model AdminAuditLog {
   createdAt  DateTime @default(now())
 
   @@index([createdAt])
-  @@index([entityType, entityId])
-}
-
-model AnalyticsEvent {
-  id        String   @id @default(cuid())
-  event     String
-  path      String?
-  sessionId String?
-  productId String?
-  orderId   String?
-  value     BigInt?
-  metadata  Json?
-  createdAt DateTime @default(now())
-
-  @@index([event, createdAt])
-  @@index([productId, createdAt])
-  @@index([orderId, createdAt])
-  @@index([sessionId, createdAt])
+  @@index([action, createdAt])
+  @@index([entityType, entityId, createdAt])
 }
