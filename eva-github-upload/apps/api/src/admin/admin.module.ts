@@ -8,6 +8,8 @@ import { AdminProductContentController } from './admin-product-content.controlle
 import { AdminProductContentService } from './admin-product-content.service.js';
 import { AdminProductPricingController } from './admin-product-pricing.controller.js';
 import { AdminProductPricingService } from './admin-product-pricing.service.js';
+import { AdminProductLifecycleController } from './admin-product-lifecycle.controller.js';
+import { AdminProductLifecycleService } from './admin-product-lifecycle.service.js';
 import { AdminCatalogReadinessController } from './admin-catalog-readiness.controller.js';
 import { AdminCatalogReadinessService } from './admin-catalog-readiness.service.js';
 import { AdminAfterSalesController } from './admin-after-sales.controller.js';
@@ -34,6 +36,7 @@ import { AdminAnalyticsService } from './admin-analytics.service.js';
     AdminPricingController,
     AdminProductContentController,
     AdminProductPricingController,
+    AdminProductLifecycleController,
     AdminCatalogReadinessController,
     AdminAfterSalesController,
     AdminCustomersController,
@@ -49,6 +52,7 @@ import { AdminAnalyticsService } from './admin-analytics.service.js';
     AdminPricingService,
     AdminProductContentService,
     AdminProductPricingService,
+    AdminProductLifecycleService,
     AdminCatalogReadinessService,
     AdminAfterSalesService,
     AdminCustomersService,
