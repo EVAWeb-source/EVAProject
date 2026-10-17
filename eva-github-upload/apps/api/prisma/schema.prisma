@@ -108,6 +108,7 @@ model MasterProduct {
   profitPercent    Decimal?        @db.Decimal(7, 3)
   taxPercent       Decimal?        @db.Decimal(7, 3)
   status           ProductStatus   @default(DRAFT)
+  isVisible        Boolean         @default(true)
   collectionId     String?
   collection       Collection?     @relation(fields: [collectionId], references: [id])
   shortDescription String?
@@ -127,6 +128,7 @@ model MasterProduct {
   updatedAt        DateTime        @updatedAt
 
   @@index([status])
+  @@index([isVisible])
   @@index([collectionId])
 }
 
