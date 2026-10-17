@@ -145,6 +145,33 @@ model ProductImage {
   @@index([productId, role])
 }
 
+model MediaAsset {
+  id           String          @id @default(cuid())
+  storageKey   String          @unique
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  width        Int?
+  height       Int?
+  siteSlots    SiteMediaSlot[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([createdAt])
+}
+
+model SiteMediaSlot {
+  id        String      @id @default(cuid())
+  slot      String      @unique
+  assetId   String?
+  asset     MediaAsset? @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  altText   String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([assetId])
+}
+
 model PhysicalUnit {
   id                       String           @id @default(cuid())
   unitSku                  String           @unique
@@ -387,7 +414,7 @@ model AfterSalesCase {
   unitId            String
   unit              PhysicalUnit     @relation(fields: [unitId], references: [id], onDelete: Restrict)
   type              AfterSalesType
-  status            AfterSalesStatus @default(REQUESTED)
+  status             AfterSalesStatus @default(REQUESTED)
   reason            String
   note              String?
   refundAmountToman BigInt?

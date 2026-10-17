@@ -23,6 +23,7 @@ const navGroups = [
       { href:'/catalog/collections', label:'کالکشن‌ها', icon:'◫' },
       { href:'/inventory', label:'موجودی', icon:'▦' },
       { href:'/catalog/content', label:'محتوا', icon:'✎' },
+      { href:'/catalog/media', label:'رسانه‌ها', icon:'▧' },
       { href:'/catalog/onboarding', label:'آماده‌سازی', icon:'✓' },
     ],
   },
@@ -113,14 +114,8 @@ export default function AdminShell({children, connected=true}:{children:ReactNod
           const expanded=expandedGroups[group.label];
           const groupHasActive=group.items.some(item=>active(item));
           return <div className={`${styles.navGroup} ${groupHasActive?styles.activeGroup:''}`} key={group.label}>
-            <button
-              type="button"
-              className={styles.groupToggle}
-              onClick={()=>toggleGroup(group.label)}
-              aria-expanded={expanded}
-            >
-              <span>{group.label}</span>
-              <i className={expanded?styles.chevronOpen:''}>⌄</i>
+            <button type="button" className={styles.groupToggle} onClick={()=>toggleGroup(group.label)} aria-expanded={expanded}>
+              <span>{group.label}</span><i className={expanded?styles.chevronOpen:''}>⌄</i>
             </button>
             {expanded&&<div className={styles.groupItems}>{group.items.map(item=><a key={item.href} className={active(item)?styles.active:''} href={item.href} onClick={()=>setOpen(false)}><i>{item.icon}</i><span>{item.label}</span></a>)}</div>}
           </div>;
