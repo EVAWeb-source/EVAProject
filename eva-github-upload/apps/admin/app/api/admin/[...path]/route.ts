@@ -33,6 +33,10 @@ async function forward(request: Request, context: { params: Promise<{ path: stri
     /^customers\/[^/]+$/,
     /^notifications$/,
     /^notifications\/test$/,
+    /^media$/,
+    /^media\/upload$/,
+    /^media\/slots\/[^/]+$/,
+    /^media\/[^/]+$/,
   ];
   const joined = path.join('/');
   if (!allowed.some((pattern) => pattern.test(joined))) {
@@ -45,22 +49,26 @@ async function forward(request: Request, context: { params: Promise<{ path: stri
     return NextResponse.json({ error: 'ADMIN_API_KEY is not configured' }, { status: 500 });
   }
 
-  const body = ['POST', 'PATCH', 'PUT'].includes(request.method) ? await request.text() : undefined;
+  const hasBody = ['POST', 'PATCH', 'PUT'].includes(request.method);
+  const contentType = request.headers.get('content-type') ?? '';
+  const isMultipart = contentType.toLowerCase().startsWith('multipart/form-data');
+  const body = hasBody ? (isMultipart ? await request.arrayBuffer() : await request.text()) : undefined;
   const response = await fetch(`${apiBase}/api/v1/admin/${joined}`, {
     method: request.method,
     headers: {
       'x-admin-key': adminKey,
-      ...(body ? { 'content-type': 'application/json' } : {}),
+      ...(hasBody && contentType ? { 'content-type': contentType } : {}),
     },
     body,
     cache: 'no-store',
   });
 
+  const resultType = response.headers.get('content-type') ?? 'application/json';
+  if (resultType.startsWith('image/')) {
+    return new NextResponse(await response.arrayBuffer(), { status: response.status, headers: { 'content-type': resultType } });
+  }
   const text = await response.text();
-  return new NextResponse(text, {
-    status: response.status,
-    headers: { 'content-type': response.headers.get('content-type') ?? 'application/json' },
-  });
+  return new NextResponse(text, { status: response.status, headers: { 'content-type': resultType } });
 }
 
 export async function GET(request: Request, context: { params: Promise<{ path: string[] }> }) {
