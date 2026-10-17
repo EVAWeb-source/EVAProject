@@ -8,6 +8,7 @@ import './approved-header.css';
 import './home-final.css';
 import './final-footer.css';
 import './scroll-performance.css';
+import './mobile-home.css';
 
 const index = indexingEnabled();
 
