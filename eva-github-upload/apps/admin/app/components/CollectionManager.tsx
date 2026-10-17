@@ -24,7 +24,7 @@ export default function CollectionManager({collections,products}:{collections:Co
 
   async function create(event:FormEvent<HTMLFormElement>){event.preventDefault();begin('create');const form=event.currentTarget;const data=new FormData(form);try{await request('collections','POST',{nameFa:data.get('nameFa'),slug:String(data.get('slug')??'').toLowerCase(),code:String(data.get('code')??'').toUpperCase()});form.reset();setMessage('کالکشن جدید ساخته شد.');router.refresh();}catch(cause){setError(cause instanceof Error?cause.message:'ساخت کالکشن انجام نشد.');}finally{setBusy('');}}
   async function save(event:FormEvent<HTMLFormElement>,collection:Collection){event.preventDefault();begin(collection.id);const data=new FormData(event.currentTarget);try{await request(`collections/${collection.id}`,'PATCH',{nameFa:data.get('nameFa'),slug:String(data.get('slug')??'').toLowerCase(),code:String(data.get('code')??'').toUpperCase()});setMessage(`کالکشن «${collection.nameFa}» بروزرسانی شد.`);router.refresh();}catch(cause){setError(cause instanceof Error?cause.message:'بروزرسانی کالکشن انجام نشد.');}finally{setBusy('');}}
-  async function remove(collection:Collection){const count=counts.get(collection.id)??0;if(count>0){setError(`این کالکشن ${new Intl.NumberFormat('fa-IR').format(count)} محصول دارد؛ اول محصولات را منتقل کن.`);return;}if(!window.confirm(`کالکشن «${collection.nameFa}» حذف شود؟`))return;begin(collection.id);try{await request(`collections/${collection.id}`,'DELETE');setMessage('کالکشن حذف شد.');router.refresh();}catch(cause){setError(cause instanceof Error?cause.message:'حذف کالکشن انجام نشد.');}finally{setBusy('');}}
+  async function remove(collection:Collection){const count=counts.get(collection.id)??0;const countText=new Intl.NumberFormat('fa-IR').format(count);const warning=count>0?`\n${countText} محصول داخل این کالکشن حذف نمی‌شوند؛ فقط از کالکشن خارج و بدون کالکشن می‌شوند.`:'';if(!window.confirm(`کالکشن «${collection.nameFa}» حذف شود؟${warning}`))return;begin(collection.id);try{const result=await request(`collections/${collection.id}`,'DELETE') as {detachedProducts?:number};const detached=result?.detachedProducts??count;setMessage(detached>0?`کالکشن حذف شد و ${new Intl.NumberFormat('fa-IR').format(detached)} محصول بدون کالکشن باقی ماند.`:'کالکشن حذف شد.');router.refresh();}catch(cause){setError(cause instanceof Error?cause.message:'حذف کالکشن انجام نشد.');}finally{setBusy('');}}
 
   return <section className={styles.wrap}>
     {(message||error)&&<div className={error?styles.error:styles.success}>{error||message}</div>}
@@ -41,7 +41,7 @@ export default function CollectionManager({collections,products}:{collections:Co
       <label>نام<input name="nameFa" defaultValue={collection.nameFa} required/></label>
       <label>Slug<input name="slug" dir="ltr" defaultValue={collection.slug} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*"/></label>
       <label>Code<input name="code" dir="ltr" defaultValue={collection.code} required pattern="[A-Z0-9-]{2,12}"/></label>
-      <div className={styles.actions}><button disabled={Boolean(busy)}>ذخیره</button><button type="button" className={styles.delete} disabled={Boolean(busy)||count>0} onClick={()=>remove(collection)}>حذف</button></div>
+      <div className={styles.actions}><button disabled={Boolean(busy)}>ذخیره</button><button type="button" className={styles.delete} disabled={Boolean(busy)} onClick={()=>remove(collection)}>حذف</button></div>
     </form>;})}{collections.length===0&&<div className={styles.empty}>هنوز کالکشنی ساخته نشده است.</div>}</div>
   </section>;
 }
