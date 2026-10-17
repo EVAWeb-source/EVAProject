@@ -85,7 +85,7 @@ export default function ProductMediaGallery({images,name}:{images:ProductImage[]
           <span className={styles.zoomHint} aria-hidden="true">⌕</span>
           <span className={styles.imageMeta}><b>{labels[active.role]}</b><small>{String(activeIndex+1).padStart(2,'0')} / {String(sorted.length).padStart(2,'0')}</small></span>
         </button>
-        {sorted.length>1&&<div className={styles.inlineArrows} aria-label="جابجایی تصاویر"><button type="button" onClick={previous} aria-label="تصویر قبلی">‹</button><button type="button" onClick={next} aria-label="تصویر بعدی">›</button></div>}
+        {sorted.length>1&&<div className={styles.inlineArrows} aria-label="جابجایی تصاویر"><button type="button" className={styles.prevArrow} onClick={previous} aria-label="تصویر قبلی">‹</button><button type="button" className={styles.nextArrow} onClick={next} aria-label="تصویر بعدی">›</button></div>}
       </div>
     </div>
 
