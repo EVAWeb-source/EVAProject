@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nest start --watch",
     "build": "prisma generate --schema prisma/schema.prisma && nest build",
-    "start": "prisma db push --config prisma7.config.ts && node dist/main.js",
+    "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
     "db:generate": "prisma generate --schema prisma/schema.prisma",
