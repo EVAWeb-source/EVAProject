@@ -51,7 +51,7 @@ export default async function ProductPage({params}:{params:Promise<{slug:string}
 
     <ProductInfoTabs specs={specs} story={product.story} details={product.details} dimensions={product.dimensions} sizeGuide={product.sizeGuide} careInstructions={product.careInstructions} packagingNote={product.packagingNote}/>
 
-    {related.length>0?<section className={styles.relatedSection}><div className={styles.relatedHeading}><div><span>YOU MAY ALSO LIKE</span><h2>شاید این‌ها را هم دوست داشته باشی</h2></div><Link href={catSlug?'/shop/'+catSlug:'/shop'}>مشاهده بیشتر ←</Link></div><CatalogGrid products={related}/></section>:null}
+    {related.length>0?<section className={styles.relatedSection}><div className={styles.relatedHeading}><div><span>YOU MAY ALSO LIKE</span><h2>شاید این‌ها را هم دوست داشته باشی</h2></div><Link href={catSlug?'/shop/'+catSlug:'/shop'}>مشاهده بیشتر ←</Link></div><CatalogGrid products={related} compact/></section>:null}
 
     <ProductSecondaryLinks/>
   </main>;
