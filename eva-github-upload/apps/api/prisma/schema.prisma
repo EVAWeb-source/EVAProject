@@ -168,10 +168,21 @@ model SiteMediaSlot {
   assetId   String?
   asset     MediaAsset? @relation(fields: [assetId], references: [id], onDelete: SetNull)
   altText   String?
+  positionX Int         @default(50)
+  positionY Int         @default(50)
+  zoom      Int         @default(100)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
   @@index([assetId])
+}
+
+model SiteContent {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PhysicalUnit {
