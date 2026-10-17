@@ -6,6 +6,21 @@ import { PrismaService } from '../prisma/prisma.service.js';
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const HOME_CONTENT_KEY = 'HOME';
+const DEFAULT_HOME_CONTENT = {
+  heroEyebrow: 'FINE JEWELRY',
+  heroTitle: 'جواهراتی برای لحظه‌های ماندگار',
+  heroBody: 'طراحی ظریف، وزن دقیق و خرید شفاف؛ برای قطعه‌هایی که قرار است بخشی از داستان تو شوند.',
+  heroCtaLabel: 'مشاهده کالکشن ←',
+  heroCtaHref: '/collections/aghaz',
+  storyEyebrow: 'OUR STORY',
+  storyTitle: 'داستان ایوا',
+  storyBody: 'در EVA به قطعه‌هایی باور داریم که قرار نیست فقط دیده شوند؛ جواهراتی ظریف و امروزی که با زمان، بخشی از داستان شخصی تو می‌شوند.',
+  storyCtaLabel: 'درباره ما ←',
+  storyCtaHref: '/about',
+};
+
+type CropInput = { positionX?: unknown; positionY?: unknown; zoom?: unknown };
 
 @Injectable()
 export class MediaService {
@@ -84,17 +99,50 @@ export class MediaService {
     return Object.fromEntries(slots.map((slot) => [slot.slot, this.serializeSlot(slot)]));
   }
 
-  async setSlot(slot: string, assetId: string | null, altText?: unknown) {
+  async getHomeContent() {
+    const record = await this.prisma.siteContent.findUnique({ where: { key: HOME_CONTENT_KEY } });
+    const stored = record?.value && typeof record.value === 'object' && !Array.isArray(record.value)
+      ? record.value as Record<string, unknown>
+      : {};
+    return { ...DEFAULT_HOME_CONTENT, ...stored };
+  }
+
+  async setHomeContent(input: Record<string, unknown>) {
+    const current = await this.getHomeContent();
+    const next = {
+      heroEyebrow: this.text(input.heroEyebrow ?? current.heroEyebrow, 80),
+      heroTitle: this.text(input.heroTitle ?? current.heroTitle, 180),
+      heroBody: this.text(input.heroBody ?? current.heroBody, 700),
+      heroCtaLabel: this.text(input.heroCtaLabel ?? current.heroCtaLabel, 80),
+      heroCtaHref: this.href(input.heroCtaHref ?? current.heroCtaHref),
+      storyEyebrow: this.text(input.storyEyebrow ?? current.storyEyebrow, 80),
+      storyTitle: this.text(input.storyTitle ?? current.storyTitle, 160),
+      storyBody: this.text(input.storyBody ?? current.storyBody, 700),
+      storyCtaLabel: this.text(input.storyCtaLabel ?? current.storyCtaLabel, 80),
+      storyCtaHref: this.href(input.storyCtaHref ?? current.storyCtaHref),
+    };
+    await this.prisma.siteContent.upsert({
+      where: { key: HOME_CONTENT_KEY },
+      create: { key: HOME_CONTENT_KEY, value: next as any },
+      update: { value: next as any },
+    });
+    return next;
+  }
+
+  async setSlot(slot: string, assetId: string | null, altText?: unknown, crop: CropInput = {}) {
     const normalizedSlot = this.normalizeSlot(slot);
     if (assetId) {
       const exists = await this.prisma.mediaAsset.findUnique({ where: { id: assetId } });
       if (!exists) throw new NotFoundException('Media asset not found');
     }
     const alt = String(altText ?? '').trim().slice(0, 300) || null;
+    const positionX = this.intRange(crop.positionX, 50, 0, 100);
+    const positionY = this.intRange(crop.positionY, 50, 0, 100);
+    const zoom = this.intRange(crop.zoom, 100, 100, 200);
     const record = await this.prisma.siteMediaSlot.upsert({
       where: { slot: normalizedSlot },
-      create: { slot: normalizedSlot, assetId, altText: alt },
-      update: { assetId, altText: alt },
+      create: { slot: normalizedSlot, assetId, altText: alt, positionX, positionY, zoom },
+      update: { assetId, altText: alt, positionX, positionY, zoom },
       include: { asset: true },
     });
     return this.serializeSlot(record);
@@ -140,6 +188,23 @@ export class MediaService {
     return known[mimeType] || '';
   }
 
+  private text(value: unknown, max: number) {
+    return String(value ?? '').trim().slice(0, max);
+  }
+
+  private href(value: unknown) {
+    const href = String(value ?? '').trim().slice(0, 300);
+    if (!href) return '/';
+    if (href.startsWith('/') || /^https?:\/\//i.test(href)) return href;
+    throw new BadRequestException('Link must start with / or http(s)://');
+  }
+
+  private intRange(value: unknown, fallback: number, min: number, max: number) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback;
+    return Math.max(min, Math.min(max, Math.round(number)));
+  }
+
   private serializeAsset(asset: any) {
     return {
       id: asset.id,
@@ -157,6 +222,9 @@ export class MediaService {
     return {
       slot: slot.slot,
       altText: slot.altText,
+      positionX: slot.positionX ?? 50,
+      positionY: slot.positionY ?? 50,
+      zoom: slot.zoom ?? 100,
       asset: slot.asset ? this.serializeAsset(slot.asset) : null,
       updatedAt: slot.updatedAt,
     };
