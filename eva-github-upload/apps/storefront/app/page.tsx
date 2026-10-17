@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import HomeBestSellers from './components/HomeBestSellers';
 import styles from './page.module.css';
+import mediaStyles from './home-media.module.css';
 import cards from './home-cards.module.css';
 import editorial from './home-story.module.css';
 
@@ -45,8 +46,8 @@ export default async function HomePage() {
           <p>طراحی ظریف، وزن دقیق و خرید شفاف؛ برای قطعه‌هایی که قرار است بخشی از داستان تو شوند.</p>
           <Link className={`${styles.heroButton} evaHomeHeroButton`} href="/collections/aghaz">مشاهده کالکشن ←</Link>
         </div>
-        <div className={`${styles.heroVisual} ${heroDesktop?.asset||heroMobile?.asset?styles.hasMedia:''} evaHomeHeroVisual`} aria-label={heroDesktop?.altText??heroMobile?.altText??'فضای تصویری ادیتوریال EVA'}>
-          {heroDesktop?.asset||heroMobile?.asset?<picture className={styles.mediaPicture}>{heroMobile?.asset&&<source media="(max-width: 820px)" srcSet={heroMobile.asset.url}/>}<img className={styles.heroMediaImage} src={heroDesktop?.asset?.url??heroMobile?.asset?.url} alt={heroDesktop?.altText??heroMobile?.altText??'EVA Fine Jewelry'}/></picture>:<><span className={styles.heroJewelry} aria-hidden="true" /><span className={styles.heroQuote} aria-hidden="true">BEAUTY LIVES IN EVERY DETAIL</span></>}
+        <div className={`${styles.heroVisual} ${heroDesktop?.asset||heroMobile?.asset?mediaStyles.hasMedia:''} evaHomeHeroVisual`} aria-label={heroDesktop?.altText??heroMobile?.altText??'فضای تصویری ادیتوریال EVA'}>
+          {heroDesktop?.asset||heroMobile?.asset?<picture className={mediaStyles.mediaPicture}>{heroMobile?.asset&&<source media="(max-width: 820px)" srcSet={heroMobile.asset.url}/>}<img className={mediaStyles.heroMediaImage} src={heroDesktop?.asset?.url??heroMobile?.asset?.url} alt={heroDesktop?.altText??heroMobile?.altText??'EVA Fine Jewelry'}/></picture>:<><span className={styles.heroJewelry} aria-hidden="true" /><span className={styles.heroQuote} aria-hidden="true">BEAUTY LIVES IN EVERY DETAIL</span></>}
         </div>
       </section>
 
@@ -69,7 +70,7 @@ export default async function HomePage() {
             <p>در EVA به قطعه‌هایی باور داریم که قرار نیست فقط دیده شوند؛ جواهراتی ظریف و امروزی که با زمان، بخشی از داستان شخصی تو می‌شوند.</p>
             <Link className={`${styles.storyButton} ${editorial.storyButton}`} href="/about">درباره ما ←</Link>
           </div>
-          <div className={`${styles.storyVisual} ${storyImage?.asset?styles.hasMedia:''} ${editorial.storyVisual}`} aria-hidden={!storyImage?.asset}>{storyImage?.asset?<img className={styles.storyMediaImage} src={storyImage.asset.url} alt={storyImage.altText??'داستان EVA'}/>:<span className={`${styles.storyFloral} ${editorial.storyFloral}`} />}</div>
+          <div className={`${styles.storyVisual} ${storyImage?.asset?mediaStyles.hasMedia:''} ${editorial.storyVisual}`} aria-hidden={!storyImage?.asset}>{storyImage?.asset?<img className={mediaStyles.storyMediaImage} src={storyImage.asset.url} alt={storyImage.altText??'داستان EVA'}/>:<span className={`${styles.storyFloral} ${editorial.storyFloral}`} />}</div>
         </div>
       </section>
 
@@ -81,8 +82,8 @@ export default async function HomePage() {
         </div>
 
         <div className={`${styles.collectionGrid} ${cards.collectionGrid}`}>
-          {collections.map((collection) => {const image=media[collection.slot];return <Link className={`${styles.collectionCard} ${image?.asset?styles.collectionCardWithMedia:''} ${cards.collectionCard}`} data-type={collection.type} href={collection.href} key={collection.title}>
-              {image?.asset?<img className={styles.collectionMediaImage} src={image.asset.url} alt={image.altText??collection.title}/>:<i aria-hidden="true" />}
+          {collections.map((collection) => {const image=media[collection.slot];return <Link className={`${styles.collectionCard} ${image?.asset?mediaStyles.collectionCardWithMedia:''} ${cards.collectionCard}`} data-type={collection.type} href={collection.href} key={collection.title}>
+              {image?.asset?<img className={mediaStyles.collectionMediaImage} src={image.asset.url} alt={image.altText??collection.title}/>:<i aria-hidden="true" />}
               <div><span>{collection.label}</span><strong>{collection.title}</strong></div>
             </Link>;})}
         </div>
