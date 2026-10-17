@@ -7,15 +7,6 @@ import {
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 
-const PRODUCT_STATUSES = [
-  'DRAFT',
-  'ACTIVE',
-  'OUT_OF_STOCK',
-  'HIDDEN',
-  'DISCONTINUED',
-  'ARCHIVED',
-] as const;
-
 const PRODUCT_CATEGORY_CODES = ['NEC', 'PEN', 'BRA', 'RIN', 'EAR', 'SET', 'ANK', 'CHM'] as const;
 
 const ADMIN_UNIT_STATUSES = [
@@ -86,7 +77,7 @@ export class AdminService {
         include: { lines: true },
         orderBy: { issuedAt: 'desc' },
       }),
-      this.prisma.masterProduct.count({ where: { status: 'ACTIVE' } }),
+      this.prisma.masterProduct.count({ where: { status: { in: ['ACTIVE', 'OUT_OF_STOCK'] } } }),
       this.prisma.physicalUnit.count({ where: { status: 'AVAILABLE' } }),
       this.prisma.physicalUnit.count({ where: { status: 'RESERVED' } }),
       this.prisma.physicalUnit.count({ where: { status: 'SOLD' } }),
@@ -154,27 +145,30 @@ export class AdminService {
             }
           : null,
       },
-      products: products.map((product) => ({
-        id: product.id,
-        nameFa: product.nameFa,
-        slug: product.slug,
-        masterSku: product.masterSku,
-        categoryCode: this.categoryCodeFromSku(product.masterSku),
-        purity: product.purity,
-        status: product.status,
-        collectionId: product.collectionId,
-        collection: product.collection?.nameFa ?? null,
-        unitCount: product.units.length,
-        availableCount: product.units.filter((unit) => unit.status === 'AVAILABLE').length,
-        units: product.units.map((unit) => ({
-          id: unit.id,
-          unitSku: unit.unitSku,
-          exactWeightGram: unit.exactWeightGram.toString(),
-          currentPriceToman: unit.currentPriceToman === null ? null : Number(unit.currentPriceToman),
-          status: unit.status,
-          reservedUntil: unit.reservedUntil,
-        })),
-      })),
+      products: products.map((product) => {
+        const availableCount = product.units.filter((unit) => unit.status === 'AVAILABLE').length;
+        return {
+          id: product.id,
+          nameFa: product.nameFa,
+          slug: product.slug,
+          masterSku: product.masterSku,
+          categoryCode: this.categoryCodeFromSku(product.masterSku),
+          purity: product.purity,
+          status: this.effectiveProductStatus(product.status, availableCount),
+          collectionId: product.collectionId,
+          collection: product.collection?.nameFa ?? null,
+          unitCount: product.units.length,
+          availableCount,
+          units: product.units.map((unit) => ({
+            id: unit.id,
+            unitSku: unit.unitSku,
+            exactWeightGram: unit.exactWeightGram.toString(),
+            currentPriceToman: unit.currentPriceToman === null ? null : Number(unit.currentPriceToman),
+            status: unit.status,
+            reservedUntil: unit.reservedUntil,
+          })),
+        };
+      }),
       units: units.map((unit) => ({
         id: unit.id,
         productId: unit.productId,
@@ -402,16 +396,12 @@ export class AdminService {
     const masterSku = this.requiredString(input.masterSku, 'Master SKU').toUpperCase();
     const categoryCode = this.validateCategoryCode(input.categoryCode);
     const purity = Number(input.purity ?? 18);
-    const status = String(input.status ?? 'DRAFT').toUpperCase();
     const collectionId = input.collectionId ? String(input.collectionId) : null;
 
     this.validateSlug(slug);
     this.validateMasterSku(masterSku);
     this.validateMasterSkuCategory(masterSku, categoryCode);
     this.validatePurity(purity);
-    if (!PRODUCT_STATUSES.includes(status as (typeof PRODUCT_STATUSES)[number])) {
-      throw new BadRequestException('Invalid product status');
-    }
 
     if (collectionId) {
       const collection = await this.prisma.collection.findUnique({ where: { id: collectionId } });
@@ -420,7 +410,7 @@ export class AdminService {
 
     try {
       return await this.prisma.masterProduct.create({
-        data: { nameFa, slug, masterSku, purity, status: status as any, collectionId },
+        data: { nameFa, slug, masterSku, purity, status: 'DRAFT', collectionId },
         include: { collection: true },
       });
     } catch (error: any) {
@@ -435,6 +425,10 @@ export class AdminService {
       include: { units: { select: { id: true, status: true } } },
     });
     if (!product) throw new NotFoundException('Product not found');
+
+    if (input.status !== undefined) {
+      throw new BadRequestException('Product status is managed automatically by publish, inventory and archive controls');
+    }
 
     const data: Record<string, unknown> = {};
     const suppliedCategoryCode = input.categoryCode !== undefined ? this.validateCategoryCode(input.categoryCode) : null;
@@ -463,13 +457,6 @@ export class AdminService {
         throw new ConflictException('Purity cannot change after Units have been created');
       }
       data.purity = purity;
-    }
-    if (input.status !== undefined) {
-      const status = String(input.status).toUpperCase();
-      if (!PRODUCT_STATUSES.includes(status as (typeof PRODUCT_STATUSES)[number])) {
-        throw new BadRequestException('Invalid product status');
-      }
-      data.status = status;
     }
     if (input.collectionId !== undefined) {
       const collectionId = input.collectionId ? String(input.collectionId) : null;
@@ -506,9 +493,6 @@ export class AdminService {
       },
     });
     if (!product) throw new NotFoundException('Product not found');
-    if (product.status === 'ACTIVE') {
-      throw new ConflictException('Active product cannot be deleted. Hide or archive it first.');
-    }
 
     const protectedUnit = product.units.find((unit) =>
       ['RESERVED', 'SOLD', 'RETURNED'].includes(unit.status) ||
@@ -549,7 +533,7 @@ export class AdminService {
     }
 
     try {
-      return await this.prisma.physicalUnit.create({
+      const created = await this.prisma.physicalUnit.create({
         data: {
           productId,
           unitSku,
@@ -558,6 +542,8 @@ export class AdminService {
         },
         include: { product: true },
       });
+      await this.syncProductStockStatus(productId);
+      return created;
     } catch (error: any) {
       if (error?.code === 'P2002') throw new ConflictException('Unit SKU already exists');
       throw error;
@@ -593,11 +579,13 @@ export class AdminService {
 
     if (Object.keys(data).length === 0) throw new BadRequestException('No editable fields supplied');
 
-    return this.prisma.physicalUnit.update({
+    const updated = await this.prisma.physicalUnit.update({
       where: { id },
       data: data as any,
       include: { product: true },
     });
+    await this.syncProductStockStatus(unit.productId);
+    return updated;
   }
 
   async deleteUnit(id: string) {
@@ -616,22 +604,34 @@ export class AdminService {
       throw new ConflictException('Unit has order/reservation history and cannot be permanently deleted');
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      await tx.physicalUnit.delete({ where: { id: unit.id } });
-      if (unit.product.status === 'ACTIVE') {
-        const remainingAvailable = await tx.physicalUnit.count({
-          where: { productId: unit.product.id, status: 'AVAILABLE', id: { not: unit.id } },
-        });
-        if (remainingAvailable === 0) {
-          await tx.masterProduct.update({
-            where: { id: unit.product.id },
-            data: { status: 'OUT_OF_STOCK' },
-          });
-        }
-      }
-    });
+    await this.prisma.physicalUnit.delete({ where: { id: unit.id } });
+    await this.syncProductStockStatus(unit.product.id);
 
     return { ok: true, id: unit.id, unitSku: unit.unitSku };
+  }
+
+  private async syncProductStockStatus(productId: string) {
+    const product = await this.prisma.masterProduct.findUnique({
+      where: { id: productId },
+      select: { status: true },
+    });
+    if (!product || !['ACTIVE', 'OUT_OF_STOCK'].includes(product.status)) return;
+
+    const availableCount = await this.prisma.physicalUnit.count({
+      where: { productId, status: 'AVAILABLE' },
+    });
+    const nextStatus = availableCount > 0 ? 'ACTIVE' : 'OUT_OF_STOCK';
+    if (product.status === nextStatus) return;
+
+    await this.prisma.masterProduct.update({
+      where: { id: productId },
+      data: { status: nextStatus as any },
+    });
+  }
+
+  private effectiveProductStatus(status: string, availableCount: number) {
+    if (!['ACTIVE', 'OUT_OF_STOCK'].includes(status)) return status;
+    return availableCount > 0 ? 'ACTIVE' : 'OUT_OF_STOCK';
   }
 
   private validateSlug(slug: string) {
