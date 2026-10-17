@@ -9,11 +9,11 @@ export default async function CatalogMediaPage(){
   await requireAdmin();
   return <AdminShell>
     <AdminPageHeader
-      eyebrow="کاتالوگ"
-      title="رسانه‌های EVA"
-      description="آپلود و مدیریت تصاویر Hero، بخش داستان و کارت‌های کالکشن بدون نیاز به ویرایش کد."
-      actions={<><a href="/catalog/content">محتوای محصولات</a><a href="/catalog">محصولات</a></>}
+      eyebrow="رسانه‌ها"
+      title="تصاویر سایت"
+      description="Hero، داستان EVA و کارت‌های کالکشن را با ابعاد استاندارد هر جایگاه مدیریت کن."
+      actions={<><a href="/catalog/media/library">Media Library</a><a href="/catalog/content">محتوای محصولات</a></>}
     />
-    <SiteMediaManager/>
+    <SiteMediaManager view="slots"/>
   </AdminShell>;
 }

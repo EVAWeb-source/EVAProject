@@ -23,8 +23,14 @@ const navGroups = [
       { href:'/catalog/collections', label:'کالکشن‌ها', icon:'◫' },
       { href:'/inventory', label:'موجودی', icon:'▦' },
       { href:'/catalog/content', label:'محتوا', icon:'✎' },
-      { href:'/catalog/media', label:'رسانه‌ها', icon:'▧' },
       { href:'/catalog/onboarding', label:'آماده‌سازی', icon:'✓' },
+    ],
+  },
+  {
+    label:'رسانه‌ها',
+    items:[
+      { href:'/catalog/media', label:'تصاویر سایت', icon:'▧', exact:true },
+      { href:'/catalog/media/library', label:'Media Library', icon:'▦' },
     ],
   },
   {
@@ -73,11 +79,7 @@ export default function AdminShell({children, connected=true}:{children:ReactNod
     if(saved){
       try{
         const parsed=JSON.parse(saved) as Partial<Record<GroupLabel,boolean>>;
-        setExpandedGroups(current=>{
-          const next={...current,...parsed};
-          next[activeGroupForPath(pathname)]=true;
-          return next;
-        });
+        setExpandedGroups(current=>{const next={...current,...parsed};next[activeGroupForPath(pathname)]=true;return next;});
         return;
       }catch{}
     }
@@ -95,11 +97,7 @@ export default function AdminShell({children, connected=true}:{children:ReactNod
   },[pathname]);
 
   function toggleGroup(label:GroupLabel){
-    setExpandedGroups(current=>{
-      const next={...current,[label]:!current[label]};
-      sessionStorage.setItem('eva-admin-nav-groups',JSON.stringify(next));
-      return next;
-    });
+    setExpandedGroups(current=>{const next={...current,[label]:!current[label]};sessionStorage.setItem('eva-admin-nav-groups',JSON.stringify(next));return next;});
   }
 
   return <div className={styles.shell}>
@@ -108,7 +106,6 @@ export default function AdminShell({children, connected=true}:{children:ReactNod
         <a className={styles.logo} href="/">EVA<span>ADMIN</span></a>
         <button className={styles.close} onClick={()=>setOpen(false)} aria-label="بستن منو">×</button>
       </div>
-
       <nav className={styles.nav} aria-label="منوی مدیریت">
         {navGroups.map(group=>{
           const expanded=expandedGroups[group.label];
@@ -121,15 +118,12 @@ export default function AdminShell({children, connected=true}:{children:ReactNod
           </div>;
         })}
       </nav>
-
       <div className={styles.sideBottom}>
         <a className={styles.storeLink} href="https://evaproject-production.up.railway.app" target="_blank" rel="noreferrer">مشاهده فروشگاه <span>↗</span></a>
         <form action="/api/logout" method="post"><button>خروج از حساب</button></form>
       </div>
     </aside>
-
     {open&&<button className={styles.backdrop} onClick={()=>setOpen(false)} aria-label="بستن منو"/>}
-
     <div className={styles.main}>
       <header className={styles.topbar}>
         <div className={styles.mobileBrand}><button onClick={()=>setOpen(true)} aria-label="باز کردن منو">☰</button><a href="/">EVA ADMIN</a></div>
