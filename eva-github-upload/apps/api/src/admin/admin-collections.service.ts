@@ -56,11 +56,22 @@ export class AdminCollectionsService {
       include: { _count: { select: { products: true } } },
     });
     if (!collection) throw new NotFoundException('Collection not found');
-    if (collection._count.products > 0) {
-      throw new ConflictException('Collection still contains products. Move them before deleting the collection.');
-    }
-    await this.prisma.collection.delete({ where: { id } });
-    return { ok: true, id: collection.id, nameFa: collection.nameFa, code: collection.code };
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.masterProduct.updateMany({
+        where: { collectionId: collection.id },
+        data: { collectionId: null },
+      });
+      await tx.collection.delete({ where: { id: collection.id } });
+    });
+
+    return {
+      ok: true,
+      id: collection.id,
+      nameFa: collection.nameFa,
+      code: collection.code,
+      detachedProducts: collection._count.products,
+    };
   }
 
   private requiredText(value: unknown, field: string) {
