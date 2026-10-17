@@ -15,7 +15,11 @@ export class CatalogService {
     await this.reservations.releaseExpired();
 
     const products = await this.prisma.masterProduct.findMany({
-      where: { status: 'ACTIVE', isVisible: true },
+      where: {
+        status: { in: ['ACTIVE', 'OUT_OF_STOCK'] },
+        isVisible: true,
+        units: { some: { status: 'AVAILABLE' } },
+      },
       select: {
         id: true,
         nameFa: true,
@@ -67,7 +71,7 @@ export class CatalogService {
       },
     });
 
-    if (!product || product.status !== 'ACTIVE' || !product.isVisible) {
+    if (!product || !['ACTIVE', 'OUT_OF_STOCK'].includes(product.status) || !product.isVisible) {
       throw new NotFoundException('Product not found');
     }
 
@@ -156,6 +160,10 @@ export class CatalogService {
       : null;
   }
 
+  private publishedAvailabilityStatus(product: any) {
+    return product.units?.length > 0 ? 'ACTIVE' : 'OUT_OF_STOCK';
+  }
+
   private serializeListingProduct(product: any, configByPurity: Map<number, any>) {
     const mainImage = product.images.find((image: any) => image.role === 'MAIN') ?? product.images[0] ?? null;
     return {
@@ -164,7 +172,7 @@ export class CatalogService {
       slug: product.slug,
       masterSku: product.masterSku,
       purity: product.purity,
-      status: product.status,
+      status: this.publishedAvailabilityStatus(product),
       shortDescription: product.shortDescription,
       images: mainImage ? [this.serializeImage(mainImage)] : [],
       collection: this.serializeCollection(product.collection),
@@ -179,7 +187,7 @@ export class CatalogService {
       slug: product.slug,
       masterSku: product.masterSku,
       purity: product.purity,
-      status: product.status,
+      status: this.publishedAvailabilityStatus(product),
       shortDescription: product.shortDescription,
       story: product.story,
       goldColor: product.goldColor,
