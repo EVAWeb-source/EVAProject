@@ -12,6 +12,18 @@ export class AdminMediaController {
     return this.media.listAdmin();
   }
 
+  @Get('home-content')
+  homeContent(@Headers('x-admin-key') key: string | undefined) {
+    this.authorize(key);
+    return this.media.getHomeContent();
+  }
+
+  @Patch('home-content')
+  updateHomeContent(@Headers('x-admin-key') key: string | undefined, @Body() body: Record<string, unknown>) {
+    this.authorize(key);
+    return this.media.setHomeContent(body);
+  }
+
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024, files: 1 } }))
   upload(@Headers('x-admin-key') key: string | undefined, @UploadedFile() file: any) {
@@ -29,7 +41,11 @@ export class AdminMediaController {
     this.authorize(key);
     const assetId = body.assetId === null || body.assetId === '' ? null : String(body.assetId || '');
     if (assetId !== null && !assetId) throw new BadRequestException('assetId is required');
-    return this.media.setSlot(slot, assetId, body.altText);
+    return this.media.setSlot(slot, assetId, body.altText, {
+      positionX: body.positionX,
+      positionY: body.positionY,
+      zoom: body.zoom,
+    });
   }
 
   @Delete(':id')
