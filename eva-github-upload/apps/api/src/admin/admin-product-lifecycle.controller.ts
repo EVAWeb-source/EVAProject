@@ -23,13 +23,23 @@ export class AdminProductLifecycleController {
   ) {
     this.authorize(key);
     const product = await this.lifecycle.update(id, body);
+    const isRestore = body.restore === true || body.isVisible === true && product.status === 'ACTIVE';
+    const action = body.archive === true
+      ? 'PRODUCT_ARCHIVED'
+      : body.restore === true
+        ? 'PRODUCT_RESTORED'
+        : 'PRODUCT_VISIBILITY_UPDATED';
+    const summary = body.archive === true
+      ? `${product.nameFa} آرشیو و از سایت مخفی شد`
+      : body.restore === true
+        ? `${product.nameFa} از آرشیو بازگردانی و در سایت فعال شد`
+        : `${product.nameFa} → ${product.isVisible ? 'نمایش در سایت' : 'عدم نمایش در سایت'}${isRestore ? ' / فعال' : ''}`;
+
     await this.audit.record({
-      action: body.archive === true ? 'PRODUCT_ARCHIVED' : 'PRODUCT_VISIBILITY_UPDATED',
+      action,
       entityType: 'PRODUCT',
       entityId: product.id,
-      summary: body.archive === true
-        ? `${product.nameFa} آرشیو و از سایت مخفی شد`
-        : `${product.nameFa} → ${product.isVisible ? 'نمایش در سایت' : 'عدم نمایش در سایت'}`,
+      summary,
       metadata: { status: product.status, isVisible: product.isVisible },
     });
     return product;
