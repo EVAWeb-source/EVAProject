@@ -1,0 +1,115 @@
+/* EVA homepage mobile UX overrides.
+   Keep the product image as the first visual on small screens and make the
+   purchase-benefits strip compact instead of stacking four full-width rows. */
+
+main [aria-label="مزیت‌های خرید از EVA"] article {
+  grid-template-columns: auto auto;
+  justify-content: center;
+}
+
+main [aria-label="مزیت‌های خرید از EVA"] article > div {
+  min-width: 0;
+}
+
+@media (max-width: 820px) {
+  main > .evaHomeHero {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  main > .evaHomeHero > .evaHomeHeroVisual {
+    order: 1;
+    width: 100%;
+    min-height: 0;
+    aspect-ratio: 4 / 5;
+  }
+
+  main > .evaHomeHero > .evaHomeHeroCopy {
+    order: 2;
+    padding: 34px 22px 42px;
+    align-items: center;
+    text-align: center;
+  }
+
+  main > .evaHomeHero > .evaHomeHeroCopy h1 {
+    max-width: 520px;
+    margin: 12px auto 14px;
+    font-size: clamp(34px, 9vw, 44px);
+    line-height: 1.28;
+  }
+
+  main > .evaHomeHero > .evaHomeHeroCopy p {
+    max-width: 520px;
+    margin-inline: auto;
+  }
+
+  main > .evaHomeHero > .evaHomeHeroCopy .evaHomeHeroButton {
+    margin-top: 22px;
+  }
+
+  main [aria-label="مزیت‌های خرید از EVA"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0 14px;
+  }
+
+  main [aria-label="مزیت‌های خرید از EVA"] article {
+    min-height: 86px;
+    padding: 13px 8px;
+    gap: 8px;
+    border-left: 1px solid #e6ddd2 !important;
+    border-bottom: 1px solid #e6ddd2 !important;
+  }
+
+  main [aria-label="مزیت‌های خرید از EVA"] article:nth-child(2n) {
+    border-left: 0 !important;
+  }
+
+  main [aria-label="مزیت‌های خرید از EVA"] article:nth-last-child(-n + 2) {
+    border-bottom: 0 !important;
+  }
+
+  main [aria-label="مزیت‌های خرید از EVA"] article > div {
+    text-align: right;
+  }
+}
+
+@media (max-width: 520px) {
+  main > .evaHomeHero > .evaHomeHeroVisual {
+    aspect-ratio: 4 / 5;
+  }
+
+  main > .evaHomeHero > .evaHomeHeroCopy {
+    padding: 30px 18px 38px;
+  }
+
+  main > .evaHomeHero > .evaHomeHeroCopy h1 {
+    font-size: clamp(32px, 9.4vw, 39px);
+  }
+
+  main [aria-label="مزیت‌های خرید از EVA"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    padding: 0 10px;
+  }
+
+  main [aria-label="مزیت‌های خرید از EVA"] article {
+    min-height: 82px;
+    padding: 11px 6px;
+    gap: 6px;
+  }
+
+  main [aria-label="مزیت‌های خرید از EVA"] article > span {
+    font-size: 20px;
+  }
+
+  main [aria-label="مزیت‌های خرید از EVA"] article strong {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  main [aria-label="مزیت‌های خرید از EVA"] article small {
+    margin-top: 2px;
+    font-size: 9px;
+    line-height: 1.55;
+  }
+}
