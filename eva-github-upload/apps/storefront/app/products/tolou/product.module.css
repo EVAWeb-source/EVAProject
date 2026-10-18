@@ -3,3 +3,37 @@
 @media(min-width:901px){.productHero{grid-template-columns:minmax(0,.96fr) minmax(420px,.84fr);gap:76px;padding-bottom:72px}.purchasePanel{max-width:520px;justify-self:end;padding-top:18px;text-align:right}.purchaseTopline{justify-content:space-between}.titleRow{position:static;justify-content:space-between;align-items:flex-start}.titleRow>div{width:auto}.iconAction{position:static;transform:none}.subtitle{margin-left:0;margin-right:0}.priceBlock{place-items:stretch}.primaryPrice{justify-content:flex-start}.priceMeta{justify-content:flex-start}.labelRow{justify-content:space-between}.units button{text-align:right}.selectedSku{justify-content:space-between;gap:16px}.availability{justify-content:flex-start}.stoneHighlight>div:first-child{justify-content:space-between}.breakdownToggle{justify-content:space-between;position:static}.breakdownToggle>b{position:static}.soldOut{justify-items:stretch}.soldOut a{width:max-content}}
 
 .relatedSection{max-width:1220px;padding-top:62px;padding-bottom:78px}.relatedHeading{margin-bottom:22px}.relatedHeading h2{font-size:24px}.relatedHeading>div{gap:4px}.relatedHeading>a{font-size:8px}@media(max-width:620px){.relatedSection{padding-top:48px;padding-bottom:60px}.relatedHeading h2{font-size:22px}}
+
+/* Mobile product UX polish */
+@media(max-width:620px){
+  .breadcrumb{display:none}
+  .productHero{padding:0 0 44px;gap:0;display:block}
+  .purchasePanel{padding:20px 16px 0;max-width:none}
+  .purchaseTopline{margin-bottom:10px}
+  .purchasePanel h1{font-size:28px;line-height:1.28;letter-spacing:-.025em}
+  .titleRow{gap:14px;align-items:center}
+  .subtitle{margin-top:8px;font-size:10px;line-height:1.85}
+  .iconAction{width:38px;height:38px;font-size:17px}
+  .priceBlock{margin-top:4px;padding:18px 0 16px;gap:8px}
+  .primaryPrice strong{font-size:24px}
+  .primaryPrice>span{font-size:9px}
+  .priceMeta{gap:7px;font-size:8px}
+  .selectorBlock{padding:18px 0 12px}
+  .labelRow{margin-bottom:9px}
+  .units{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .units button{min-height:58px;padding:9px 10px}
+  .selectedSku{padding:10px 0 7px}
+  .availability{margin:5px 0 13px}
+  .addToCart{min-height:54px;font-size:11px;border-radius:4px}
+  .microTrust{margin-top:8px}
+  .microTrust span{padding:9px 3px}
+  .secondaryActions{margin-top:7px}
+  .breakdown{margin-top:13px}
+  .soldOut{margin-top:20px;padding:16px}
+  .relatedSection{padding:46px 16px 58px}
+  .relatedHeading{margin-bottom:20px}
+  .relatedHeading h2{font-size:22px}
+}
+@media(max-width:360px){
+  .units{grid-template-columns:1fr}
+}
