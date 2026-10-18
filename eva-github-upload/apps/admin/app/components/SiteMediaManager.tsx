@@ -28,6 +28,7 @@ export default function SiteMediaManager({view='slots'}:{view?:View}){
   const [message,setMessage]=useState('');
   const [error,setError]=useState('');
   const [previewSlot,setPreviewSlot]=useState<string|null>(null);
+  const [openSlot,setOpenSlot]=useState<string|null>(null);
 
   async function load(){setLoading(true);setError('');try{const response=await fetch('/api/admin/media',{cache:'no-store'});const raw=await response.text();if(!response.ok)throw new Error(raw||'دریافت رسانه‌ها انجام نشد.');setData(JSON.parse(raw));}catch(cause){setError(cause instanceof Error?cause.message:'دریافت رسانه‌ها انجام نشد.');}finally{setLoading(false);}}
   useEffect(()=>{void load();},[]);
@@ -84,10 +85,21 @@ export default function SiteMediaManager({view='slots'}:{view?:View}){
 
     {view==='slots'?<>
       <div className={styles.intro}><div><h2>تصاویر سایت و تنظیم کادر</h2><p>برای هر بخش هم «عکس کامل» را می‌بینی و هم «خروجی واقعی سایت». اسلایدرها فقط خروجی سایت را تغییر می‌دهند.</p></div><span>JPG · PNG · WebP · AVIF · Max 10MB</span></div>
-      <div className={styles.slotGrid}>{SLOT_DEFINITIONS.map(def=>{const item=current(def.slot);const crop=cropOf(item);return <article className={styles.slotCard} key={def.slot}>
-        <div className={styles.cardHead}><div><strong>{def.title}</strong><div className={styles.specRow}><b>{def.spec}</b><span>{def.ratio}</span></div><small>{def.hint}</small></div></div>
+      <div className={styles.slotGrid}>{SLOT_DEFINITIONS.map(def=>{const item=current(def.slot);const crop=cropOf(item);const isOpen=openSlot===def.slot;return <article className={`${styles.slotCard} ${isOpen?styles.slotCardOpen:''}`} key={def.slot}>
+        <button className={styles.accordionHead} type="button" aria-expanded={isOpen} onClick={()=>setOpenSlot(isOpen?null:def.slot)}>
+          <div className={styles.accordionTitle}>
+            <strong>{def.title}</strong>
+            <div className={styles.specRow}><b>{def.spec}</b><span>{def.ratio}</span></div>
+          </div>
+          <div className={styles.accordionMeta}>
+            <span className={item?.asset?styles.mediaReady:styles.mediaEmpty}>{item?.asset?'تصویر تنظیم شده':'بدون تصویر'}</span>
+            <i aria-hidden="true">{isOpen?'−':'+'}</i>
+          </div>
+        </button>
 
-        {item?.asset?<div className={styles.previewWorkspace}>
+        {isOpen&&<div className={styles.accordionBody}>
+          <p className={styles.slotHint}>{def.hint}</p>
+          {item?.asset?<div className={styles.previewWorkspace}>
           <div className={styles.previewBlock}>
             <div className={styles.previewTitle}><b>عکس کامل</b><span>بدون برش</span></div>
             <div className={styles.sourcePreview}><img src={item.asset.url} alt={item.altText??def.title}/></div>
@@ -110,6 +122,7 @@ export default function SiteMediaManager({view='slots'}:{view?:View}){
           </div>}
           <div className={styles.actions}><button className={styles.primary} type="button" disabled={busy===def.slot} onClick={()=>choose(def.slot)}>{busy===def.slot?'در حال انجام...':item?.asset?'جایگزینی عکس':'آپلود عکس'}</button>{item?.asset&&<><button type="button" disabled={busy===def.slot} onClick={()=>{const input=document.getElementById(`alt-${def.slot}`) as HTMLInputElement|null;void updateSlot(def.slot,item.asset!.id,input?.value??'',readCrop(def.slot));}}>ذخیره متن و کادر</button><button className={styles.danger} type="button" disabled={busy===def.slot} onClick={()=>void updateSlot(def.slot,null,'',{positionX:50,positionY:50,zoom:100})}>حذف از بخش</button></>}</div>
         </div>
+        </div>}
       </article>;})}</div>
     </>:<>
       <div className={styles.libraryHead}><div><h2>Media Library</h2><p>آرشیو فایل‌های آپلودشده EVA. تصویری که در محصول یا یکی از جایگاه‌های سایت استفاده می‌شود تا زمان آزاد شدن قابل حذف نیست.</p></div><span>{data.assets.length} فایل</span></div>
