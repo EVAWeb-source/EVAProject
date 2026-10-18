@@ -24,3 +24,13 @@
   .lightboxPrev{left:2px}
   .lightboxNext{right:2px}
 }
+
+
+.mobileIndicators{display:none}
+@media(max-width:620px){
+  .thumbnailRail{display:none}
+  .mobileIndicators{order:2;display:flex;align-items:center;justify-content:center;gap:7px;padding:2px 16px 4px}
+  .mobileIndicator,.mobileIndicatorActive{width:20px;height:20px;padding:0;border:0;background:transparent;display:grid;place-items:center;cursor:pointer}
+  .mobileIndicator span,.mobileIndicatorActive span{display:block;width:6px;height:6px;border-radius:50%;background:#cfc5b9;transition:transform .16s ease,background .16s ease}
+  .mobileIndicatorActive span{background:#8d6c38;transform:scale(1.35)}
+}
