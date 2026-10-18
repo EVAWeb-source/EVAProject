@@ -15,11 +15,20 @@ export default function ProductMediaGallery({images,name}:{images:ProductImage[]
   }),[images]);
   const [activeIndex,setActiveIndex]=useState(0);
   const [lightboxOpen,setLightboxOpen]=useState(false);
+  const [showDesktopThumbs,setShowDesktopThumbs]=useState(false);
   const touchStart=useRef<number|null>(null);
 
   useEffect(()=>{
     if(activeIndex>sorted.length-1)setActiveIndex(0);
   },[activeIndex,sorted.length]);
+
+  useEffect(()=>{
+    const media=window.matchMedia('(min-width: 621px)');
+    const sync=()=>setShowDesktopThumbs(media.matches);
+    sync();
+    media.addEventListener?.('change',sync);
+    return()=>media.removeEventListener?.('change',sync);
+  },[]);
 
   useEffect(()=>{
     if(!lightboxOpen)return;
@@ -53,7 +62,7 @@ export default function ProductMediaGallery({images,name}:{images:ProductImage[]
   const active=sorted[activeIndex]??sorted[0];
   return <>
     <div className={styles.gallery} aria-label={`تصاویر ${name}`}>
-      <div className={styles.thumbnailRail} aria-label="انتخاب تصویر">
+      {showDesktopThumbs?<div className={styles.thumbnailRail} aria-label="انتخاب تصویر">
         {sorted.map((image,index)=><button
           type="button"
           className={index===activeIndex?styles.thumbnail+' '+styles.thumbnailActive:styles.thumbnail}
@@ -61,8 +70,17 @@ export default function ProductMediaGallery({images,name}:{images:ProductImage[]
           aria-label={`نمایش ${labels[image.role]} ${index+1}`}
           aria-pressed={index===activeIndex}
           key={image.id}
-        ><img src={image.url} alt="" loading={index<3?'eager':'lazy'} decoding="async" /></button>)}
-      </div>
+        ><img src={image.url} alt="" loading="lazy" decoding="async" fetchPriority="low" /></button>)}
+      </div>:sorted.length>1?<div className={styles.mobileIndicators} aria-label="انتخاب تصویر">
+        {sorted.map((image,index)=><button
+          type="button"
+          className={index===activeIndex?styles.mobileIndicatorActive:styles.mobileIndicator}
+          onClick={()=>setActiveIndex(index)}
+          aria-label={`نمایش ${labels[image.role]} ${index+1}`}
+          aria-pressed={index===activeIndex}
+          key={image.id}
+        ><span aria-hidden="true"/></button>)}
+      </div>:null}
 
       <div className={styles.stageWrap}>
         <button
