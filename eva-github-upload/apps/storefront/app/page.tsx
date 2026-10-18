@@ -60,11 +60,11 @@ export default async function HomePage() {
           <p>{content.heroBody}</p>
           <Link className={`${styles.heroButton} evaHomeHeroButton`} href={content.heroCtaHref}>{content.heroCtaLabel}</Link>
         </div>
-        <div className={`${styles.heroVisual} ${heroDesktop?.asset||heroMobile?.asset?mediaStyles.hasMedia:''} evaHomeHeroVisual`} aria-label={heroDesktop?.altText??heroMobile?.altText??'فضای تصویری ادیتوریال EVA'}>
-          {heroDesktop?.asset||heroMobile?.asset?<>
-            {heroDesktop?.asset&&<img className={`${mediaStyles.heroMediaImage} ${heroMobile?.asset?mediaStyles.heroDesktopOnly:''}`} src={heroDesktop.asset.url} alt={heroDesktop.altText??'EVA Fine Jewelry'} style={mediaStyle(heroDesktop)}/>}
-            {heroMobile?.asset&&<img className={`${mediaStyles.heroMediaImage} ${heroDesktop?.asset?mediaStyles.heroMobileOnly:''}`} src={heroMobile.asset.url} alt={heroMobile.altText??heroDesktop?.altText??'EVA Fine Jewelry'} style={mediaStyle(heroMobile)}/>}
-          </>:<><span className={styles.heroJewelry} aria-hidden="true" /><span className={styles.heroQuote} aria-hidden="true">BEAUTY LIVES IN EVERY DETAIL</span></>}
+        <div className={`${styles.heroVisual} ${heroDesktop?.asset?mediaStyles.hasDesktopMedia:''} ${heroMobile?.asset?mediaStyles.hasMobileMedia:''} evaHomeHeroVisual`} aria-label={heroDesktop?.altText??heroMobile?.altText??'فضای تصویری ادیتوریال EVA'}>
+          {heroDesktop?.asset&&<img className={`${mediaStyles.heroMediaImage} ${mediaStyles.heroDesktopOnly}`} src={heroDesktop.asset.url} alt={heroDesktop.altText??'EVA Fine Jewelry'} style={mediaStyle(heroDesktop)}/>}
+          {heroMobile?.asset&&<img className={`${mediaStyles.heroMediaImage} ${mediaStyles.heroMobileOnly}`} src={heroMobile.asset.url} alt={heroMobile.altText??'EVA Fine Jewelry'} style={mediaStyle(heroMobile)}/>}
+          {!heroDesktop?.asset&&<div className={mediaStyles.desktopFallback} aria-hidden="true"><span className={styles.heroJewelry}/><span className={styles.heroQuote}>BEAUTY LIVES IN EVERY DETAIL</span></div>}
+          {!heroMobile?.asset&&<div className={mediaStyles.mobileFallback} aria-hidden="true"><span className={styles.heroJewelry}/><span className={styles.heroQuote}>BEAUTY LIVES IN EVERY DETAIL</span></div>}
         </div>
       </section>
 
