@@ -46,6 +46,12 @@ export default function SiteMediaManager({view='slots'}:{view?:View}){
     applyCrop(document.getElementById(`preview-${slot}`) as HTMLImageElement|null,crop);
     applyCrop(document.getElementById(`modal-preview-${slot}`) as HTMLImageElement|null,crop);
     const output=document.getElementById(`crop-values-${slot}`);if(output)output.textContent=`X ${crop.positionX}% · Y ${crop.positionY}% · Zoom ${crop.zoom}%`;
+    const modalOutput=document.getElementById(`modal-crop-values-${slot}`);if(modalOutput)modalOutput.textContent=`X ${crop.positionX}% · Y ${crop.positionY}% · Zoom ${crop.zoom}%`;
+  }
+  function setCropValue(slot:string,key:'x'|'y'|'z',value:number){
+    const input=document.getElementById(`crop-${key}-${slot}`) as HTMLInputElement|null;
+    if(input)input.value=String(value);
+    refreshPreview(slot);
   }
 
   async function uploadAndAssign(file:File,slot:string){
@@ -118,7 +124,13 @@ export default function SiteMediaManager({view='slots'}:{view?:View}){
             <img id={`modal-preview-${modalDef.slot}`} src={modalItem.asset.url} alt={modalItem.altText??modalDef.title} style={{objectPosition:`${modalCrop.positionX}% ${modalCrop.positionY}%`,transform:`scale(${modalCrop.zoom/100})`,transformOrigin:`${modalCrop.positionX}% ${modalCrop.positionY}%`}}/>
           </div>
         </div>
-        <div className={styles.modalHint}>برای تغییر کادر، اسلایدرهای همان تصویر را حرکت بده؛ این پیش‌نمایش هم‌زمان به‌روزرسانی می‌شود.</div>
+        <div className={styles.modalControls}>
+          <div className={styles.cropHead}><b>تنظیم Crop روی پیش‌نمایش بزرگ</b><span id={`modal-crop-values-${modalDef.slot}`}>X {modalCrop.positionX}% · Y {modalCrop.positionY}% · Zoom {modalCrop.zoom}%</span></div>
+          <label>حرکت افقی<input type="range" min="0" max="100" defaultValue={modalCrop.positionX} onInput={event=>setCropValue(modalDef.slot,'x',Number(event.currentTarget.value))}/></label>
+          <label>حرکت عمودی<input type="range" min="0" max="100" defaultValue={modalCrop.positionY} onInput={event=>setCropValue(modalDef.slot,'y',Number(event.currentTarget.value))}/></label>
+          <label>زوم<input type="range" min="100" max="200" defaultValue={modalCrop.zoom} onInput={event=>setCropValue(modalDef.slot,'z',Number(event.currentTarget.value))}/></label>
+        </div>
+        <div className={styles.modalHint}>بعد از رسیدن به کادر دلخواه، پنجره را ببند و «ذخیره متن و کادر» را بزن.</div>
       </div>
     </div>}
   </section>;
