@@ -7,6 +7,7 @@ type ProductImage={id:string;url:string;altText:string;role:'MAIN'|'GALLERY'|'ON
 
 const labels:Record<ProductImage['role'],string>={MAIN:'نمای اصلی',GALLERY:'گالری',ON_BODY:'نمای روی بدن',DETAIL:'جزئیات'};
 const roleOrder:Record<ProductImage['role'],number>={MAIN:0,ON_BODY:1,DETAIL:2,GALLERY:3};
+function variant(url:string,width:number,quality:number){const join=url.includes('?')?'&':'?';return `${url}${join}w=${width}&q=${quality}`;}
 
 export default function ProductMediaGallery({images,name}:{images:ProductImage[];name:string}){
   const sorted=useMemo(()=>[...images].sort((a,b)=>{
@@ -70,7 +71,7 @@ export default function ProductMediaGallery({images,name}:{images:ProductImage[]
           aria-label={`نمایش ${labels[image.role]} ${index+1}`}
           aria-pressed={index===activeIndex}
           key={image.id}
-        ><img src={image.url} alt="" loading="lazy" decoding="async" fetchPriority="low" /></button>)}
+        ><img src={variant(image.url,180,72)} alt="" loading="lazy" decoding="async" fetchPriority="low" /></button>)}
       </div>:sorted.length>1?<div className={styles.mobileIndicators} aria-label="انتخاب تصویر">
         {sorted.map((image,index)=><button
           type="button"
@@ -91,15 +92,18 @@ export default function ProductMediaGallery({images,name}:{images:ProductImage[]
           onTouchStart={event=>{touchStart.current=event.touches[0].clientX;}}
           onTouchEnd={onTouchEnd}
         >
-          <img
-            src={active.url}
-            alt={active.altText||`${name} - ${labels[active.role]}`}
-            loading="eager"
-            decoding="async"
-            fetchPriority="high"
-            width={1200}
-            height={1500}
-          />
+          <picture className={styles.stagePicture}>
+            <source media="(max-width: 620px)" srcSet={variant(active.url,900,80)}/>
+            <img
+              src={variant(active.url,1400,84)}
+              alt={active.altText||`${name} - ${labels[active.role]}`}
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              width={1200}
+              height={1500}
+            />
+          </picture>
           <span className={styles.zoomHint} aria-hidden="true">⌕</span>
           <span className={styles.imageMeta}><b>{labels[active.role]}</b><small>{String(activeIndex+1).padStart(2,'0')} / {String(sorted.length).padStart(2,'0')}</small></span>
         </button>
@@ -111,7 +115,7 @@ export default function ProductMediaGallery({images,name}:{images:ProductImage[]
       <div className={styles.lightboxTop}><span>{name}</span><button type="button" onClick={()=>setLightboxOpen(false)} aria-label="بستن تصویر بزرگ">×</button></div>
       <div className={styles.lightboxBody} onTouchStart={event=>{touchStart.current=event.touches[0].clientX;}} onTouchEnd={onTouchEnd}>
         {sorted.length>1&&<button type="button" className={styles.lightboxPrev} onClick={previous} aria-label="تصویر قبلی">←</button>}
-        <img src={active.url} alt={active.altText||`${name} - ${labels[active.role]}`} />
+        <img src={variant(active.url,1800,88)} alt={active.altText||`${name} - ${labels[active.role]}`} />
         {sorted.length>1&&<button type="button" className={styles.lightboxNext} onClick={next} aria-label="تصویر بعدی">→</button>}
       </div>
       <div className={styles.lightboxFooter}><span>{labels[active.role]}</span><b>{activeIndex+1} / {sorted.length}</b></div>
