@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
+import sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
@@ -26,6 +27,7 @@ type CropInput = { positionX?: unknown; positionY?: unknown; zoom?: unknown };
 export class MediaService {
   private readonly s3: S3Client;
   private readonly bucket: string;
+  private readonly variantCache = new Map<string, Buffer>();
 
   constructor(private readonly prisma: PrismaService) {
     const endpoint = process.env.MEDIA_S3_ENDPOINT;
@@ -148,13 +150,41 @@ export class MediaService {
     return this.serializeSlot(record);
   }
 
-  async getObject(id: string) {
+  async getObject(id: string, options: { width?: unknown; quality?: unknown } = {}) {
     const asset = await this.prisma.mediaAsset.findUnique({ where: { id } });
     if (!asset) throw new NotFoundException('Media asset not found');
+
+    const requestedWidth = Number(options.width);
+    const width = Number.isFinite(requestedWidth) && requestedWidth > 0
+      ? [180, 480, 900, 1400, 1800].find((candidate) => requestedWidth <= candidate) ?? 1800
+      : null;
+    const quality = this.intRange(options.quality, 82, 60, 90);
+    const cacheKey = width ? `${id}:${width}:${quality}` : '';
+    const cached = cacheKey ? this.variantCache.get(cacheKey) : undefined;
+    if (cached) {
+      return { asset, bytes: cached, contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' };
+    }
+
     const object = await this.s3.send(new GetObjectCommand({ Bucket: this.bucket, Key: asset.storageKey }));
     if (!object.Body) throw new NotFoundException('Media file not found');
-    const bytes = await object.Body.transformToByteArray();
-    return { asset, bytes: Buffer.from(bytes), cacheControl: object.CacheControl || 'public, max-age=31536000, immutable' };
+    const source = Buffer.from(await object.Body.transformToByteArray());
+
+    if (!width) {
+      return { asset, bytes: source, contentType: asset.mimeType, cacheControl: object.CacheControl || 'public, max-age=31536000, immutable' };
+    }
+
+    const bytes = await sharp(source, { failOn: 'none' })
+      .rotate()
+      .resize({ width, withoutEnlargement: true })
+      .webp({ quality, effort: 4 })
+      .toBuffer();
+
+    this.variantCache.set(cacheKey, bytes);
+    if (this.variantCache.size > 60) {
+      const oldest = this.variantCache.keys().next().value;
+      if (oldest) this.variantCache.delete(oldest);
+    }
+    return { asset, bytes, contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' };
   }
 
   async remove(id: string) {
