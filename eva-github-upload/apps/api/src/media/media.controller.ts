@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Res } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { MediaService } from './media.service.js';
 
@@ -17,9 +17,9 @@ export class MediaController {
   }
 
   @Get('media/:id')
-  async file(@Param('id') id: string, @Res() response: Response) {
-    const result = await this.media.getObject(id);
-    response.setHeader('Content-Type', result.asset.mimeType);
+  async file(@Param('id') id: string, @Query('w') width: string | undefined, @Query('q') quality: string | undefined, @Res() response: Response) {
+    const result = await this.media.getObject(id, { width, quality });
+    response.setHeader('Content-Type', result.contentType);
     response.setHeader('Content-Length', String(result.bytes.length));
     response.setHeader('Cache-Control', result.cacheControl);
     response.setHeader('X-Content-Type-Options', 'nosniff');
