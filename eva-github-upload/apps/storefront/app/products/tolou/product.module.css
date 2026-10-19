@@ -362,3 +362,10 @@
   .breakdownToggle{padding:13px 14px;min-height:66px}
   .breakdownRows{padding:8px 14px 14px}
 }
+
+
+/* Keep desktop gallery column aligned with purchase content height */
+@media(min-width:901px){
+  .productHero{align-items:stretch}
+  .purchasePanel{height:max-content}
+}
