@@ -9,6 +9,7 @@ const securityHeaders = [
 
 const nextConfig = {
   poweredByHeader: false,
+  distDir: '.admin-next',
   async headers() {
     return [
       {
