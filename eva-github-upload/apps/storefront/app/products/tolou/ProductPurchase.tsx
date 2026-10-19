@@ -86,9 +86,7 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
       </div>
 
       {hasStone&&<div className={styles.stoneHighlight}><div><span>STONE DETAILS</span><strong>{breakdown.stoneName??'سنگ'}</strong></div><dl><div><dt>قیراط</dt><dd>{decimal(breakdown.stoneCarat??0)}</dd></div><div><dt>وزن سنگ</dt><dd>{decimal(breakdown.stoneWeightGram??0)} گرم</dd></div><div><dt>ارزش سنگ</dt><dd>{toman(breakdown.stoneValueToman)} تومان</dd></div></dl></div>}
-      </div>
 
-      <div className={styles.purchaseExtras} aria-label="ابزارهای خرید و شفافیت قیمت">
         <div className={styles.secondaryActions}>
           <button type="button" className={saved?styles.secondaryActionActive:''} onClick={toggleSaveLater}>
             <i aria-hidden="true">{saved?'✓':'＋'}</i><span><strong>{saved?'برای بعد ذخیره شد':'ذخیره برای بعد'}</strong><small>{saved?'از لیست ذخیره‌ها قابل دسترسی است':'اگر هنوز برای خرید مطمئن نیستی'}</small></span>
@@ -97,7 +95,9 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
             <i aria-hidden="true">↗</i><span><strong>{shareState||'اشتراک‌گذاری'}</strong><small>ارسال لینک این محصول برای دیگران</small></span>
           </button>
         </div>
+      </div>
 
+      <div className={styles.purchaseExtras} aria-label="شفافیت قیمت">
       <details className={styles.breakdown}>
         <summary className={styles.breakdownToggle}><span><small>PRICE TRANSPARENCY</small><strong>جزئیات و نحوه محاسبه قیمت</strong><em>طلا، اجرت، سود و مالیات</em></span><b aria-hidden="true">＋</b></summary>
         <div className={styles.breakdownRows}>
