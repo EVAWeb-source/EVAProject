@@ -523,13 +523,10 @@
   }
 }
 @media(max-width:620px){
-  .purchaseActions{
-    padding:0 16px;
+  .purchaseActions,.purchaseExtras{
+    padding:0;
   }
   .purchaseActions .secondaryActions{
     margin-top:10px;
-  }
-  .purchaseExtras{
-    padding:0 16px;
   }
 }
