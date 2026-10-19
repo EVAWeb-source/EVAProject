@@ -10,7 +10,9 @@
 
   .heroVisual{
     order:-1;
-    min-height:clamp(340px,92vw,460px);
+    height:250px;
+    min-height:250px;
+    aspect-ratio:auto;
   }
 
   .heroCopy{
@@ -41,6 +43,7 @@
   .heroVisual{
     height:250px;
     min-height:250px;
+    aspect-ratio:auto;
   }
 
   .heroCopy{
