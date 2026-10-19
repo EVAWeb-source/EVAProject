@@ -14,7 +14,6 @@ jobs:
         working-directory: eva-github-upload
     env:
       DATABASE_URL: postgresql://eva:eva@localhost:5432/eva
-      NODE_ENV: production
 
     steps:
       - name: Checkout
@@ -28,8 +27,13 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Generate Prisma client
+        run: npm run db:generate
+
       - name: Typecheck
         run: npm run typecheck
 
       - name: Production build
         run: npm run build
+        env:
+          NODE_ENV: production
