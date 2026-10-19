@@ -79,7 +79,7 @@ export class AdminService {
           order: {
             include: {
               payments: {
-                where: { status: 'SUCCEEDED' },
+                where: { status: { in: ['SUCCEEDED', 'REFUNDED'] } },
                 orderBy: { paidAt: 'desc' },
                 take: 1,
               },
