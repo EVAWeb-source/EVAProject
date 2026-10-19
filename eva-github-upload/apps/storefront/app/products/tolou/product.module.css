@@ -169,3 +169,21 @@
 @media(max-width:380px){
   .secondaryActions{grid-template-columns:1fr}
 }
+
+
+@media(min-width:621px){
+  .microTrust>div{display:contents}
+  .microTrust>div>i,.microTrust small{display:none}
+  .microTrust>div>span{
+    text-align:center;
+    padding:10px 5px;
+    border-left:1px solid #e6ddd3;
+    font-size:8px;
+    color:#736b64;
+  }
+  .microTrust>div:last-child>span{border-left:0}
+  .microTrust strong{font:inherit;font-weight:inherit;color:inherit}
+  .secondaryActions button>i,.secondaryActions small{display:none}
+  .secondaryActions button>span{display:inline}
+  .secondaryActions strong{font:inherit;font-weight:inherit;color:inherit}
+}
