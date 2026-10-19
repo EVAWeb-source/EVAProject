@@ -94,10 +94,19 @@ export class OrdersService {
     });
 
     const mobile = normalizeIranMobile(dto.mobile);
+    const postalCode = this.normalizePostalCode(dto.postalCode);
+    const customerName = dto.customerName.trim();
+    const recipientName = dto.recipientName.trim();
+    const province = dto.province.trim();
+    const city = dto.city.trim();
+    const address = dto.address.trim();
+    if ([customerName, recipientName, province, city].some((value) => value.length < 2) || address.length < 5) {
+      throw new BadRequestException('Checkout contact and address fields are incomplete');
+    }
     const customer = await this.prisma.customer.upsert({
       where: { mobile },
-      create: { mobile, name: dto.customerName },
-      update: { name: dto.customerName },
+      create: { mobile, name: customerName },
+      update: { name: customerName },
     });
 
     const orderNumber = `EVA-${new Date().getUTCFullYear()}-${randomInt(100000, 999999)}`;
@@ -113,13 +122,13 @@ export class OrdersService {
           status: 'PENDING_PAYMENT',
           isDemo: true,
           customerId: customer.id,
-          customerName: dto.customerName,
+          customerName,
           mobile,
-          province: dto.province,
-          city: dto.city,
-          address: dto.address,
-          postalCode: dto.postalCode,
-          recipientName: dto.recipientName,
+          province,
+          city,
+          address,
+          postalCode,
+          recipientName,
           isGift: dto.isGift ?? false,
           giftMessage: dto.isGift ? dto.giftMessage?.trim() || null : null,
           hidePriceInPackage: dto.isGift
@@ -172,6 +181,17 @@ export class OrdersService {
     });
 
     return this.toPublicOrder(order);
+  }
+
+  private normalizePostalCode(value: string) {
+    const digits = value
+      .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+      .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+      .replace(/\D/g, '');
+    if (!/^\d{10}$/.test(digits)) {
+      throw new BadRequestException('Enter a valid 10-digit postal code');
+    }
+    return digits;
   }
 
   async findByNumber(orderNumber: string) {
