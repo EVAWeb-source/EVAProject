@@ -486,3 +486,47 @@
     margin-right:86px;
   }
 }
+
+
+/* Exact second-row alignment: price details under image, actions under product info */
+.purchaseActions{min-width:0}
+@media(min-width:901px){
+  .purchaseActions{
+    grid-column:2;
+    grid-row:2;
+    width:100%;
+    max-width:500px;
+    justify-self:stretch;
+    align-self:start;
+  }
+  .purchaseActions .secondaryActions{
+    width:100%;
+    margin:0;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  .purchaseActions .secondaryActions button{
+    min-height:68px;
+  }
+  .purchaseExtras{
+    grid-column:1;
+    grid-row:2;
+    align-self:start;
+  }
+  .purchaseExtras .breakdown{
+    margin:0;
+  }
+}
+@media(max-width:900px){
+  .purchaseActions{
+    width:100%;
+  }
+}
+@media(max-width:620px){
+  .purchaseActions,.purchaseExtras{
+    padding:0;
+  }
+  .purchaseActions .secondaryActions{
+    margin-top:10px;
+  }
+}
