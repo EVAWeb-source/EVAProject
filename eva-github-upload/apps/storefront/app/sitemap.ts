@@ -28,6 +28,8 @@ const staticRoutes = [
   '/faq',
   '/shipping-returns',
   '/contact',
+  '/privacy',
+  '/terms',
 ] as const;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
