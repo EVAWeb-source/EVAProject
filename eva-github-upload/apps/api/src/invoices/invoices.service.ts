@@ -73,7 +73,7 @@ export class InvoicesService {
 
     if (
       !payment ||
-      payment.status !== 'SUCCEEDED' ||
+      !['SUCCEEDED', 'REFUNDED'].includes(payment.status) ||
       payment.order.orderNumber !== orderNumber
     ) {
       throw new NotFoundException('Invoice not found');
