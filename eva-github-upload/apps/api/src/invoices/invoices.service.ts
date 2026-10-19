@@ -6,17 +6,20 @@ import { PrismaService } from '../prisma/prisma.service.js';
 export class InvoicesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getByNumber(invoiceNumber: string) {
+  async getByNumber(invoiceNumber: string, accessToken: string) {
     const invoice = await this.prisma.invoice.findUnique({
       where: { invoiceNumber },
       include: { order: true, lines: true },
     });
 
     if (!invoice) throw new NotFoundException('Invoice not found');
+    await this.assertPrivateAccess(invoice.order.orderNumber, accessToken);
     return this.toDetailed(invoice);
   }
 
-  async getByOrder(orderNumber: string) {
+  async getByOrder(orderNumber: string, accessToken: string) {
+    await this.assertPrivateAccess(orderNumber, accessToken);
+
     const existing = await this.prisma.invoice.findFirst({
       where: { order: { orderNumber } },
       include: { order: true, lines: true },
@@ -54,6 +57,27 @@ export class InvoicesService {
         finalPriceToman: Number(line.finalPriceToman),
       })),
     };
+  }
+
+  private async assertPrivateAccess(orderNumber: string, accessToken: string) {
+    const token = accessToken.trim();
+    if (!token) throw new NotFoundException('Invoice not found');
+
+    const payment = await this.prisma.paymentAttempt.findUnique({
+      where: { token },
+      select: {
+        status: true,
+        order: { select: { orderNumber: true } },
+      },
+    });
+
+    if (
+      !payment ||
+      payment.status !== 'SUCCEEDED' ||
+      payment.order.orderNumber !== orderNumber
+    ) {
+      throw new NotFoundException('Invoice not found');
+    }
   }
 
   async ensureForPaidOrder(orderNumber: string) {
