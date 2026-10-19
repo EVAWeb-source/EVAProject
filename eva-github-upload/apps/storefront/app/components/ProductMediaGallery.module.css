@@ -34,3 +34,8 @@
   .mobileIndicator span,.mobileIndicatorActive span{display:block;width:6px;height:6px;border-radius:50%;background:#cfc5b9;transition:transform .16s ease,background .16s ease}
   .mobileIndicatorActive span{background:#8d6c38;transform:scale(1.35)}
 }
+
+
+@media(max-width:620px){
+  .stage{aspect-ratio:1 / 1.08}
+}

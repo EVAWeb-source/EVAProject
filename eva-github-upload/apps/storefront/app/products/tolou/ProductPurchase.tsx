@@ -76,11 +76,19 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
       <button type="button" className={added?styles.addToCart+' '+styles.addedToCart:styles.addToCart} onClick={addToCart}>{added?'✓ داخل سبد خرید':'افزودن به سبد خرید'}</button>
       <div className={styles.actionStatus}>{cartStatus||shareState}</div>
 
-      <div className={styles.microTrust}><span>وزن دقیق</span><span>فاکتور معتبر</span><span>ارسال امن</span></div>
+      <div className={styles.microTrust} aria-label="مزیت‌های خرید این محصول">
+        <div><i aria-hidden="true">✓</i><span><strong>وزن دقیق</strong><small>وزن همین قطعه قبل از خرید مشخص است</small></span></div>
+        <div><i aria-hidden="true">⌁</i><span><strong>فاکتور معتبر</strong><small>جزئیات خرید و قیمت شفاف ثبت می‌شود</small></span></div>
+        <div><i aria-hidden="true">◇</i><span><strong>ارسال امن</strong><small>بسته‌بندی مطمئن تا تحویل سفارش</small></span></div>
+      </div>
 
       <div className={styles.secondaryActions}>
-        <button type="button" className={saved?extra.savedAction:''} onClick={toggleSaveLater}>{saved?'ذخیره شد':'ذخیره برای بعد'}</button>
-        <button type="button" onClick={shareProduct}>{shareState||'اشتراک‌گذاری'}</button>
+        <button type="button" className={saved?styles.secondaryActionActive:''} onClick={toggleSaveLater}>
+          <i aria-hidden="true">{saved?'✓':'＋'}</i><span><strong>{saved?'برای بعد ذخیره شد':'ذخیره برای بعد'}</strong><small>{saved?'از لیست ذخیره‌ها قابل دسترسی است':'اگر هنوز برای خرید مطمئن نیستی'}</small></span>
+        </button>
+        <button type="button" onClick={shareProduct}>
+          <i aria-hidden="true">↗</i><span><strong>{shareState||'اشتراک‌گذاری'}</strong><small>ارسال لینک این محصول برای دیگران</small></span>
+        </button>
       </div>
 
       {hasStone&&<div className={styles.stoneHighlight}><div><span>STONE DETAILS</span><strong>{breakdown.stoneName??'سنگ'}</strong></div><dl><div><dt>قیراط</dt><dd>{decimal(breakdown.stoneCarat??0)}</dd></div><div><dt>وزن سنگ</dt><dd>{decimal(breakdown.stoneWeightGram??0)} گرم</dd></div><div><dt>ارزش سنگ</dt><dd>{toman(breakdown.stoneValueToman)} تومان</dd></div></dl></div>}
