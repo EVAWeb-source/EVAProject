@@ -231,6 +231,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
 
   return (
     <>
+      <a className={styles.skipLink} href="#eva-content">رفتن به محتوای اصلی</a>
       <header className={`${styles.header} evaApprovedHeader`}>
         <Link className={`${styles.brand} evaApprovedBrand`} href="/" aria-label="EVA">
           <img className="evaBrandLogoImage" src={EVA_MARK_SRC} alt="" width={160} height={137} decoding="async" />
@@ -238,7 +239,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
 
         <nav className={`${styles.desktopNav} evaApprovedNav`} aria-label="ناوبری اصلی">
           {primaryNav.map(([href, label]) => (
-            <Link className={active(href) ? styles.active : ''} href={href} key={href}>{label}</Link>
+            <Link className={active(href) ? styles.active : ''} href={href} key={href} aria-current={active(href)?'page':undefined}>{label}</Link>
           ))}
         </nav>
 
@@ -251,7 +252,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className={styles.content}>{children}</div>
+      <div id="eva-content" className={styles.content} tabIndex={-1}>{children}</div>
 
       {!commerceWorkspace && <footer className={styles.footer}>
         <div className={styles.footerTop}>
@@ -305,7 +306,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
           </div>
 
           <span className={styles.mobileSectionLabel}>خرید و آشنایی</span>
-          <nav className={styles.mobileNav}>{primaryNav.map(([href, label]) => <Link className={active(href)?styles.mobileActive:''} href={href} key={href}>{label}<span>←</span></Link>)}</nav>
+          <nav className={styles.mobileNav}>{primaryNav.map(([href, label]) => <Link className={active(href)?styles.mobileActive:''} href={href} key={href} aria-current={active(href)?'page':undefined}>{label}<span>←</span></Link>)}</nav>
 
           <span className={styles.mobileSectionLabel}>خدمات</span>
           <div className={styles.mobileUtilities}>
