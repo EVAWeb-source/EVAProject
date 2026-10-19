@@ -19,7 +19,7 @@ export default async function InvoicesPage(){
           <div className={styles.items}><span>قطعات</span><strong>{new Intl.NumberFormat('fa-IR').format(items.length)} قطعه</strong>{items.slice(0,3).map(item=><small key={item.unitSku}>{item.productNameFa} · <b dir="ltr">{item.unitSku}</b></small>)}{items.length>3&&<small>+ {new Intl.NumberFormat('fa-IR').format(items.length-3)} قطعه دیگر</small>}</div>
           <div className={styles.total}><span>مبلغ نهایی</span><strong>{toman(invoice.totalToman)}</strong></div>
         </div>
-        <div className={styles.actions}><a href={`${STOREFRONT_BASE}/invoice/${encodeURIComponent(invoice.invoiceNumber)}`} target="_blank" rel="noreferrer">مشاهده فاکتور</a><a href={`${STOREFRONT_BASE}/verify/${encodeURIComponent(invoice.verificationCode)}`} target="_blank" rel="noreferrer">Verify</a><a href={`/orders/${invoice.orderId}`}>سفارش</a></div>
+        <div className={styles.actions}>{invoice.accessToken&&<a href={`${STOREFRONT_BASE}/invoice/${encodeURIComponent(invoice.invoiceNumber)}?accessToken=${encodeURIComponent(invoice.accessToken)}`} target="_blank" rel="noreferrer">مشاهده فاکتور</a>}<a href={`${STOREFRONT_BASE}/verify/${encodeURIComponent(invoice.verificationCode)}`} target="_blank" rel="noreferrer">Verify</a><a href={`/orders/${invoice.orderId}`}>سفارش</a></div>
       </article>})}{data.invoices.length===0&&<div className={styles.empty}>هنوز فاکتوری صادر نشده است.</div>}</div>
     </section>}
   </AdminShell>;
