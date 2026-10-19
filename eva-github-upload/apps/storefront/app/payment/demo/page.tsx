@@ -96,6 +96,7 @@ export default function DemoPaymentPage(){
           referenceId:data.referenceId,
           invoiceNumber:data.invoice?.invoiceNumber ?? null,
           verificationCode:data.invoice?.verificationCode ?? null,
+          paymentToken:data.token,
         }));
         window.localStorage.removeItem('eva-cart');
         window.localStorage.removeItem('eva-reservation');
@@ -155,7 +156,7 @@ export default function DemoPaymentPage(){
       </div>}
 
       {failed&&<div className={styles.actions}><a className={styles.secondary} href="/checkout">رزرو دوباره از Checkout</a><a className={styles.textLink} href="/cart">بازگشت به سبد خرید</a></div>}
-      {payment.status==='SUCCEEDED'&&<div className={styles.actions}>{payment.invoice&&<a className={styles.secondary} href={`/invoice/${encodeURIComponent(payment.invoice.invoiceNumber)}`}>مشاهده فاکتور</a>}<a className={styles.textLink} href={`/success?order=${encodeURIComponent(payment.order.number)}`}>مشاهده نتیجه سفارش</a></div>}
+      {payment.status==='SUCCEEDED'&&<div className={styles.actions}>{payment.invoice&&<a className={styles.secondary} href={`/invoice/${encodeURIComponent(payment.invoice.invoiceNumber)}?accessToken=${encodeURIComponent(payment.token)}`}>مشاهده فاکتور</a>}<a className={styles.textLink} href={`/success?order=${encodeURIComponent(payment.order.number)}`}>مشاهده نتیجه سفارش</a></div>}
     </section>
   </main>;
 }
