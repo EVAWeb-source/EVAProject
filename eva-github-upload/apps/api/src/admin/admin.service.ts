@@ -74,7 +74,18 @@ export class AdminService {
       }),
       this.prisma.invoice.findMany({
         take: 30,
-        include: { lines: true },
+        include: {
+          lines: true,
+          order: {
+            include: {
+              payments: {
+                where: { status: 'SUCCEEDED' },
+                orderBy: { paidAt: 'desc' },
+                take: 1,
+              },
+            },
+          },
+        },
         orderBy: { issuedAt: 'desc' },
       }),
       this.prisma.masterProduct.count({ where: { status: { in: ['ACTIVE', 'OUT_OF_STOCK'] } } }),
@@ -204,6 +215,7 @@ export class AdminService {
           item: items[0] ?? null,
           payment: payment
             ? {
+                token: payment.token,
                 provider: payment.provider,
                 status: payment.status,
                 referenceId: payment.referenceId,
@@ -229,6 +241,7 @@ export class AdminService {
           customerMobile: invoice.customerMobile,
           totalToman: Number(invoice.totalToman),
           verificationCode: invoice.verificationCode,
+          accessToken: invoice.order.payments[0]?.token ?? null,
           issuedAt: invoice.issuedAt,
           itemCount: items.length,
           items,
