@@ -1,16 +1,16 @@
 import type { Metadata } from 'next';
 import SearchClient from './SearchClient';
 import type { CatalogProduct } from '../components/CatalogGrid';
-import { publicMetadata } from '../lib/seo';
+import { noIndexMetadata } from '../lib/seo';
 import styles from './search.module.css';
 
 export const dynamic='force-dynamic';
 
-export const metadata:Metadata=publicMetadata({
+export const metadata:Metadata={
+  ...noIndexMetadata,
   title:'جستجو | ایوا',
   description:'جستجو میان محصولات، کالکشن‌ها و دسته‌های طلای ایوا.',
-  path:'/search',
-});
+};
 
 async function getProducts():Promise<CatalogProduct[]>{
   const apiBase=process.env.API_URL ?? 'https://eva-api-production-c864.up.railway.app';
