@@ -72,6 +72,9 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
   const exitLoaderTimer = useRef<number | null>(null);
   const safetyTimer = useRef<number | null>(null);
   const loaderShownAt = useRef<number | null>(null);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const mobileDialogRef = useRef<HTMLDivElement | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const minimal = minimalPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(prefix));
   const commerceWorkspace = pathname === '/shop';
@@ -145,6 +148,40 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
   }, [menuOpen, longLoaderVisible]);
 
   useEffect(() => {
+    if (!menuOpen) return;
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : menuButtonRef.current;
+    const dialog = mobileDialogRef.current;
+    const focusable = () => Array.from(dialog?.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])') ?? []);
+    focusable()[0]?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setMenuOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const items = focusable();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      window.setTimeout(() => previousFocusRef.current?.focus(), 0);
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
     const refresh = () => {
       setWishlistCount(readWishlistCount());
       setCartCount(readCartCount());
@@ -210,7 +247,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
           <Link className={`${styles.iconAction} evaApprovedAction`} href="/wishlist" aria-label="علاقه‌مندی‌ها"><HeaderIcon type="heart" />{wishlistCount > 0 && <small>{new Intl.NumberFormat('fa-IR').format(wishlistCount)}</small>}</Link>
           <Link className={`${styles.iconAction} evaApprovedAction`} href="/account" aria-label="حساب کاربری"><HeaderIcon type="user" /></Link>
           <Link className={`${styles.iconAction} evaApprovedAction`} href="/search" aria-label="جستجو"><HeaderIcon type="search" /></Link>
-          <button className={styles.menuButton} onClick={() => setMenuOpen(true)} aria-label="باز کردن منو">☰</button>
+          <button ref={menuButtonRef} className={styles.menuButton} onClick={() => setMenuOpen(true)} aria-label="باز کردن منو" aria-expanded={menuOpen} aria-controls="eva-mobile-menu">☰</button>
         </div>
       </header>
 
@@ -227,7 +264,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
           <div className={styles.footerLinks}>
             <div><strong>خرید</strong><Link href="/shop">فروشگاه</Link><Link href="/collections">کالکشن‌ها</Link><Link href="/gift">هدیه</Link><Link href="/lightweight">طلای سبک</Link></div>
             <div><strong>راهنما</strong><Link href="/help">مرکز راهنما</Link><Link href="/faq">سوالات متداول</Link><Link href="/shipping-returns">ارسال و مرجوعی</Link><Link href="/track-order">رهگیری سفارش</Link></div>
-            <div><strong>اعتماد</strong><Link href="/trust">اعتماد به EVA</Link><Link href="/about">درباره EVA</Link><Link href="/contact">تماس</Link><Link href="/account">حساب من</Link></div>
+            <div><strong>اعتماد</strong><Link href="/trust">اعتماد به EVA</Link><Link href="/about">درباره EVA</Link><Link href="/contact">تماس</Link><Link href="/privacy">حریم خصوصی</Link><Link href="/terms">شرایط استفاده</Link><Link href="/account">حساب من</Link></div>
           </div>
         </div>
         <div className={styles.footerBottom}><span>© EVA 2026</span><span>طراحی‌شده برای یک تجربه آرام و شفاف از خرید طلا.</span></div>
@@ -252,7 +289,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
       )}
 
       {menuOpen && (
-        <div className={styles.mobileOverlay} role="dialog" aria-modal="true" aria-label="منوی EVA">
+        <div id="eva-mobile-menu" ref={mobileDialogRef} className={styles.mobileOverlay} role="dialog" aria-modal="true" aria-label="منوی EVA">
           <button className={styles.closeButton} onClick={() => setMenuOpen(false)} aria-label="بستن منو">×</button>
           <div className={styles.mobileMenuHead}>
             <Link className={styles.mobileBrand} href="/" aria-label="EVA" style={{ ...brandResetStyle, display: 'inline-flex', alignItems: 'center' }}>
