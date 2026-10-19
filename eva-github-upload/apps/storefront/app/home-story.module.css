@@ -186,3 +186,58 @@
   .storyCopy p{font-size:11px!important;line-height:2.05!important}
   .storyVisual{min-height:225px!important}
 }
+
+/* EVA final mobile benefits rail */
+@media(max-width:520px){
+  .promiseStrip{
+    display:flex!important;
+    grid-template-columns:none!important;
+    overflow-x:auto!important;
+    overscroll-behavior-x:contain;
+    scroll-snap-type:x mandatory;
+    scrollbar-width:none;
+    gap:8px!important;
+    padding:10px 12px 12px!important;
+    border-top:1px solid #eee7df!important;
+    border-bottom:1px solid #e8e0d7!important;
+    background:#fffdf9!important;
+  }
+
+  .promiseStrip::-webkit-scrollbar{
+    display:none;
+  }
+
+  .promiseStrip article,
+  .promiseStrip article:nth-child(even),
+  .promiseStrip article:nth-last-child(-n+2),
+  .promiseStrip article:last-child{
+    flex:0 0 188px;
+    min-height:62px!important;
+    grid-template-columns:26px minmax(0,1fr)!important;
+    justify-content:start!important;
+    align-items:center!important;
+    gap:8px!important;
+    padding:9px 11px!important;
+    border:1px solid #e9e0d6!important;
+    border-radius:10px;
+    background:#fff!important;
+    text-align:right!important;
+    scroll-snap-align:start;
+  }
+
+  .promiseIcon{
+    font-size:17px!important;
+  }
+
+  .promiseStrip strong{
+    font-size:9px!important;
+    white-space:normal!important;
+  }
+
+  .promiseStrip small{
+    display:block!important;
+    margin-top:1px!important;
+    font-size:7.5px!important;
+    line-height:1.55!important;
+  }
+}
