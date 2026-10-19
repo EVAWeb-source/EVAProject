@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     url: siteUrl(),
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'EVA | ایوا',
     description: DEFAULT_DESCRIPTION,
   },
