@@ -454,3 +454,35 @@
     height:100%;
   }
 }
+
+
+/* Correct desktop ownership of product utility controls */
+@media(min-width:901px){
+  .purchaseExtras{
+    grid-column:1;
+    grid-row:2;
+    display:block;
+    width:calc(100% - 94px);
+    margin-right:94px;
+    align-self:start;
+  }
+  .purchaseExtras .breakdown{
+    width:100%;
+    margin:0;
+  }
+  .purchaseMain .secondaryActions{
+    width:100%;
+    margin-top:12px;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  .purchaseMain .secondaryActions button{
+    min-height:68px;
+  }
+}
+@media(min-width:901px) and (max-width:1180px){
+  .purchaseExtras{
+    width:calc(100% - 86px);
+    margin-right:86px;
+  }
+}
