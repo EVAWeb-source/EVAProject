@@ -234,6 +234,9 @@ export class CustomerService {
         ? {
             invoiceNumber: order.invoice.invoiceNumber,
             verificationCode: order.invoice.verificationCode,
+            accessToken: payment && ['SUCCEEDED', 'REFUNDED'].includes(payment.status)
+              ? payment.token
+              : null,
           }
         : null,
       payment: payment
