@@ -24,6 +24,9 @@ const emptyGift:GiftState={enabled:false,message:'',hidePrice:true};
 
 function toman(value:number){return `${new Intl.NumberFormat('fa-IR').format(value)} تومان`;}
 function faWeight(value:string){return `${new Intl.NumberFormat('fa-IR',{minimumFractionDigits:2,maximumFractionDigits:3}).format(Number(value))} گرم`;}
+function latinDigits(value:string){return value.replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));}
+function normalizeMobileInput(value:string){let mobile=latinDigits(value).replace(/\D/g,'');if(mobile.startsWith('0098'))mobile='0'+mobile.slice(4);else if(mobile.startsWith('98'))mobile='0'+mobile.slice(2);return /^09\d{9}$/.test(mobile)?mobile:null;}
+function normalizePostalCode(value:string){const code=latinDigits(value).replace(/\D/g,'');return /^\d{10}$/.test(code)?code:null;}
 function readCart():CartItem[]{
   try{
     const raw=window.localStorage.getItem('eva-cart');
@@ -183,9 +186,15 @@ export default function CheckoutPage(){
     event.preventDefault();
     if(!items.length||reservations.length!==items.length||loading||secondsLeft<=0)return;
 
-    setLoading(true);
     setError('');
     const form=new FormData(event.currentTarget);
+    const mobile=normalizeMobileInput(String(form.get('mobile')??''));
+    const postalCode=normalizePostalCode(String(form.get('postalCode')??''));
+    if(!mobile){setError('شماره موبایل معتبر وارد کن؛ مثال: ۰۹۱۲۱۲۳۴۵۶۷.');return;}
+    if(!postalCode){setError('کدپستی باید دقیقاً ۱۰ رقم باشد.');return;}
+    if(form.get('termsAccepted')!=='on'){setError('برای ادامه، شرایط استفاده و سیاست حریم خصوصی را تأیید کن.');return;}
+
+    setLoading(true);
     const reservationByUnit=new Map(reservations.map(entry=>[entry.unit.id,entry]));
 
     try{
@@ -194,13 +203,14 @@ export default function CheckoutPage(){
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           items:items.map(item=>({unitId:item.unitId,reservationToken:reservationByUnit.get(item.unitId)?.token})),
-          customerName:String(form.get('customerName')??''),
-          mobile:String(form.get('mobile')??''),
-          province:String(form.get('province')??''),
-          city:String(form.get('city')??''),
-          address:String(form.get('address')??''),
-          postalCode:String(form.get('postalCode')??''),
-          recipientName:String(form.get('recipientName')??''),
+          customerName:String(form.get('customerName')??'').trim(),
+          mobile,
+          province:String(form.get('province')??'').trim(),
+          city:String(form.get('city')??'').trim(),
+          address:String(form.get('address')??'').trim(),
+          postalCode,
+          recipientName:String(form.get('recipientName')??'').trim(),
+          termsAccepted:true,
           isGift:gift.enabled,
           giftMessage:gift.enabled?gift.message:'',
           hidePriceInPackage:gift.enabled?gift.hidePrice:false,
@@ -247,15 +257,16 @@ export default function CheckoutPage(){
           <p>{reservationReady?'تا پایان این زمان، Unitهای این سفارش برای مشتری دیگری قابل خرید نیستند.':'برای ادامه پرداخت باید رزرو همه قطعه‌ها فعال باشد.'}</p>
         </div>
 
-        <section className={styles.formSection}><div className={styles.sectionHead}><b>۱</b><div><h2>اطلاعات تماس</h2><span>برای تأیید سفارش و پیگیری</span></div></div><div className={styles.grid2}><label>نام و نام خانوادگی<input name="customerName" autoComplete="name" required placeholder="نام و نام خانوادگی" /></label><label>شماره موبایل<input name="mobile" autoComplete="tel" required inputMode="tel" placeholder="۰۹۱۲..." /></label></div></section>
+        <section className={styles.formSection}><div className={styles.sectionHead}><b>۱</b><div><h2>اطلاعات تماس</h2><span>برای تأیید سفارش و پیگیری</span></div></div><div className={styles.grid2}><label>نام و نام خانوادگی<input name="customerName" autoComplete="name" required placeholder="نام و نام خانوادگی" /></label><label>شماره موبایل<input name="mobile" autoComplete="tel" required inputMode="tel" maxLength={16} pattern="[0-9۰-۹٠-٩+\\s-]{10,16}" placeholder="۰۹۱۲..." aria-describedby="checkout-mobile-hint" /><small id="checkout-mobile-hint">شماره موبایل ایران؛ مثال ۰۹۱۲۱۲۳۴۵۶۷</small></label></div></section>
 
-        <section className={styles.formSection}><div className={styles.sectionHead}><b>۲</b><div><h2>آدرس ارسال</h2><span>نشانی دقیق گیرنده سفارش</span></div></div><div className={styles.grid2}><label>استان<input name="province" autoComplete="address-level1" required placeholder="استان" /></label><label>شهر<input name="city" autoComplete="address-level2" required placeholder="شهر" /></label></div><label>آدرس کامل<textarea name="address" autoComplete="street-address" required placeholder="خیابان، کوچه، پلاک و واحد" /></label><div className={styles.grid2}><label>کدپستی<input name="postalCode" autoComplete="postal-code" required inputMode="numeric" placeholder="۱۰ رقم" /></label><label>نام گیرنده<input name="recipientName" required placeholder="نام گیرنده" /></label></div></section>
+        <section className={styles.formSection}><div className={styles.sectionHead}><b>۲</b><div><h2>آدرس ارسال</h2><span>نشانی دقیق گیرنده سفارش</span></div></div><div className={styles.grid2}><label>استان<input name="province" autoComplete="address-level1" required placeholder="استان" /></label><label>شهر<input name="city" autoComplete="address-level2" required placeholder="شهر" /></label></div><label>آدرس کامل<textarea name="address" autoComplete="street-address" required placeholder="خیابان، کوچه، پلاک و واحد" /></label><div className={styles.grid2}><label>کدپستی<input name="postalCode" autoComplete="postal-code" required inputMode="numeric" maxLength={10} pattern="[0-9۰-۹٠-٩]{10}" placeholder="۱۰ رقم" /></label><label>نام گیرنده<input name="recipientName" required placeholder="نام گیرنده" /></label></div></section>
 
         <section className={styles.formSection}><div className={styles.sectionHead}><b>۳</b><div><h2>روش ارسال</h2><span>جزئیات نهایی با اتصال سرویس لجستیک تکمیل می‌شود</span></div></div><label className={styles.choice}><input type="radio" name="shipping" defaultChecked/><span><strong>ارسال استاندارد ایوا</strong><small>روش، هزینه و بازه تحویل در اتصال نهایی سرویس ارسال محاسبه خواهد شد.</small></span><b>انتخاب‌شده</b></label></section>
 
         <section className={styles.formSection}><div className={styles.sectionHead}><b>۴</b><div><h2>پرداخت</h2><span>نسخه فعلی برای تست جریان سفارش</span></div></div><div className={styles.demoPay}><strong>درگاه آزمایشی ایوا</strong><p>بعد از ثبت اطلاعات، Order واقعی تستی ساخته می‌شود و به شبیه‌ساز درگاه می‌روی. هیچ مبلغ بانکی واقعی جابه‌جا نمی‌شود.</p></div></section>
 
         {gift.enabled&&<div className={styles.giftSummary}><span>GIFT ORDER</span><strong>این سفارش به‌عنوان هدیه ثبت می‌شود.</strong>{gift.message&&<p>«{gift.message}»</p>}<small>{gift.hidePrice?'قیمت داخل بسته نمایش داده نمی‌شود.':'نمایش قیمت داخل بسته فعال است.'}</small></div>}
+        <label className={styles.legalConsent}><input type="checkbox" name="termsAccepted" required/><span>با <Link href="/terms" target="_blank">شرایط استفاده و خرید</Link> و <Link href="/privacy" target="_blank">سیاست حریم خصوصی</Link> EVA موافقم.</span></label>
         {error&&<div className={styles.error} role="alert"><strong>امکان ادامه نیست</strong><p>{error}</p><Link href="/cart">بازگشت به سبد خرید</Link></div>}
 
         <button className={styles.payButton} disabled={loading||reserving||!reservationReady}>{loading?'در حال ساخت سفارش...':reserving?'در حال رزرو قطعه‌ها...':`ادامه به پرداخت آزمایشی • ${toman(total)}`}</button>
