@@ -63,3 +63,48 @@
   .tools{grid-template-columns:repeat(3,minmax(0,1fr))}
   .tools> :last-child{grid-column:auto}
 }
+
+
+/* Final mobile card metadata polish */
+.identityMeta{display:flex;align-items:center;gap:5px;flex:none}
+.mobileWeight{display:none}
+@media(max-width:560px){
+  .infoTop{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:7px;
+  }
+  .identityMeta{
+    direction:ltr;
+    gap:5px;
+    padding-top:1px;
+  }
+  .mobileWeight{
+    display:inline;
+    direction:rtl;
+    white-space:nowrap;
+    font-size:7px;
+    line-height:1.4;
+    color:#766d65;
+  }
+  .desktopWeight{display:none}
+  .purity{
+    justify-self:auto;
+    padding:2px 5px;
+    font-size:7px;
+  }
+  .info{
+    gap:3px;
+  }
+  .meta{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    min-height:15px;
+    gap:0;
+  }
+  .priceTag{
+    margin-inline-start:auto;
+  }
+}
