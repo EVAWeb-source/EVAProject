@@ -72,3 +72,7 @@
 @media(max-width:1000px){.desktopNav{gap:20px;font-size:10px}.footerTop{grid-template-columns:1fr;gap:44px}.footerBrand{max-width:430px}}
 @media(max-width:820px){.announcement{min-height:27px;font-size:9px}.header{position:relative;top:auto;height:64px;padding:0 16px;grid-template-columns:1fr auto}.brand{font-size:25px}.desktopNav{display:none}.accountAction{display:none}.menuButton{display:inline-flex}.footer{padding:58px 18px 22px}.footerTop{padding-bottom:44px}.footerLinks{grid-template-columns:1fr 1fr}.footerBottom{flex-direction:column;gap:7px}.footer:before{right:18px}}
 @media(max-width:520px){.actions{gap:4px}.cartAction{padding:0 12px;min-width:54px}.footerLinks{grid-template-columns:1fr;gap:30px}.mobileOverlay{padding:14px 14px 24px}.mobileMenuHead{padding-left:48px}.mobileQuickActions{gap:5px;margin-top:12px}.mobileQuickActions>a{min-height:62px}.mobileNav a{min-height:46px;font-size:14px}.mobileUtilities{gap:5px}.mobileUtilities a{min-height:40px;font-size:8.5px}.longLoaderMark{width:190px}.longLoaderLogo{font-size:38px}.longLoaderHalo{width:96px;height:96px}}
+
+.skipLink{position:fixed;z-index:200;top:8px;right:8px;transform:translateY(-150%);padding:9px 13px;background:#272320;color:#fffdf9;border-radius:8px;font-size:11px;transition:transform .16s ease}
+.skipLink:focus{transform:translateY(0)}
+.content:focus{outline:none}

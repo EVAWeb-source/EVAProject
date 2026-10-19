@@ -6,6 +6,7 @@ import {
   IsBoolean,
   IsOptional,
   IsString,
+  Equals,
   MaxLength,
   MinLength,
   ValidateNested,
@@ -35,6 +36,7 @@ export class CreateOrderDto {
 
   @IsString()
   @MinLength(10)
+  @MaxLength(16)
   mobile!: string;
 
   @IsString()
@@ -50,8 +52,12 @@ export class CreateOrderDto {
   address!: string;
 
   @IsString()
-  @MinLength(5)
+  @MinLength(10)
+  @MaxLength(10)
   postalCode!: string;
+
+  @Equals(true)
+  termsAccepted!: boolean;
 
   @IsString()
   @MinLength(2)
