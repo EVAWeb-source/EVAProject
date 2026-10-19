@@ -23,6 +23,8 @@ main [aria-label="مزیت‌های خرید از EVA"] article > div {
     width: 100%;
     height: 250px !important;
     min-height: 250px !important;
+    max-height: 250px !important;
+    flex: 0 0 250px !important;
     aspect-ratio: auto !important;
   }
 
@@ -79,6 +81,8 @@ main [aria-label="مزیت‌های خرید از EVA"] article > div {
   main > .evaHomeHero > .evaHomeHeroVisual {
     height: 250px !important;
     min-height: 250px !important;
+    max-height: 250px !important;
+    flex: 0 0 250px !important;
     aspect-ratio: auto !important;
   }
 
