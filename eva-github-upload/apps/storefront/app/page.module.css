@@ -10,8 +10,8 @@
 
   .heroVisual{
     order:-1;
-    height:300px;
-    min-height:300px;
+    height:350px;
+    min-height:350px;
     aspect-ratio:auto;
   }
 
@@ -41,8 +41,8 @@
 
 @media(max-width:520px){
   .heroVisual{
-    height:300px;
-    min-height:300px;
+    height:350px;
+    min-height:350px;
     aspect-ratio:auto;
   }
 
