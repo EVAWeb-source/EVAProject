@@ -181,3 +181,67 @@
     font-size:7px;
   }
 }
+
+
+/* Mobile filter chips: remove heading and rectangular dock */
+@media(max-width:560px){
+  .filterDock{
+    background:transparent;
+    border-top:0;
+    border-bottom:0;
+  }
+  .toolbar{
+    padding:1px 12px 4px;
+    border-top:0;
+    background:transparent;
+    gap:4px;
+  }
+  .toolbarIntro{
+    display:none;
+  }
+  .tools{
+    width:100%;
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:5px;
+  }
+  .tools :global([class*='FilterMenu_menu']){
+    min-width:0;
+    width:100%;
+  }
+  .tools :global([class*='FilterMenu_trigger']){
+    min-height:24px;
+    padding:0 8px;
+    border:1px solid #e4dacd;
+    border-radius:999px;
+    background:#fbf7f1;
+    box-shadow:none;
+    column-gap:4px;
+  }
+  .tools :global([class*='FilterMenu_label']){
+    display:none!important;
+  }
+  .tools :global([class*='FilterMenu_trigger']) strong{
+    min-width:0;
+    font-size:7.1px;
+    font-weight:560;
+    line-height:1;
+    color:#5f574f;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .tools :global([class*='FilterMenu_trigger']) i{
+    font-size:10px;
+    color:#9c7a45;
+  }
+  .tools :global(details[open] [class*='FilterMenu_trigger']){
+    background:#f3e9dc;
+    border-color:#c9b18d;
+  }
+  .clearFilters{
+    min-height:22px;
+    padding:0 3px;
+    font-size:6.8px;
+  }
+}
