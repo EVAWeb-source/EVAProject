@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { InvoicesService } from './invoices.service.js';
 
 @Controller('invoices')
@@ -6,13 +6,19 @@ export class InvoicesController {
   constructor(private readonly invoices: InvoicesService) {}
 
   @Get(':invoiceNumber')
-  getByNumber(@Param('invoiceNumber') invoiceNumber: string) {
-    return this.invoices.getByNumber(invoiceNumber);
+  getByNumber(
+    @Param('invoiceNumber') invoiceNumber: string,
+    @Query('accessToken') accessToken = '',
+  ) {
+    return this.invoices.getByNumber(invoiceNumber, accessToken);
   }
 
   @Get('order/:orderNumber')
-  getByOrder(@Param('orderNumber') orderNumber: string) {
-    return this.invoices.getByOrder(orderNumber);
+  getByOrder(
+    @Param('orderNumber') orderNumber: string,
+    @Query('accessToken') accessToken = '',
+  ) {
+    return this.invoices.getByOrder(orderNumber, accessToken);
   }
 
   @Get('verify/:verificationCode')
