@@ -37,3 +37,135 @@
 @media(max-width:360px){
   .units{grid-template-columns:1fr}
 }
+
+
+/* Mobile purchase clarity */
+@media(max-width:620px){
+  .addToCart{
+    background:#9a742f;
+    border-color:#9a742f;
+    color:#fffdf9;
+    box-shadow:0 8px 22px rgba(154,116,47,.18);
+  }
+  .addToCart:hover,.addToCart:focus-visible{
+    background:#876426;
+    border-color:#876426;
+  }
+  .addedToCart{
+    background:#40594c;
+    border-color:#40594c;
+    box-shadow:none;
+  }
+
+  .microTrust{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:7px;
+    margin-top:10px;
+    padding:0;
+    background:transparent;
+    border:0;
+  }
+  .microTrust>div{
+    min-height:58px;
+    display:grid;
+    grid-template-columns:34px 1fr;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border:1px solid #e8ded2;
+    border-radius:10px;
+    background:#fbf7f1;
+    text-align:right;
+  }
+  .microTrust>div>i{
+    width:30px;
+    height:30px;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    background:#f0e6d7;
+    color:#8d6c38;
+    font-style:normal;
+    font-size:13px;
+  }
+  .microTrust>div>span{
+    display:grid;
+    gap:2px;
+    padding:0;
+    border:0;
+    text-align:right;
+  }
+  .microTrust strong{
+    font-size:9px;
+    font-weight:650;
+    color:#39332d;
+  }
+  .microTrust small{
+    font-size:8px;
+    line-height:1.65;
+    color:#8a8179;
+  }
+
+  .secondaryActions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:10px;
+  }
+  .secondaryActions button{
+    min-height:66px;
+    display:grid;
+    grid-template-columns:28px 1fr;
+    align-items:center;
+    gap:8px;
+    padding:9px 10px;
+    border:1px solid #e2d8cc;
+    border-radius:10px;
+    background:#fff;
+    color:#514941;
+    text-align:right;
+    font:inherit;
+  }
+  .secondaryActions button>i{
+    width:26px;
+    height:26px;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    background:#f7f1e8;
+    color:#8d6c38;
+    font-style:normal;
+    font-size:13px;
+  }
+  .secondaryActions button>span{
+    display:grid;
+    gap:2px;
+  }
+  .secondaryActions strong{
+    font-size:8.5px;
+    font-weight:650;
+    color:#403832;
+  }
+  .secondaryActions small{
+    font-size:7px;
+    line-height:1.55;
+    color:#978d84;
+  }
+  .secondaryActions button:hover,.secondaryActions button:focus-visible{
+    border-color:#c9b18a;
+    background:#fdf9f4;
+    color:#403832;
+  }
+  .secondaryActionActive{
+    border-color:#b9cdbc!important;
+    background:#f3f8f4!important;
+  }
+  .secondaryActionActive>i{
+    background:#e6f0e8!important;
+    color:#466a52!important;
+  }
+}
+@media(max-width:380px){
+  .secondaryActions{grid-template-columns:1fr}
+}
