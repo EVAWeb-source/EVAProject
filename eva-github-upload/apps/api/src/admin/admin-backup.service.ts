@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 
 const BACKUP_FORMAT = 'EVA_BUSINESS_BACKUP';
 const BACKUP_FORMAT_VERSION = 1;
-const BACKUP_SCHEMA_VERSION = 'eva-commerce-schema-2026-10-05';
+const BACKUP_SCHEMA_VERSION = 'eva-commerce-schema-2026-10-19';
 
 @Injectable()
 export class AdminBackupService {
@@ -28,6 +28,9 @@ export class AdminBackupService {
       collections,
       products,
       productImages,
+      mediaAssets,
+      siteMediaSlots,
+      siteContent,
       units,
       goldRates,
       pricingRules,
@@ -45,6 +48,9 @@ export class AdminBackupService {
       this.prisma.collection.findMany({ orderBy: { id: 'asc' } }),
       this.prisma.masterProduct.findMany({ orderBy: { id: 'asc' } }),
       this.prisma.productImage.findMany({ orderBy: { id: 'asc' } }),
+      this.prisma.mediaAsset.findMany({ orderBy: { id: 'asc' } }),
+      this.prisma.siteMediaSlot.findMany({ orderBy: { id: 'asc' } }),
+      this.prisma.siteContent.findMany({ orderBy: { id: 'asc' } }),
       this.prisma.physicalUnit.findMany({ orderBy: { id: 'asc' } }),
       this.prisma.goldRate.findMany({ orderBy: { id: 'asc' } }),
       this.prisma.pricingRule.findMany({ orderBy: { id: 'asc' } }),
@@ -64,6 +70,9 @@ export class AdminBackupService {
       Collection: collections,
       MasterProduct: products,
       ProductImage: productImages,
+      MediaAsset: mediaAssets,
+      SiteMediaSlot: siteMediaSlots,
+      SiteContent: siteContent,
       PhysicalUnit: units,
       GoldRate: goldRates,
       PricingRule: pricingRules,
@@ -108,6 +117,9 @@ export class AdminBackupService {
       this.prisma.collection.count(),
       this.prisma.masterProduct.count(),
       this.prisma.productImage.count(),
+      this.prisma.mediaAsset.count(),
+      this.prisma.siteMediaSlot.count(),
+      this.prisma.siteContent.count(),
       this.prisma.physicalUnit.count(),
       this.prisma.goldRate.count(),
       this.prisma.pricingRule.count(),
@@ -123,7 +135,7 @@ export class AdminBackupService {
       this.prisma.adminAuditLog.count(),
     ]);
     const names = [
-      'Collection', 'MasterProduct', 'ProductImage', 'PhysicalUnit', 'GoldRate', 'PricingRule',
+      'Collection', 'MasterProduct', 'ProductImage', 'MediaAsset', 'SiteMediaSlot', 'SiteContent', 'PhysicalUnit', 'GoldRate', 'PricingRule',
       'Customer', 'Order', 'OrderLine', 'Reservation', 'PaymentAttempt', 'Invoice', 'InvoiceLine',
       'AfterSalesCase', 'SmsNotification', 'AdminAuditLog',
     ];
