@@ -203,7 +203,7 @@ export type AuditLogData = {
 export async function requireAdmin() {
   const expected = sessionValue();
   const store = await cookies();
-  if (expected && store.get(ADMIN_SESSION_COOKIE)?.value !== expected) redirect('/login');
+  if (!expected || store.get(ADMIN_SESSION_COOKIE)?.value !== expected) redirect('/login');
 }
 
 async function adminFetch<T>(path: string): Promise<{ data: T | null; error: string | null }> {
