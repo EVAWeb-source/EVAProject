@@ -35,7 +35,7 @@ type Order = {
   deliveredAt: string | null;
   totalToman: number;
   createdAt: string;
-  invoice: { invoiceNumber: string; verificationCode: string } | null;
+  invoice: { invoiceNumber: string; verificationCode: string; accessToken: string | null } | null;
   payment: { status: string; provider: string; referenceId: string | null; paidAt: string | null } | null;
   items: OrderItem[];
   item: OrderItem | null;
@@ -329,7 +329,7 @@ export default async function AccountPage() {
                 )}
 
                 <footer className={styles.actions}>
-                  {order.invoice && <Link href={`/invoice/${encodeURIComponent(order.invoice.invoiceNumber)}`}>مشاهده فاکتور</Link>}
+                  {order.invoice?.accessToken && <Link href={`/invoice/${encodeURIComponent(order.invoice.invoiceNumber)}?accessToken=${encodeURIComponent(order.invoice.accessToken)}`}>مشاهده فاکتور</Link>}
                   {order.invoice && <Link href={`/verify/${encodeURIComponent(order.invoice.verificationCode)}`}>تأیید اصالت</Link>}
                   <Link href="/track-order">رهگیری سفارش</Link>
                 </footer>
