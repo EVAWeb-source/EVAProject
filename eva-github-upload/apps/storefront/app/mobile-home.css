@@ -76,7 +76,9 @@ main [aria-label="مزیت‌های خرید از EVA"] article > div {
 
 @media (max-width: 520px) {
   main > .evaHomeHero > .evaHomeHeroVisual {
-    aspect-ratio: 4 / 5;
+    height: 250px !important;
+    min-height: 250px !important;
+    aspect-ratio: auto !important;
   }
 
   main > .evaHomeHero > .evaHomeHeroCopy {
