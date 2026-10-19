@@ -21,8 +21,9 @@ main [aria-label="مزیت‌های خرید از EVA"] article > div {
   main > .evaHomeHero > .evaHomeHeroVisual {
     order: 1;
     width: 100%;
-    min-height: 0;
-    aspect-ratio: 4 / 5;
+    height: 250px !important;
+    min-height: 250px !important;
+    aspect-ratio: auto !important;
   }
 
   main > .evaHomeHero > .evaHomeHeroCopy {
