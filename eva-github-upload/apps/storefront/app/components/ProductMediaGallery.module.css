@@ -114,9 +114,3 @@
     aspect-ratio:1 / 1.12;
   }
 }
-/* EVA desktop gallery final height alignment */
-@media(min-width:901px){
-  .stage{
-    aspect-ratio:1 / .96;
-  }
-}
