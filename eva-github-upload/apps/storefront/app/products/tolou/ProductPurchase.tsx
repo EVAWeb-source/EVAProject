@@ -41,10 +41,12 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
   async function shareProduct(){try{if(navigator.share){await navigator.share({title:product.name,text:`${product.name} از ایوا`,url:window.location.href});setShareState('اشتراک‌گذاری شد');}else{await navigator.clipboard?.writeText(window.location.href);setShareState('لینک کپی شد');}}catch{setShareState('');}window.setTimeout(()=>setShareState(''),1800);}
 
   if(!selected){return <div className={styles.purchasePanel}>
-    <div className={styles.purchaseTopline}><Link className={styles.collectionLink} href={'/collections/'+product.collectionSlug}>کالکشن {product.collection}</Link><span>{product.category}</span></div>
-    <div className={styles.titleRow}><div><h1>{product.name}</h1></div><button type="button" className={styles.iconAction} onClick={toggleWishlist} aria-label="افزودن به علاقه‌مندی‌ها">{liked?'♥':'♡'}</button></div>
-    <p className={styles.subtitle}>{subtitle}</p>
-    <div className={styles.soldOut}><span>در حال حاضر این محصول موجود نیست.</span><Link href="/shop">مشاهده محصولات موجود</Link></div>
+    <div className={styles.purchaseMain}>
+      <div className={styles.purchaseTopline}><Link className={styles.collectionLink} href={'/collections/'+product.collectionSlug}>کالکشن {product.collection}</Link><span>{product.category}</span></div>
+      <div className={styles.titleRow}><div><h1>{product.name}</h1></div><button type="button" className={styles.iconAction} onClick={toggleWishlist} aria-label="افزودن به علاقه‌مندی‌ها">{liked?'♥':'♡'}</button></div>
+      <p className={styles.subtitle}>{subtitle}</p>
+      <div className={styles.soldOut}><span>در حال حاضر این محصول موجود نیست.</span><Link href="/shop">مشاهده محصولات موجود</Link></div>
+    </div>
   </div>;}
 
   const breakdown=selected.pricing;
@@ -52,6 +54,7 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
 
   return <>
     <div className={styles.purchasePanel}>
+      <div className={styles.purchaseMain}>
       <div className={styles.purchaseTopline}><Link className={styles.collectionLink} href={'/collections/'+product.collectionSlug}>کالکشن {product.collection}</Link><span>{product.category}</span></div>
 
       <div className={styles.titleRow}>
@@ -74,7 +77,7 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
       <div className={styles.availability}><span/> آماده سفارش و ارسال امن</div>
 
       <button type="button" className={added?styles.addToCart+' '+styles.addedToCart:styles.addToCart} onClick={addToCart}>{added?'✓ داخل سبد خرید':'افزودن به سبد خرید'}</button>
-      <div className={styles.actionStatus}>{cartStatus||shareState}</div>
+      <div className={styles.actionStatus}>{cartStatus}</div>
 
       <div className={styles.microTrust} aria-label="مزیت‌های خرید این محصول">
         <div><i aria-hidden="true">✓</i><span><strong>وزن دقیق</strong><small>وزن همین قطعه قبل از خرید مشخص است</small></span></div>
@@ -82,16 +85,18 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
         <div><i aria-hidden="true">◇</i><span><strong>ارسال امن</strong><small>بسته‌بندی مطمئن تا تحویل سفارش</small></span></div>
       </div>
 
-      <div className={styles.secondaryActions}>
-        <button type="button" className={saved?styles.secondaryActionActive:''} onClick={toggleSaveLater}>
-          <i aria-hidden="true">{saved?'✓':'＋'}</i><span><strong>{saved?'برای بعد ذخیره شد':'ذخیره برای بعد'}</strong><small>{saved?'از لیست ذخیره‌ها قابل دسترسی است':'اگر هنوز برای خرید مطمئن نیستی'}</small></span>
-        </button>
-        <button type="button" onClick={shareProduct}>
-          <i aria-hidden="true">↗</i><span><strong>{shareState||'اشتراک‌گذاری'}</strong><small>ارسال لینک این محصول برای دیگران</small></span>
-        </button>
+      {hasStone&&<div className={styles.stoneHighlight}><div><span>STONE DETAILS</span><strong>{breakdown.stoneName??'سنگ'}</strong></div><dl><div><dt>قیراط</dt><dd>{decimal(breakdown.stoneCarat??0)}</dd></div><div><dt>وزن سنگ</dt><dd>{decimal(breakdown.stoneWeightGram??0)} گرم</dd></div><div><dt>ارزش سنگ</dt><dd>{toman(breakdown.stoneValueToman)} تومان</dd></div></dl></div>}
       </div>
 
-      {hasStone&&<div className={styles.stoneHighlight}><div><span>STONE DETAILS</span><strong>{breakdown.stoneName??'سنگ'}</strong></div><dl><div><dt>قیراط</dt><dd>{decimal(breakdown.stoneCarat??0)}</dd></div><div><dt>وزن سنگ</dt><dd>{decimal(breakdown.stoneWeightGram??0)} گرم</dd></div><div><dt>ارزش سنگ</dt><dd>{toman(breakdown.stoneValueToman)} تومان</dd></div></dl></div>}
+      <div className={styles.purchaseExtras} aria-label="ابزارهای خرید و شفافیت قیمت">
+        <div className={styles.secondaryActions}>
+          <button type="button" className={saved?styles.secondaryActionActive:''} onClick={toggleSaveLater}>
+            <i aria-hidden="true">{saved?'✓':'＋'}</i><span><strong>{saved?'برای بعد ذخیره شد':'ذخیره برای بعد'}</strong><small>{saved?'از لیست ذخیره‌ها قابل دسترسی است':'اگر هنوز برای خرید مطمئن نیستی'}</small></span>
+          </button>
+          <button type="button" onClick={shareProduct}>
+            <i aria-hidden="true">↗</i><span><strong>{shareState||'اشتراک‌گذاری'}</strong><small>ارسال لینک این محصول برای دیگران</small></span>
+          </button>
+        </div>
 
       <details className={styles.breakdown}>
         <summary className={styles.breakdownToggle}><span><small>PRICE TRANSPARENCY</small><strong>جزئیات و نحوه محاسبه قیمت</strong><em>طلا، اجرت، سود و مالیات</em></span><b aria-hidden="true">＋</b></summary>
@@ -102,6 +107,7 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
           <p>{hasStone?'قیمت نهایی شامل طلای قطعه و ارزش سنگ است. مالیات فعلی فقط روی اجرت و سود طلا محاسبه می‌شود.':'مالیات فقط روی اجرت و سود طلا محاسبه شده است.'}</p>
         </div>
       </details>
+      </div>
     </div>
 
     {miniCartOpen&&<div className={extra.miniCartBackdrop} role="presentation" onMouseDown={event=>{if(event.currentTarget===event.target)setMiniCartOpen(false);}}><div className={extra.miniCart} role="dialog" aria-modal="true"><button className={extra.miniCartClose} type="button" onClick={()=>setMiniCartOpen(false)}>×</button><span className={extra.miniCartEyebrow}>ADDED TO CART</span><h2>{product.name}</h2><div className={extra.miniCartItem}>{product.imageUrl?<img src={product.imageUrl} alt=""/>:<div className={extra.miniCartFallback}/>}<div><strong>{selected.weight}</strong><span dir="ltr">{selected.unitSku}</span><b>{toman(selected.price)} تومان</b></div></div><div className={extra.miniCartActions}><Link href="/cart">مشاهده سبد خرید</Link><button type="button" onClick={()=>setMiniCartOpen(false)}>ادامه خرید</button></div></div></div>}
