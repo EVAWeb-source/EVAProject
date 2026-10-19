@@ -422,3 +422,35 @@
 @media(max-width:900px){
   .purchaseMain,.purchaseExtras{width:100%}
 }
+
+
+/* Final desktop product utility row */
+@media(min-width:901px){
+  .productHero{
+    row-gap:10px;
+  }
+  .purchaseExtras{
+    display:grid;
+    grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);
+    gap:10px;
+    align-items:stretch;
+  }
+  .purchaseExtras .breakdown{
+    grid-column:1;
+    grid-row:1;
+    margin:0;
+    height:max-content;
+  }
+  .purchaseExtras .secondaryActions{
+    grid-column:2;
+    grid-row:1;
+    margin:0;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    align-items:stretch;
+  }
+  .purchaseExtras .secondaryActions button{
+    min-height:68px;
+    height:100%;
+  }
+}
