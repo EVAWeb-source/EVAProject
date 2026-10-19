@@ -87,6 +87,9 @@ export default function ProductPurchase({ product, units }: ProductPurchaseProps
 
       {hasStone&&<div className={styles.stoneHighlight}><div><span>STONE DETAILS</span><strong>{breakdown.stoneName??'سنگ'}</strong></div><dl><div><dt>قیراط</dt><dd>{decimal(breakdown.stoneCarat??0)}</dd></div><div><dt>وزن سنگ</dt><dd>{decimal(breakdown.stoneWeightGram??0)} گرم</dd></div><div><dt>ارزش سنگ</dt><dd>{toman(breakdown.stoneValueToman)} تومان</dd></div></dl></div>}
 
+      </div>
+
+      <div className={styles.purchaseActions} aria-label="ابزارهای خرید">
         <div className={styles.secondaryActions}>
           <button type="button" className={saved?styles.secondaryActionActive:''} onClick={toggleSaveLater}>
             <i aria-hidden="true">{saved?'✓':'＋'}</i><span><strong>{saved?'برای بعد ذخیره شد':'ذخیره برای بعد'}</strong><small>{saved?'از لیست ذخیره‌ها قابل دسترسی است':'اگر هنوز برای خرید مطمئن نیستی'}</small></span>
