@@ -187,3 +187,178 @@
   .secondaryActions button>span{display:inline}
   .secondaryActions strong{font:inherit;font-weight:inherit;color:inherit}
 }
+
+
+/* Desktop purchase consistency with mobile */
+@media(min-width:621px){
+  .addToCart{
+    background:#9a742f;
+    border-color:#9a742f;
+    color:#fffdf9;
+    box-shadow:0 8px 24px rgba(154,116,47,.16);
+  }
+  .addToCart:hover,.addToCart:focus-visible{
+    background:#876426;
+    border-color:#876426;
+  }
+  .addedToCart{
+    background:#40594c;
+    border-color:#40594c;
+    box-shadow:none;
+  }
+
+  .microTrust{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:8px;
+    margin-top:10px;
+    background:transparent;
+    border:0;
+  }
+  .microTrust>div{
+    display:grid;
+    grid-template-columns:30px 1fr;
+    align-items:center;
+    gap:8px;
+    min-width:0;
+    padding:10px;
+    border:1px solid #e7ddd1;
+    border-radius:10px;
+    background:#fbf7f1;
+  }
+  .microTrust>div>i{
+    display:grid;
+    width:28px;
+    height:28px;
+    place-items:center;
+    border-radius:50%;
+    background:#f0e6d7;
+    color:#8d6c38;
+    font-style:normal;
+    font-size:12px;
+  }
+  .microTrust>div>span{
+    display:grid;
+    gap:2px;
+    padding:0;
+    border:0!important;
+    text-align:right;
+    color:inherit;
+  }
+  .microTrust strong{
+    font-size:8.5px;
+    font-weight:650;
+    color:#39332d;
+  }
+  .microTrust small{
+    display:block;
+    font-size:7px;
+    line-height:1.55;
+    color:#8a8179;
+  }
+
+  .secondaryActions{
+    gap:8px;
+    margin-top:9px;
+  }
+  .secondaryActions button{
+    min-height:62px;
+    display:grid;
+    grid-template-columns:27px 1fr;
+    align-items:center;
+    gap:8px;
+    padding:9px 10px;
+    border:1px solid #e2d8cc;
+    border-radius:10px;
+    background:#fff;
+    text-align:right;
+    color:#514941;
+  }
+  .secondaryActions button>i{
+    display:grid;
+    width:25px;
+    height:25px;
+    place-items:center;
+    border-radius:50%;
+    background:#f7f1e8;
+    color:#8d6c38;
+    font-style:normal;
+    font-size:12px;
+  }
+  .secondaryActions button>span{
+    display:grid;
+    gap:2px;
+  }
+  .secondaryActions strong{
+    font-size:8.5px;
+    font-weight:650;
+    color:#403832;
+  }
+  .secondaryActions small{
+    display:block;
+    font-size:7px;
+    line-height:1.5;
+    color:#978d84;
+  }
+  .secondaryActions button:hover,.secondaryActions button:focus-visible{
+    border-color:#c9b18a;
+    background:#fdf9f4;
+  }
+  .secondaryActionActive{
+    border-color:#b9cdbc!important;
+    background:#f3f8f4!important;
+  }
+  .secondaryActionActive>i{
+    background:#e6f0e8!important;
+    color:#466a52!important;
+  }
+}
+
+/* Stronger price transparency panel */
+.breakdown{
+  margin-top:16px;
+  border:1px solid #e3d7c9;
+  border-radius:12px;
+  background:#fbf7f1;
+  overflow:hidden;
+}
+.breakdownToggle{
+  padding:14px 16px;
+  min-height:68px;
+}
+.breakdownToggle>span{gap:3px}
+.breakdownToggle small{
+  color:#9a742f;
+  letter-spacing:.16em;
+}
+.breakdownToggle strong{
+  font-size:10px;
+  color:#342e29;
+}
+.breakdownToggle em{
+  font-style:normal;
+  font-size:8px;
+  color:#8b8178;
+}
+.breakdownToggle>b{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  flex:none;
+  border-radius:50%;
+  background:#efe5d6;
+  color:#8d6c38;
+}
+.breakdown[open] .breakdownToggle{
+  background:#f7f0e6;
+  border-bottom:1px solid #e7dccf;
+}
+.breakdownRows{
+  padding:10px 16px 16px;
+}
+@media(max-width:620px){
+  .breakdown{margin-top:14px}
+  .breakdownToggle{padding:13px 14px;min-height:66px}
+  .breakdownRows{padding:8px 14px 14px}
+}

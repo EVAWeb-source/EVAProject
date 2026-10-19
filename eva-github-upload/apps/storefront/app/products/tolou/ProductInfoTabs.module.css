@@ -22,3 +22,21 @@
   .storyCard p{font-size:11px;line-height:2}
   .secondary{padding:15px 16px 34px}
 }
+
+
+/* Product information layout consistency */
+.detailsOnly{grid-template-columns:1fr}
+.detailsOnly dl{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  column-gap:28px;
+  width:100%;
+}
+.detailsOnly dl div{
+  min-width:0;
+}
+@media(max-width:900px){
+  .detailsOnly dl{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .detailsOnly dl{grid-template-columns:1fr}
+}

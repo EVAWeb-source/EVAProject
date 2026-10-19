@@ -39,3 +39,8 @@
 @media(max-width:620px){
   .stage{aspect-ratio:1 / 1.08}
 }
+
+
+@media(min-width:621px){
+  .stage{aspect-ratio:1 / 1.18}
+}
