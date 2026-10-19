@@ -71,7 +71,7 @@ export type Dashboard = {
     itemCount: number;
     items: AdminOrderItem[];
     item: AdminOrderItem | null;
-    payment: null | { provider: string; status: string; referenceId: string | null; paidAt: string | null };
+    payment: null | { token: string; provider: string; status: string; referenceId: string | null; paidAt: string | null };
     invoiceNumber: string | null;
   }>;
   invoices: Array<{
@@ -83,6 +83,7 @@ export type Dashboard = {
     customerMobile: string;
     totalToman: number;
     verificationCode: string;
+    accessToken: string | null;
     issuedAt: string;
     itemCount: number;
     items: AdminOrderItem[];

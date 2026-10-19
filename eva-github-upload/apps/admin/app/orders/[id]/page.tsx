@@ -20,6 +20,9 @@ export default async function OrderDetailPage({params}:{params:Promise<{id:strin
   const fulfillmentStatus=full?.fulfillmentStatus??order.fulfillmentStatus??'REGISTERED';
   const current=flow.indexOf(fulfillmentStatus);
   const items=order.items?.length?order.items:order.item?[order.item]:[];
+  const invoiceHref=order.invoiceNumber&&order.payment?.token
+    ? `${STOREFRONT_BASE}/invoice/${encodeURIComponent(order.invoiceNumber)}?accessToken=${encodeURIComponent(order.payment.token)}`
+    : null;
 
   return <AdminShell connected={!error}>
     <AdminPageHeader eyebrow="ORDER DETAIL" title={order.orderNumber} description={`${order.customerName} • ${statusFa(order.status)} • ${new Intl.NumberFormat('fa-IR').format(items.length)} قطعه`} actions={<><a href="/orders">← سفارش‌ها</a>{customer&&<a href={`/customers/${customer.id}`}>پروفایل مشتری</a>}{order.status==='PAID'&&<a href="/fulfillment">Fulfillment</a>}<a href="/after-sales">لغو و مرجوعی</a></>}/>
@@ -43,13 +46,13 @@ export default async function OrderDetailPage({params}:{params:Promise<{id:strin
 
       <section className={`${styles.card} ${styles.full}`}><div className={styles.head}><span>FULFILLMENT</span><h2>مسیر آماده‌سازی و ارسال</h2></div><div className={styles.timeline}>{flow.map((step,index)=><div key={step} className={index<=current?styles.done:styles.step}><i>{index<=current?'✓':index+1}</i><span>{flowLabels[step]}</span></div>)}</div><div className={styles.rows}>
         <div className={styles.row}><span>شرکت حمل</span><strong>{full?.shippingCarrier??'—'}</strong></div><div className={styles.row}><span>کد رهگیری</span><strong dir="ltr">{full?.trackingCode??'—'}</strong></div>
-      </div><div className={styles.actions}>{order.invoiceNumber&&<a href={`${STOREFRONT_BASE}/invoice/${encodeURIComponent(order.invoiceNumber)}`} target="_blank" rel="noreferrer">فاکتور ↗</a>}<a href="/fulfillment">مدیریت Fulfillment</a></div></section>
+      </div><div className={styles.actions}>{invoiceHref&&<a href={invoiceHref} target="_blank" rel="noreferrer">فاکتور ↗</a>}<a href="/fulfillment">مدیریت Fulfillment</a></div></section>
 
       <section className={styles.card}><div className={styles.head}><span>PAYMENT</span><h2>پرداخت</h2></div><div className={styles.rows}>
         <div className={styles.row}><span>Provider</span><strong>{order.payment?.provider??'—'}</strong></div><div className={styles.row}><span>وضعیت</span><strong>{statusFa(order.payment?.status??order.status)}</strong></div><div className={styles.row}><span>Reference</span><strong dir="ltr">{order.payment?.referenceId??'—'}</strong></div><div className={styles.row}><span>زمان پرداخت</span><strong>{order.payment?.paidAt?faDate(order.payment.paidAt):'—'}</strong></div>
       </div></section>
 
-      <section className={styles.card}><div className={styles.head}><span>INVOICE</span><h2>فاکتور</h2></div><div className={styles.rows}><div className={styles.row}><span>شماره فاکتور</span><strong dir="ltr">{order.invoiceNumber??'—'}</strong></div></div>{order.invoiceNumber&&<div className={styles.actions}><a href={`${STOREFRONT_BASE}/invoice/${encodeURIComponent(order.invoiceNumber)}`} target="_blank" rel="noreferrer">باز کردن فاکتور ↗</a></div>}</section>
+      <section className={styles.card}><div className={styles.head}><span>INVOICE</span><h2>فاکتور</h2></div><div className={styles.rows}><div className={styles.row}><span>شماره فاکتور</span><strong dir="ltr">{order.invoiceNumber??'—'}</strong></div></div>{invoiceHref&&<div className={styles.actions}><a href={invoiceHref} target="_blank" rel="noreferrer">باز کردن فاکتور ↗</a></div>}</section>
 
       <div className={styles.full}><OrderAfterSalesActions orderId={order.id} orderStatus={order.status} fulfillmentStatus={fulfillmentStatus} itemCount={items.length}/></div>
     </div>

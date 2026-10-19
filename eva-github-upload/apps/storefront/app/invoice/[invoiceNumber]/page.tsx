@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import { notFound } from 'next/navigation';
 import PrintButton from './PrintButton';
 import styles from './invoice.module.css';
 
@@ -28,15 +29,17 @@ const toman=(value:number)=>`${new Intl.NumberFormat('fa-IR').format(value)} ت�
 const weight=(value:string|number)=>`${new Intl.NumberFormat('fa-IR',{minimumFractionDigits:0,maximumFractionDigits:3}).format(Number(value))} گرم`;
 const decimal=(value:number)=>new Intl.NumberFormat('fa-IR',{minimumFractionDigits:0,maximumFractionDigits:3}).format(value);
 
-async function getInvoice(invoiceNumber:string):Promise<Invoice>{
-  const response=await fetch(`${apiBase}/api/v1/invoices/${encodeURIComponent(invoiceNumber)}`,{cache:'no-store'});
+async function getInvoice(invoiceNumber:string,accessToken:string):Promise<Invoice>{
+  const response=await fetch(`${apiBase}/api/v1/invoices/${encodeURIComponent(invoiceNumber)}?accessToken=${encodeURIComponent(accessToken)}`,{cache:'no-store'});
+  if(response.status===404)notFound();
   if(!response.ok)throw new Error(`Invoice load failed: ${response.status}`);
   return response.json();
 }
 
-export default async function InvoicePage({params}:{params:Promise<{invoiceNumber:string}>}){
-  const {invoiceNumber}=await params;
-  const invoice=await getInvoice(invoiceNumber);
+export default async function InvoicePage({params,searchParams}:{params:Promise<{invoiceNumber:string}>;searchParams:Promise<{accessToken?:string}>}){
+  const [{invoiceNumber},{accessToken}]=await Promise.all([params,searchParams]);
+  if(!accessToken)notFound();
+  const invoice=await getInvoice(invoiceNumber,accessToken);
   const verifyUrl=`${siteBase}/verify/${invoice.verificationCode}`;
   const qrDataUrl=await QRCode.toDataURL(verifyUrl,{width:220,margin:1,errorCorrectionLevel:'M'});
 
