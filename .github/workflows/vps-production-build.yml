@@ -1,0 +1,45 @@
+name: VPS Production Build
+
+on:
+  pull_request:
+    paths:
+      - 'eva-github-upload/**'
+      - '.github/workflows/vps-production-build.yml'
+  workflow_dispatch:
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build -f eva-github-upload/Dockerfile.production --target api-runtime eva-github-upload
+
+      - name: Build Storefront image
+        run: docker build -f eva-github-upload/Dockerfile.production --target storefront-runtime eva-github-upload
+
+      - name: Build Admin image
+        run: docker build -f eva-github-upload/Dockerfile.production --target admin-runtime eva-github-upload
+
+      - name: Validate production compose
+        working-directory: eva-github-upload
+        env:
+          POSTGRES_USER: eva
+          POSTGRES_PASSWORD: ci-only-value
+          POSTGRES_DB: eva
+          FRONTEND_URL: http://127.0.0.1
+          ADMIN_URL: http://127.0.0.1:3001
+          ADMIN_API_KEY: ci-only-value
+          OTP_SECRET: ci-only-value
+          OTP_DEMO_MODE: "true"
+          OTP_DEMO_ALLOWED_MOBILE: ""
+          OTP_DEMO_CODE: ""
+          MEDIA_S3_ENDPOINT: http://127.0.0.1
+          MEDIA_S3_BUCKET: ci
+          MEDIA_S3_REGION: auto
+          MEDIA_S3_ACCESS_KEY_ID: ci
+          MEDIA_S3_SECRET_ACCESS_KEY: ci
+          MEDIA_PUBLIC_BASE_URL: http://127.0.0.1
+          SITE_URL: http://127.0.0.1
+        run: docker compose -f docker-compose.production.yml config >/dev/null

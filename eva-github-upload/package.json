@@ -18,6 +18,18 @@
     "db:migrate": "npm run db:migrate -w @eva/api",
     "db:studio": "npm run db:studio -w @eva/api"
   },
+  "overrides": {
+    "@aws-sdk/core": "3.916.0",
+    "@aws-sdk/credential-provider-env": "3.916.0",
+    "@aws-sdk/credential-provider-http": "3.916.0",
+    "@aws-sdk/credential-provider-ini": "3.918.0",
+    "@aws-sdk/credential-provider-node": "3.918.0",
+    "@aws-sdk/credential-provider-process": "3.916.0",
+    "@aws-sdk/credential-provider-sso": "3.916.0",
+    "@aws-sdk/credential-provider-web-identity": "3.918.0",
+    "@aws-sdk/nested-clients": "3.916.0",
+    "@aws-sdk/types": "3.914.0"
+  },
   "devDependencies": {
     "concurrently": "^9.2.1",
     "typescript": "^5.9.2"
