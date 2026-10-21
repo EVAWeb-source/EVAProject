@@ -1,0 +1,52 @@
+FROM node:22.22.3-bookworm-slim AS base
+WORKDIR /app
+ENV CI=true
+COPY package.json ./
+COPY apps/api/package.json apps/api/package.json
+COPY apps/storefront/package.json apps/storefront/package.json
+COPY apps/admin/package.json apps/admin/package.json
+COPY packages/contracts/package.json packages/contracts/package.json
+COPY packages/ui/package.json packages/ui/package.json
+RUN npm install
+
+FROM base AS source
+COPY . .
+
+FROM source AS api-build
+RUN npm run build -w @eva/api
+
+FROM source AS storefront-build
+RUN npm run build -w @eva/storefront
+
+FROM source AS admin-build
+RUN npm run build -w @eva/admin
+
+FROM node:22.22.3-bookworm-slim AS api-runtime
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=api-build /app/package.json ./
+COPY --from=api-build /app/node_modules ./node_modules
+COPY --from=api-build /app/apps/api ./apps/api
+COPY --from=api-build /app/packages ./packages
+EXPOSE 4000
+CMD ["node","apps/api/dist/main.js"]
+
+FROM node:22.22.3-bookworm-slim AS storefront-runtime
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=storefront-build /app/package.json ./
+COPY --from=storefront-build /app/node_modules ./node_modules
+COPY --from=storefront-build /app/apps/storefront ./apps/storefront
+COPY --from=storefront-build /app/packages ./packages
+EXPOSE 3000
+CMD ["./node_modules/.bin/next","start","apps/storefront","-p","3000"]
+
+FROM node:22.22.3-bookworm-slim AS admin-runtime
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=admin-build /app/package.json ./
+COPY --from=admin-build /app/node_modules ./node_modules
+COPY --from=admin-build /app/apps/admin ./apps/admin
+COPY --from=admin-build /app/packages ./packages
+EXPOSE 3001
+CMD ["./node_modules/.bin/next","start","apps/admin","-p","3001"]
