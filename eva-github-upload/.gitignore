@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.production.example
+
+node_modules/
+.next/
+.admin-next/
+dist/
+
+*.log
