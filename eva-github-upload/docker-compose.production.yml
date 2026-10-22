@@ -33,9 +33,12 @@ services:
       OTP_DEMO_MODE: ${OTP_DEMO_MODE}
       OTP_DEMO_ALLOWED_MOBILE: ${OTP_DEMO_ALLOWED_MOBILE}
       OTP_DEMO_CODE: ${OTP_DEMO_CODE}
+      MEDIA_STORAGE_MODE: ${MEDIA_STORAGE_MODE}
+      MEDIA_LOCAL_DIR: /data/media
       MEDIA_S3_ENDPOINT: ${MEDIA_S3_ENDPOINT}
       MEDIA_S3_BUCKET: ${MEDIA_S3_BUCKET}
       MEDIA_S3_REGION: ${MEDIA_S3_REGION}
+      MEDIA_S3_FORCE_PATH_STYLE: ${MEDIA_S3_FORCE_PATH_STYLE}
       MEDIA_S3_ACCESS_KEY_ID: ${MEDIA_S3_ACCESS_KEY_ID}
       MEDIA_S3_SECRET_ACCESS_KEY: ${MEDIA_S3_SECRET_ACCESS_KEY}
       MEDIA_PUBLIC_BASE_URL: ${MEDIA_PUBLIC_BASE_URL}
@@ -46,6 +49,8 @@ services:
       - "4000"
     ports:
       - "127.0.0.1:4000:4000"
+    volumes:
+      - eva_media_data:/data/media
     networks:
       - eva_internal
 
@@ -108,5 +113,6 @@ networks:
 
 volumes:
   eva_postgres_data:
+  eva_media_data:
   eva_caddy_data:
   eva_caddy_config:
