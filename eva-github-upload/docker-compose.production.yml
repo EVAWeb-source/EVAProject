@@ -114,5 +114,7 @@ networks:
 volumes:
   eva_postgres_data:
   eva_media_data:
+    external: true
+    name: eva-github-upload_eva_media_data
   eva_caddy_data:
   eva_caddy_config:
