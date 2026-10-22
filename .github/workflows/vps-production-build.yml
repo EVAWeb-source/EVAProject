@@ -35,9 +35,11 @@ jobs:
           OTP_DEMO_MODE: "true"
           OTP_DEMO_ALLOWED_MOBILE: ""
           OTP_DEMO_CODE: ""
+          MEDIA_STORAGE_MODE: local
           MEDIA_S3_ENDPOINT: http://127.0.0.1
           MEDIA_S3_BUCKET: ci
           MEDIA_S3_REGION: auto
+          MEDIA_S3_FORCE_PATH_STYLE: "false"
           MEDIA_S3_ACCESS_KEY_ID: ci
           MEDIA_S3_SECRET_ACCESS_KEY: ci
           MEDIA_PUBLIC_BASE_URL: http://127.0.0.1
