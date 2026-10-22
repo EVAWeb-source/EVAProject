@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { randomUUID } from 'node:crypto';
-import { extname } from 'node:path';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { dirname, extname, resolve, sep } from 'node:path';
 import sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -25,23 +26,33 @@ type CropInput = { positionX?: unknown; positionY?: unknown; zoom?: unknown };
 
 @Injectable()
 export class MediaService {
-  private readonly s3: S3Client;
+  private readonly s3?: S3Client;
   private readonly bucket: string;
+  private readonly localDir?: string;
   private readonly variantCache = new Map<string, Buffer>();
 
   constructor(private readonly prisma: PrismaService) {
+    const mode = (process.env.MEDIA_STORAGE_MODE || 's3').trim().toLowerCase();
+    const bucket = process.env.MEDIA_S3_BUCKET || 'eva-media';
+    this.bucket = bucket;
+
+    if (mode === 'local') {
+      const localDir = process.env.MEDIA_LOCAL_DIR;
+      if (!localDir) throw new Error('MEDIA_LOCAL_DIR is required for local media storage');
+      this.localDir = resolve(localDir);
+      return;
+    }
+
     const endpoint = process.env.MEDIA_S3_ENDPOINT;
-    const bucket = process.env.MEDIA_S3_BUCKET;
     const accessKeyId = process.env.MEDIA_S3_ACCESS_KEY_ID;
     const secretAccessKey = process.env.MEDIA_S3_SECRET_ACCESS_KEY;
     if (!endpoint || !bucket || !accessKeyId || !secretAccessKey) {
       throw new Error('EVA media storage is not configured');
     }
-    this.bucket = bucket;
     this.s3 = new S3Client({
       endpoint,
       region: process.env.MEDIA_S3_REGION || 'auto',
-      forcePathStyle: false,
+      forcePathStyle: process.env.MEDIA_S3_FORCE_PATH_STYLE === 'true',
       credentials: { accessKeyId, secretAccessKey },
     });
   }
@@ -62,13 +73,19 @@ export class MediaService {
     const now = new Date();
     const storageKey = `media/${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, '0')}/${randomUUID()}${extension}`;
 
-    await this.s3.send(new PutObjectCommand({
-      Bucket: this.bucket,
-      Key: storageKey,
-      Body: file.buffer,
-      ContentType: mimeType,
-      CacheControl: 'public, max-age=31536000, immutable',
-    }));
+    if (this.localDir) {
+      const target = this.localPath(storageKey);
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, file.buffer);
+    } else {
+      await this.s3!.send(new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: storageKey,
+        Body: file.buffer,
+        ContentType: mimeType,
+        CacheControl: 'public, max-age=31536000, immutable',
+      }));
+    }
 
     const asset = await this.prisma.mediaAsset.create({
       data: {
@@ -165,12 +182,23 @@ export class MediaService {
       return { asset, bytes: cached, contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' };
     }
 
-    const object = await this.s3.send(new GetObjectCommand({ Bucket: this.bucket, Key: asset.storageKey }));
-    if (!object.Body) throw new NotFoundException('Media file not found');
-    const source = Buffer.from(await object.Body.transformToByteArray());
+    let source: Buffer;
+    let cacheControl = 'public, max-age=31536000, immutable';
+    if (this.localDir) {
+      try {
+        source = await readFile(this.localPath(asset.storageKey));
+      } catch {
+        throw new NotFoundException('Media file not found');
+      }
+    } else {
+      const object = await this.s3!.send(new GetObjectCommand({ Bucket: this.bucket, Key: asset.storageKey }));
+      if (!object.Body) throw new NotFoundException('Media file not found');
+      source = Buffer.from(await object.Body.transformToByteArray());
+      cacheControl = object.CacheControl || cacheControl;
+    }
 
     if (!width) {
-      return { asset, bytes: source, contentType: asset.mimeType, cacheControl: object.CacheControl || 'public, max-age=31536000, immutable' };
+      return { asset, bytes: source, contentType: asset.mimeType, cacheControl };
     }
 
     const bytes = await sharp(source, { failOn: 'none' })
@@ -195,9 +223,21 @@ export class MediaService {
     if (productReferences > 0 || asset.siteSlots.length > 0) {
       throw new BadRequestException('This image is currently in use and cannot be deleted');
     }
-    await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: asset.storageKey }));
+    if (this.localDir) {
+      await rm(this.localPath(asset.storageKey), { force: true });
+    } else {
+      await this.s3!.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: asset.storageKey }));
+    }
     await this.prisma.mediaAsset.delete({ where: { id } });
     return { ok: true };
+  }
+
+  private localPath(storageKey: string) {
+    if (!this.localDir) throw new Error('Local media storage is not configured');
+    const target = resolve(this.localDir, storageKey);
+    const root = this.localDir.endsWith(sep) ? this.localDir : this.localDir + sep;
+    if (!target.startsWith(root)) throw new BadRequestException('Invalid media storage key');
+    return target;
   }
 
   private normalizeSlot(slot: string) {
