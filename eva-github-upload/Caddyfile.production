@@ -1,4 +1,4 @@
-:80 {
+eva-gold.ir {
   encode zstd gzip
 
   @api path /api/v1/*
@@ -9,4 +9,8 @@
   handle {
     reverse_proxy storefront:3000
   }
+}
+
+www.eva-gold.ir {
+  redir https://eva-gold.ir{uri} permanent
 }
