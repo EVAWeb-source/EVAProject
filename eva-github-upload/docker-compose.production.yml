@@ -102,6 +102,7 @@ services:
       - "80:80"
       - "443:443"
       - "443:443/udp"
+      - "8443:8443"
     volumes:
       - ./Caddyfile.production:/etc/caddy/Caddyfile:ro
       - eva_caddy_data:/data
