@@ -15,15 +15,10 @@ www.eva-gold.ir {
   redir https://eva-gold.ir{uri} permanent
 }
 
-admin.eva-gold.ir {
+https://eva-gold.ir:8443 {
   encode zstd gzip
 
-  tls {
-    issuer acme https://acme.zerossl.com/v2/DV90 {
-      email {$ACME_EMAIL}
-      eab {$ZEROSSL_EAB_KID} {$ZEROSSL_EAB_HMAC_KEY}
-    }
-  }
+  tls /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/eva-gold.ir/eva-gold.ir.crt /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/eva-gold.ir/eva-gold.ir.key
 
   header {
     X-Content-Type-Options "nosniff"
