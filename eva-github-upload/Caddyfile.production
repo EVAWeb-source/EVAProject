@@ -14,3 +14,16 @@ eva-gold.ir {
 www.eva-gold.ir {
   redir https://eva-gold.ir{uri} permanent
 }
+
+admin.eva-gold.ir {
+  encode zstd gzip
+
+  header {
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "no-referrer"
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  }
+
+  reverse_proxy admin:3001
+}
