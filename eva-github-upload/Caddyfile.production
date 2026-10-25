@@ -18,6 +18,10 @@ www.eva-gold.ir {
 admin.eva-gold.ir {
   encode zstd gzip
 
+  tls {
+    issuer acme https://acme.zerossl.com/v2/DV90
+  }
+
   header {
     X-Content-Type-Options "nosniff"
     X-Frame-Options "DENY"
