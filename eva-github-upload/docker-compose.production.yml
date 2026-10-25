@@ -98,6 +98,8 @@ services:
     depends_on:
       - storefront
       - api
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL}
     ports:
       - "80:80"
       - "443:443"
